@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5661e9892548c75449ea51bf203a49f7, type: 3}
+  m_Name: Skill_Tackle
+  m_EditorClassIdentifier: 
+  Id: 001
+  DisplayName: "\u649E\u51FB"
+  Type: 1
+  TargetType: 1
+  Power: 40
+  Accuracy: 1
+  MaxPP: 20
