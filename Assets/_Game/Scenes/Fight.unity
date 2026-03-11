@@ -1827,6 +1827,54 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1775461849}
   m_CullTransparentMesh: 1
+--- !u!1 &1811571576
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1811571578}
+  - component: {fileID: 1811571577}
+  m_Layer: 0
+  m_Name: BattleCoordinator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1811571577
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1811571576}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d128b6eb9c6cfda49b83068d648e9134, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerSpecies: {fileID: 11400000, guid: 9203c7cc45ee05b48812114fd28074a5, type: 2}
+  enemySpecies: {fileID: 11400000, guid: cfefac2801e333044b459fc4f13b051f, type: 2}
+  typeChart: {fileID: 11400000, guid: 9c9359f4bef1a4e41adad6ab00ca234e, type: 2}
+  uiController: {fileID: 2038514673}
+--- !u!4 &1811571578
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1811571576}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 339.10016, y: 197.33585, z: -0.6545339}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1830095288
 GameObject:
   m_ObjectHideFlags: 0
@@ -2158,9 +2206,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2bbf4884c098ea044abc926a4e8ad203, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerSpecies: {fileID: 11400000, guid: 9203c7cc45ee05b48812114fd28074a5, type: 2}
-  enemySpecies: {fileID: 11400000, guid: cfefac2801e333044b459fc4f13b051f, type: 2}
-  typeChart: {fileID: 11400000, guid: 9c9359f4bef1a4e41adad6ab00ca234e, type: 2}
   playerNameText: {fileID: 812092125}
   enemyNameText: {fileID: 25612601}
   playerHpText: {fileID: 170862969}
@@ -2200,3 +2245,4 @@ SceneRoots:
   - {fileID: 1111179746}
   - {fileID: 456399071}
   - {fileID: 2038514674}
+  - {fileID: 1811571578}

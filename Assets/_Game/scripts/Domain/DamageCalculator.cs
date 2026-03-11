@@ -27,7 +27,7 @@ namespace Pokemon.Domain
         {
            
             //基础伤害计算 = 技能威力 + 攻击方攻击力 - 防御方防御力 * 0.5
-            float baseDamage = skill.Power + attacker.Attack - defender.Defense * 1.5f;
+            float baseDamage = skill.Power + attacker.Attack - defender.Defense * 2f;
             if (baseDamage < 1f) baseDamage = 1f;
 
             //属性加成系数 如果为同属性则技能威力*1.5 检查属性相克表，如果不存在则默认威力*1

@@ -2,18 +2,21 @@ using Pokemon.Domain;
 
 namespace Pokemon.Application
 {
+    /// <summary>
+    /// 战斗回合执行用例，采用命令模式和用例模式设计
+    /// </summary>
     public sealed class ExecuteTurnUseCase
     {
         public struct TurnResult
         {
-            public bool PlayerActed;
-            public bool EnemyActed;
-            public bool PlayerHit;
-            public bool EnemyHit;
-            public int DamageToEnemy;
-            public int DamageToPlayer;
-            public bool BattleEnded;
-            public bool PlayerWon;
+            public bool PlayerActed;    //玩家回合
+            public bool EnemyActed;     //敌方回合
+            public bool PlayerHit;      //玩家命中
+            public bool EnemyHit;       //敌人命中
+            public int DamageToEnemy;   //对敌人伤害
+            public int DamageToPlayer;  //对玩家伤害
+            public bool BattleEnded;    //对战结束
+            public bool PlayerWon;      //玩家胜利
         }
 
         //只读 确保线程安全和不可变性
@@ -43,7 +46,7 @@ namespace Pokemon.Application
             MonsterRuntime enemy,
             SkillData enemySkill)
         {
-            TurnResult result = new TurnResult();
+            TurnResult result = new();
 
             bool playerFirst = player.Speed >= enemy.Speed;
 
@@ -84,9 +87,11 @@ namespace Pokemon.Application
             ref TurnResult result,
             bool isPlayerAction)
         {
+            //判断是否还有技能PP
             if (!attacker.TryConsumePP(skill))
                 return;
 
+            //检查是否命中
             bool hit = _damageCalculator.CheckHit(skill);
             int damage = 0;
 
