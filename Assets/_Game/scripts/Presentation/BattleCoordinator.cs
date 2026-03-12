@@ -21,6 +21,10 @@ namespace MonsterLike.Presentation
         [Header("Settings")]
         [SerializeField] private float stepDelaySeconds = 1.5f;
 
+        [Header("Views")]
+        [SerializeField] private BattleUnitView playerView;
+        [SerializeField] private BattleUnitView enemyView;
+
         private MonsterRuntime _player;
         private MonsterRuntime _enemy;
         private ExecuteTurnUseCase _turnUseCase;
@@ -31,6 +35,8 @@ namespace MonsterLike.Presentation
         {
             if (uiController == null) return;
             InitBattle();
+            if (playerView != null) playerView.Setup(playerSpecies.BattleSprite);
+            if (enemyView != null) enemyView.Setup(enemySpecies.BattleSprite);
         }
 
         private void InitBattle()
@@ -83,6 +89,12 @@ namespace MonsterLike.Presentation
                 uiController.UpdateHp(step.PlayerHpAfter, _player.Species.BaseHP, step.EnemyHpAfter, _enemy.Species.BaseHP);
 
                 // 停顿，让玩家看清文字（未来可以在这里播放动画/特效）
+                //yield return new WaitForSeconds(stepDelaySeconds);//
+                // 根据标记播放对应动画，并等待动画完成
+                if (step.AnimType == StepAnimType.PlayerAttack) yield return playerView.PlayAttackAnimation(true);
+                else if (step.AnimType == StepAnimType.EnemyAttack) yield return enemyView.PlayAttackAnimation(false);
+                else if (step.AnimType == StepAnimType.EnemyHit) yield return enemyView.PlayHitAnimation();
+                else if (step.AnimType == StepAnimType.PlayerHit) yield return playerView.PlayHitAnimation();
                 yield return new WaitForSeconds(stepDelaySeconds);
 
                 if (step.IsBattleEnd)

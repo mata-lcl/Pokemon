@@ -22,8 +22,12 @@ namespace Pokemon.Domain
         public int BaseDefense = 10;
         public int BaseSpeed = 10;
 
-        [Header("Learned Skills")]
+        [Header("学习技能")]
         public List<SkillData> InitialSkills = new List<SkillData>();
+
+        //新增
+        [Header("精灵图片")]
+        public Sprite BattleSprite;
     }
 }
 

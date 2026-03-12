@@ -13,12 +13,21 @@ MonoBehaviour:
   m_Name: TypeChart_Basic
   m_EditorClassIdentifier: 
   Entries:
-  - AttackType: 2
-    DefenseType: 3
-    Multiplier: 2
   - AttackType: 3
     DefenseType: 4
     Multiplier: 2
   - AttackType: 4
+    DefenseType: 3
+    Multiplier: 0.5
+  - AttackType: 2
+    DefenseType: 3
+    Multiplier: 2
+  - AttackType: 3
+    DefenseType: 2
+    Multiplier: 0.5
+  - AttackType: 4
     DefenseType: 2
     Multiplier: 2
+  - AttackType: 2
+    DefenseType: 4
+    Multiplier: 0.5

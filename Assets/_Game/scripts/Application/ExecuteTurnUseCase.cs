@@ -3,6 +3,14 @@ using System.Collections.Generic;
 
 namespace Pokemon.Application
 {
+    public enum StepAnimType
+    {
+        None,
+        PlayerAttack,
+        EnemyAttack,
+        PlayerHit,
+        EnemyHit
+    }
     // 定义一个回合内的单个“步骤/画面”
     //不可变的数据快照
     public struct TurnStep
@@ -12,6 +20,8 @@ namespace Pokemon.Application
         public int EnemyHpAfter;
         public bool IsBattleEnd;
         public bool PlayerWon;
+        //新增2DSprite
+        public StepAnimType AnimType;
     }
 
     public sealed class ExecuteTurnUseCase
@@ -74,14 +84,21 @@ namespace Pokemon.Application
             return steps;
         }
 
+        /// <summary>
+        /// 处理回合信息，输出信息
+        /// </summary>
+        /// <param name="attacker"></param>
+        /// <param name="skill"></param>
+        /// <param name="defender"></param>
+        /// <param name="isPlayerAttacking"></param>
+        /// <param name="steps"></param>
         private void ResolveAction(
             MonsterRuntime attacker, SkillData skill,
             MonsterRuntime defender, bool isPlayerAttacking,
             List<TurnStep> steps)
         {
-            //string attackerName = isPlayerAttacking ? attacker.Species.name : attacker.Species.name;
+            //string attackerName = isPlayerAttacking ? "我方" : "敌方";
             string attackerName = attacker.Species.DisplayName;
-            
 
             if (!attacker.TryConsumePP(skill))
             {
@@ -96,13 +113,46 @@ namespace Pokemon.Application
                 return;
             }
 
-            int damage = _damageCalculator.CalculateDamage(attacker, defender, skill);
-            defender.ApplyDamage(damage);
+            // 获取详细的伤害结果
+            var damageResult = _damageCalculator.CalculateDamage(attacker, defender, skill);
+            defender.ApplyDamage(damageResult.FinalDamage);
 
-            steps.Add(CreateStep($"{attackerName}使用 {skill.DisplayName}，造成了 {damage} 点伤害！", attacker, defender, isPlayerAttacking));
+            //插入伤害提示
+            //steps.Add(CreateStep($"{attackerName}使用 {skill.DisplayName}，造成了 {damageResult.FinalDamage} 点伤害！", attacker, defender, isPlayerAttacking));
+            //新增：受伤动画
+            var attackStep = CreateStep($"{attackerName}使用了 {skill.DisplayName}！", attacker, defender, isPlayerAttacking);
+            attackStep.AnimType = isPlayerAttacking ? StepAnimType.PlayerAttack : StepAnimType.EnemyAttack;
+            steps.Add(attackStep);
+
+
+            // --- 步骤 2: 伤害与受击闪烁 ---
+            var hitStep = CreateStep($"造成了 {damageResult.FinalDamage} 点伤害！", attacker, defender, isPlayerAttacking);
+            hitStep.AnimType = isPlayerAttacking ? StepAnimType.EnemyHit : StepAnimType.PlayerHit;
+            steps.Add(hitStep);
+
+            //根据倍率插入克制提示 (像宝可梦一样的经典节奏)
+            if (damageResult.TypeMultiplier > 1.1f)
+            {
+                steps.Add(CreateStep("效果拔群！", attacker, defender, isPlayerAttacking));
+            }
+            else if (damageResult.TypeMultiplier < 0.9f && damageResult.TypeMultiplier > 0.1f)
+            {
+                steps.Add(CreateStep("效果不太好...", attacker, defender, isPlayerAttacking));
+            }
+            else if (damageResult.TypeMultiplier <= 0.1f)
+            {
+                steps.Add(CreateStep("似乎没有效果...", attacker, defender, isPlayerAttacking));
+            }
         }
 
-        // 辅助方法，用于快速生成当前的快照状态
+        /// <summary>
+        /// 辅助方法，用于快速生成当前的快照状态
+        /// </summary>
+        /// <param name="msg"></param>
+        /// <param name="attacker"></param>
+        /// <param name="defender"></param>
+        /// <param name="isPlayerAttacking"></param>
+        /// <returns></returns>
         private TurnStep CreateStep(string msg, MonsterRuntime attacker, MonsterRuntime defender, bool isPlayerAttacking)
         {
             return new TurnStep
@@ -110,7 +160,8 @@ namespace Pokemon.Application
                 Message = msg,
                 PlayerHpAfter = isPlayerAttacking ? attacker.CurrentHP : defender.CurrentHP,
                 EnemyHpAfter = isPlayerAttacking ? defender.CurrentHP : attacker.CurrentHP,
-                IsBattleEnd = false
+                IsBattleEnd = false,
+                AnimType = StepAnimType.None
             };
         }
     }

@@ -1,4 +1,5 @@
 using Pokemon.Domain;
+using Unity.VisualScripting.Dependencies.NCalc;
 
 namespace Pokemon.Application
 {
@@ -93,25 +94,27 @@ namespace Pokemon.Application
 
             //ºÏ≤È «∑Ò√¸÷–
             bool hit = _damageCalculator.CheckHit(skill);
-            int damage = 0;
+            //int damage = 0;
+            var damage = _damageCalculator.CalculateDamage(attacker, defender, skill);
 
             if (hit)
             {
-                damage = _damageCalculator.CalculateDamage(attacker, defender, skill);
-                defender.ApplyDamage(damage);
+
+                //damage = _damageCalculator.CalculateDamage(attacker, defender, skill);
+                defender.ApplyDamage(damage.FinalDamage);
             }
 
             if (isPlayerAction)
             {
                 result.PlayerActed = true;
                 result.PlayerHit = hit;
-                result.DamageToEnemy = damage;
+                result.DamageToEnemy = damage.FinalDamage;
             }
             else
             {
                 result.EnemyActed = true;
                 result.EnemyHit = hit;
-                result.DamageToPlayer = damage;
+                result.DamageToPlayer = damage.FinalDamage;
             }
         }
     }
