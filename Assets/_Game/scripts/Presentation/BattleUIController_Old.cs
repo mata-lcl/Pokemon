@@ -32,7 +32,7 @@ namespace Pokemon.Presentation
         private MonsterRuntime _player;
         private MonsterRuntime _enemy;
         private DamageCalculator _damageCalculator;
-        private ExecuteTurnUseCase _turnUseCase;
+        private ExecuteTurnUseCase_Old _turnUseCase;
 
         private readonly List<SkillData> _playerSkills = new List<SkillData>();
         private bool _battleEnded;
@@ -49,7 +49,7 @@ namespace Pokemon.Presentation
             _enemy = new MonsterRuntime(enemySpecies);
 
             _damageCalculator = new DamageCalculator(typeChart);
-            _turnUseCase = new ExecuteTurnUseCase(_damageCalculator);
+            _turnUseCase = new ExecuteTurnUseCase_Old(_damageCalculator);
 
             playerNameText.text = _player.Species.DisplayName;
             enemyNameText.text = _enemy.Species.DisplayName;

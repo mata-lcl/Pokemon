@@ -5,7 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace MonsterLike.Presentation
+namespace Pokemon.Presentation
 {
     public class BattleUIController : MonoBehaviour
     {
@@ -20,8 +20,12 @@ namespace MonsterLike.Presentation
         [SerializeField] private Button[] skillButtons;
         [SerializeField] private TMP_Text[] skillBtnTexts;
 
-        // 向外暴露玩家点击事件
-        public event Action<int> OnSkillClicked;
+        /// <summary>
+        /// 向外暴露玩家点击事件
+        /// 核心设计：公开一个事件，将用户输入转发给外部
+        /// 实现了观察者模式(Observer Pattern)，UI不处理业务逻辑
+        /// </summary>
+        public event Action<int> OnSkillClicked;    //委托，参数是技能索引
 
         private void Awake()
         {
@@ -65,6 +69,12 @@ namespace MonsterLike.Presentation
             }
         }
 
+        /// <summary>
+        /// 技能UI刷新，遍历所有技能槽，
+        /// 将有对应技能：激活按钮，设置交互性（PP>0），更新文本
+        /// </summary>
+        /// <param 要显示的技能列表="skills"></param>
+        /// <param 技能到PP值的映射="ppMap"></param>
         public void RefreshSkills(List<SkillData> skills, IReadOnlyDictionary<SkillData, int> ppMap)
         {
             for (int i = 0; i < skillButtons.Length; i++)

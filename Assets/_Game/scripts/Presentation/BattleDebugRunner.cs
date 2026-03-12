@@ -16,7 +16,7 @@ namespace Pokemon.Presentation
         private MonsterRuntime _enemy;
 
         private DamageCalculator _damageCalculator;
-        private ExecuteTurnUseCase _executeTurnUseCase;
+        private ExecuteTurnUseCase_Old _executeTurnUseCase;
 
         private bool _battleEnded;
 
@@ -33,7 +33,7 @@ namespace Pokemon.Presentation
             _enemy = new MonsterRuntime(enemySpecies);
 
             _damageCalculator = new DamageCalculator(typeChart);
-            _executeTurnUseCase = new ExecuteTurnUseCase(_damageCalculator);
+            _executeTurnUseCase = new ExecuteTurnUseCase_Old(_damageCalculator);
 
             Debug.Log("=== Battle Start ===");
             Debug.Log($"Player: {_player.Species.DisplayName} HP={_player.CurrentHP} SPD={_player.Speed}");

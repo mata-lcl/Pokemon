@@ -1,5 +1,7 @@
 using Pokemon.Application;
 using Pokemon.Domain;
+using Pokemon.Presentation;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,6 +17,10 @@ namespace MonsterLike.Presentation
         [Header("UI Reference")]
         [SerializeField] private BattleUIController uiController;
 
+        // 设置播放每个步骤的停顿时间
+        [Header("Settings")]
+        [SerializeField] private float stepDelaySeconds = 1.5f;
+
         private MonsterRuntime _player;
         private MonsterRuntime _enemy;
         private ExecuteTurnUseCase _turnUseCase;
@@ -23,12 +29,7 @@ namespace MonsterLike.Presentation
 
         private void Start()
         {
-            if (uiController == null)
-            {
-                Debug.LogError("[BattleCoordinator] UI Controller 未绑定！");
-                return;
-            }
-
+            if (uiController == null) return;
             InitBattle();
         }
 
@@ -36,20 +37,15 @@ namespace MonsterLike.Presentation
         {
             _player = new MonsterRuntime(playerSpecies);
             _enemy = new MonsterRuntime(enemySpecies);
-
             _turnUseCase = new ExecuteTurnUseCase(new DamageCalculator(typeChart));
 
-            // 提取玩家技能列表（固定顺序）
             _playerSkills = new List<SkillData>();
             foreach (var skill in _player.GetSkillPP().Keys)
             {
                 if (skill != null) _playerSkills.Add(skill);
             }
 
-            // 监听UI点击事件
             uiController.OnSkillClicked += HandlePlayerAction;
-
-            // 初始化UI表现
             uiController.SetupNames(_player.Species.DisplayName, _enemy.Species.DisplayName);
             uiController.UpdateHp(_player.CurrentHP, _player.Species.BaseHP, _enemy.CurrentHP, _enemy.Species.BaseHP);
             uiController.RefreshSkills(_playerSkills, _player.GetSkillPP());
@@ -58,51 +54,49 @@ namespace MonsterLike.Presentation
 
         private void OnDestroy()
         {
-            if (uiController != null)
-            {
-                uiController.OnSkillClicked -= HandlePlayerAction;
-            }
+            if (uiController != null) uiController.OnSkillClicked -= HandlePlayerAction;
         }
 
         private void HandlePlayerAction(int skillIndex)
         {
             if (_battleEnded) return;
-            if (skillIndex < 0 || skillIndex >= _playerSkills.Count) return;
 
             SkillData playerSkill = _playerSkills[skillIndex];
             SkillData enemySkill = PickFirstAvailableSkill(_enemy);
 
-            if (enemySkill == null)
-            {
-                EndBattle("敌人PP耗尽，无法行动。你赢了！");
-                return;
-            }
+            // 瞬间生成本回合的“录像”
+            List<TurnStep> steps = _turnUseCase.Execute(_player, playerSkill, _enemy, enemySkill);
 
-            // 锁定UI，防止连点（这在后续加动画时极其重要）
+            // 启动协程，按时间慢慢播放录像
+            StartCoroutine(PlayTurnRoutine(steps));
+        }
+
+        private IEnumerator PlayTurnRoutine(List<TurnStep> steps)
+        {
+            // 锁定UI，防止连点
             uiController.SetInteractable(false);
 
-            // 执行核心回合逻辑
-            var result = _turnUseCase.Execute(_player, playerSkill, _enemy, enemySkill);
-
-            // 构建战报日志
-            string log = "";
-            if (result.PlayerActed)
-                log += $"{_player.Species.DisplayName}使用 {playerSkill.DisplayName}：{(result.PlayerHit ? "命中" : "未命中")} 伤害 {result.DamageToEnemy}\n";
-            if (result.EnemyActed)
-                log += $"{_enemy.Species.DisplayName}使用 {enemySkill.DisplayName}：{(result.EnemyHit ? "命中" : "未命中")} 伤害 {result.DamageToPlayer}\n";
-
-            // 更新UI
-            uiController.UpdateHp(_player.CurrentHP, _player.Species.BaseHP, _enemy.CurrentHP, _enemy.Species.BaseHP);
-            uiController.RefreshSkills(_playerSkills, _player.GetSkillPP());
-            uiController.SetLog(log.TrimEnd());
-
-            if (result.BattleEnded)
+            foreach (var step in steps)
             {
-                EndBattle(result.PlayerWon ? "战斗结束，你赢了！" : "战斗结束，你输了！");
+                // 更新UI显示
+                uiController.SetLog(step.Message);
+                uiController.UpdateHp(step.PlayerHpAfter, _player.Species.BaseHP, step.EnemyHpAfter, _enemy.Species.BaseHP);
+
+                // 停顿，让玩家看清文字（未来可以在这里播放动画/特效）
+                yield return new WaitForSeconds(stepDelaySeconds);
+
+                if (step.IsBattleEnd)
+                {
+                    _battleEnded = true;
+                    uiController.SetInteractable(false);
+                    yield break; // 结束协程
+                }
             }
-            else
+
+            // 回合播放完毕没死，解锁UI并刷新PP文本
+            if (!_battleEnded)
             {
-                // 战斗没结束，刷新技能状态并解锁UI
+                uiController.SetLog("请选择下一步行动。");
                 uiController.RefreshSkills(_playerSkills, _player.GetSkillPP());
             }
         }
@@ -113,14 +107,7 @@ namespace MonsterLike.Presentation
             {
                 if (pair.Key != null && pair.Value > 0) return pair.Key;
             }
-            return null;
-        }
-
-        private void EndBattle(string finalMessage)
-        {
-            _battleEnded = true;
-            uiController.SetLog(finalMessage);
-            uiController.SetInteractable(false);
+            return null; // 这里暂不处理敌人也耗尽PP的边角情况
         }
     }
 }
