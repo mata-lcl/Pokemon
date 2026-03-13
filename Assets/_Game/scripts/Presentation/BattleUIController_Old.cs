@@ -45,8 +45,8 @@ namespace Pokemon.Presentation
                 return;
             }
 
-            _player = new MonsterRuntime(playerSpecies);
-            _enemy = new MonsterRuntime(enemySpecies);
+            _player = new MonsterRuntime(playerSpecies,5);
+            _enemy = new MonsterRuntime(enemySpecies, 5);
 
             _damageCalculator = new DamageCalculator(typeChart);
             _turnUseCase = new ExecuteTurnUseCase_Old(_damageCalculator);
@@ -87,7 +87,7 @@ namespace Pokemon.Presentation
         {
             _playerSkills.Clear();
 
-            foreach (var kv in _player.GetSkillPP())
+            foreach (var kv in _player.CurrentPP)
             {
                 if (kv.Key != null)
                     _playerSkills.Add(kv.Key);
@@ -164,17 +164,17 @@ namespace Pokemon.Presentation
             for (int i = 0; i < _playerSkills.Count && i < skillButtons.Length; i++)
             {
                 SkillData skill = _playerSkills[i];
-                bool canUse = _player.CanUseSkill(skill);
+                bool canUse = _player.TryConsumePP(skill);
                 skillButtons[i].interactable = canUse;
 
-                int pp = _player.GetSkillPP()[skill];
+                int pp = _player.CurrentPP[skill];
                 skillBtnTexts[i].text = $"{skill.DisplayName} ({pp})";
             }
         }
 
         private SkillData PickFirstAvailableSkill(MonsterRuntime monster)
         {
-            IReadOnlyDictionary<SkillData, int> ppMap = monster.GetSkillPP();
+            IReadOnlyDictionary<SkillData, int> ppMap = monster.CurrentPP;
             foreach (var pair in ppMap)
             {
                 if (pair.Key != null && pair.Value > 0) return pair.Key;

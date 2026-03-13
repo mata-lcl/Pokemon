@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5661e9892548c75449ea51bf203a49f7, type: 3}
-  m_Name: Skill_Tackle
+  m_Name: Skill_PoisonSting
   m_EditorClassIdentifier: 
-  Id: 001
-  DisplayName: "\u649E\u51FB"
+  Id: 004
+  DisplayName: "\u6BD2\u9488"
   Type: 1
   TargetType: 1
   Power: 10
   Accuracy: 1
   MaxPP: 20
-  ApplyStatus: 0
-  StatusChance: 0
+  ApplyStatus: 1
+  StatusChance: 1

@@ -37,14 +37,14 @@ namespace Pokemon.Presentation
         /// </summary>
         private void InitBattle()
         {
-            _player = new MonsterRuntime(playerSpecies);
-            _enemy = new MonsterRuntime(enemySpecies);
+            _player = new MonsterRuntime(playerSpecies,5);
+            _enemy = new MonsterRuntime(enemySpecies,5);
 
             _turnUseCase = new ExecuteTurnUseCase_Old(new DamageCalculator(typeChart));
 
             // 提取玩家技能列表（固定顺序）
             _playerSkills = new List<SkillData>();
-            foreach (var skill in _player.GetSkillPP().Keys)
+            foreach (var skill in _player.CurrentPP.Keys)
             {
                 if (skill != null) _playerSkills.Add(skill);
             }
@@ -55,7 +55,7 @@ namespace Pokemon.Presentation
             // 初始化UI表现
             uiController.SetupNames(_player.Species.DisplayName, _enemy.Species.DisplayName);
             uiController.UpdateHp(_player.CurrentHP, _player.Species.BaseHP, _enemy.CurrentHP, _enemy.Species.BaseHP);
-            uiController.RefreshSkills(_playerSkills, _player.GetSkillPP());
+            uiController.RefreshSkills(_playerSkills, _player.CurrentPP);
             uiController.SetLog("战斗开始！请选择技能。");
         }
 
@@ -96,7 +96,7 @@ namespace Pokemon.Presentation
 
             // 更新UI
             uiController.UpdateHp(_player.CurrentHP, _player.Species.BaseHP, _enemy.CurrentHP, _enemy.Species.BaseHP);
-            uiController.RefreshSkills(_playerSkills, _player.GetSkillPP());
+            uiController.RefreshSkills(_playerSkills, _player.CurrentPP);
             uiController.SetLog(log.TrimEnd());
 
             if (result.BattleEnded)
@@ -106,13 +106,13 @@ namespace Pokemon.Presentation
             else
             {
                 // 战斗没结束，刷新技能状态并解锁UI
-                uiController.RefreshSkills(_playerSkills, _player.GetSkillPP());
+                uiController.RefreshSkills(_playerSkills, _player.CurrentPP);
             }
         }
 
         private SkillData PickFirstAvailableSkill(MonsterRuntime monster)
         {
-            foreach (var pair in monster.GetSkillPP())
+            foreach (var pair in monster.CurrentPP)
             {
                 if (pair.Key != null && pair.Value > 0) return pair.Key;
             }

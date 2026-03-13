@@ -2217,7 +2217,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1853261271}
-  - component: {fileID: 1853261270}
   m_Layer: 0
   m_Name: BattleDebugEntry
   m_TagString: Untagged
@@ -2225,21 +2224,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 0
---- !u!114 &1853261270
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1853261269}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3dab2fe426f34304687c43eb01a88da8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerSpecies: {fileID: 11400000, guid: 9203c7cc45ee05b48812114fd28074a5, type: 2}
-  enemySpecies: {fileID: 11400000, guid: cfefac2801e333044b459fc4f13b051f, type: 2}
-  typeChart: {fileID: 11400000, guid: 9c9359f4bef1a4e41adad6ab00ca234e, type: 2}
 --- !u!4 &1853261271
 Transform:
   m_ObjectHideFlags: 0

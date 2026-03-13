@@ -1,11 +1,11 @@
 using Pokemon.Application;
 using Pokemon.Domain;
-using Pokemon.Presentation;
+// 注意这里的命名空间我统一帮你改成了 Pokemon.Presentation 保持一致
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace MonsterLike.Presentation
+namespace Pokemon.Presentation
 {
     public class BattleCoordinator : MonoBehaviour
     {
@@ -41,20 +41,28 @@ namespace MonsterLike.Presentation
 
         private void InitBattle()
         {
-            _player = new MonsterRuntime(playerSpecies);
-            _enemy = new MonsterRuntime(enemySpecies);
+            // 【修复1】这里必须传入等级，我们暂定双方都是 5 级
+            _player = new MonsterRuntime(playerSpecies, 5);
+            _enemy = new MonsterRuntime(enemySpecies, 5);
+
             _turnUseCase = new ExecuteTurnUseCase(new DamageCalculator(typeChart));
 
             _playerSkills = new List<SkillData>();
-            foreach (var skill in _player.GetSkillPP().Keys)
+
+            // 【修复3】GetSkillPP() 替换为了公有属性 CurrentPP
+            foreach (var skill in _player.CurrentPP.Keys)
             {
                 if (skill != null) _playerSkills.Add(skill);
             }
 
             uiController.OnSkillClicked += HandlePlayerAction;
             uiController.SetupNames(_player.Species.DisplayName, _enemy.Species.DisplayName);
-            uiController.UpdateHp(_player.CurrentHP, _player.Species.BaseHP, _enemy.CurrentHP, _enemy.Species.BaseHP);
-            uiController.RefreshSkills(_playerSkills, _player.GetSkillPP());
+
+            // 【修复2】界面的最大血量不再是 Species.BaseHP，而是经过个体值和等级计算后的 MaxHP
+            uiController.UpdateHp(_player.CurrentHP, _player.MaxHP, _enemy.CurrentHP, _enemy.MaxHP);
+
+            // 【修复3】同样替换为 CurrentPP
+            uiController.RefreshSkills(_playerSkills, _player.CurrentPP);
             uiController.SetLog("战斗开始！请选择技能。");
         }
 
@@ -86,15 +94,17 @@ namespace MonsterLike.Presentation
             {
                 // 更新UI显示
                 uiController.SetLog(step.Message);
-                uiController.UpdateHp(step.PlayerHpAfter, _player.Species.BaseHP, step.EnemyHpAfter, _enemy.Species.BaseHP);
 
-                // 停顿，让玩家看清文字（未来可以在这里播放动画/特效）
-                //yield return new WaitForSeconds(stepDelaySeconds);//
+                // 【修复2】这里也改成 MaxHP
+                uiController.UpdateHp(step.PlayerHpAfter, _player.MaxHP, step.EnemyHpAfter, _enemy.MaxHP);
+
                 // 根据标记播放对应动画，并等待动画完成
                 if (step.AnimType == StepAnimType.PlayerAttack) yield return playerView.PlayAttackAnimation(true);
                 else if (step.AnimType == StepAnimType.EnemyAttack) yield return enemyView.PlayAttackAnimation(false);
                 else if (step.AnimType == StepAnimType.EnemyHit) yield return enemyView.PlayHitAnimation();
                 else if (step.AnimType == StepAnimType.PlayerHit) yield return playerView.PlayHitAnimation();
+
+                // 停顿，让玩家看清文字
                 yield return new WaitForSeconds(stepDelaySeconds);
 
                 if (step.IsBattleEnd)
@@ -109,17 +119,20 @@ namespace MonsterLike.Presentation
             if (!_battleEnded)
             {
                 uiController.SetLog("请选择下一步行动。");
-                uiController.RefreshSkills(_playerSkills, _player.GetSkillPP());
+
+                // 【修复3】替换为 CurrentPP
+                uiController.RefreshSkills(_playerSkills, _player.CurrentPP);
             }
         }
 
         private SkillData PickFirstAvailableSkill(MonsterRuntime monster)
         {
-            foreach (var pair in monster.GetSkillPP())
+            // 【修复3】替换为 CurrentPP
+            foreach (var pair in monster.CurrentPP)
             {
                 if (pair.Key != null && pair.Value > 0) return pair.Key;
             }
-            return null; // 这里暂不处理敌人也耗尽PP的边角情况
+            return null;
         }
     }
 }

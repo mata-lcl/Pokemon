@@ -29,8 +29,8 @@ namespace Pokemon.Presentation
                 return;
             }
 
-            _player = new MonsterRuntime(playerSpecies);
-            _enemy = new MonsterRuntime(enemySpecies);
+            _player = new MonsterRuntime(playerSpecies, 5);
+            _enemy = new MonsterRuntime(enemySpecies, 5);
 
             _damageCalculator = new DamageCalculator(typeChart);
             _executeTurnUseCase = new ExecuteTurnUseCase_Old(_damageCalculator);
@@ -96,7 +96,7 @@ namespace Pokemon.Presentation
 
         private SkillData PickFirstAvailableSkill(MonsterRuntime monster)
         {
-            IReadOnlyDictionary<SkillData, int> ppMap = monster.GetSkillPP();
+            IReadOnlyDictionary<SkillData, int> ppMap = monster.CurrentPP;
             foreach (var pair in ppMap)
             {
                 if (pair.Key != null && pair.Value > 0)

@@ -1,66 +1,146 @@
+using System;
 using System.Collections.Generic;
+using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Pokemon.Domain
 {
-    /// <summary>
-    /// 密封类，不能被继承
-    /// </summary>
-    public sealed class MonsterRuntime
+    public class MonsterRuntime
     {
-        //在构造时赋值，之后不可更改
-        public PokemonSpeciesData Species { get; }
-        public int CurrentHP { get; private set; }  //外部只能读取，内部才可以修改
-        //私有的只读字典，用于存放技能以及技能点数，键为SkillData，值为PP值
-        private readonly Dictionary<SkillData, int> _currentPP = new Dictionary<SkillData, int>();
+        public PokemonSpeciesData Species { get; private set; }
+        public int Level { get; private set; }
+        public int CurrentHP { get; private set; }
 
-        #region 每次访问动态计算数值，返回攻击，防御，速度，属性以及是否濒死
-        public int Attack => Species.BaseAttack;
-        public int Defense => Species.BaseDefense;
-        public int Speed => Species.BaseSpeed;
-        public ElementType PrimaryType => Species.PrimaryType;
+        // --- 异常状态 ---
+        public StatusCondition CurrentStatus { get; private set; }
+        public Dictionary<SkillData, int> CurrentPP { get; private set; }
         public bool IsFainted => CurrentHP <= 0;
-        #endregion
+
+        // --- 个体值 (IVs: 0~31) ---
+        public int IvHP { get; private set; }
+        public int IvAttack { get; private set; }
+        public int IvDefense { get; private set; }
+        public int IvSpeed { get; private set; }
+
+        // --- 学习力/努力值 (EVs: 单项最高255，总和最高510) ---
+        public int EvHP { get; private set; }
+        public int EvAttack { get; private set; }
+        public int EvDefense { get; private set; }
+        public int EvSpeed { get; private set; }
+
+        // --- 最终能力值 (动态计算) ---
+        // 注意：这里调用的 Species 属性名必须和 PokemonSpeciesData.cs 里的变量名完全一致
+        public int MaxHP => CalculateHpStat();
+        public int Attack => CalculateStandardStat(Species.BaseAttack, IvAttack, EvAttack); // 已修正为 BaseAttack
+        public int Defense => CalculateStandardStat(Species.BaseDefense, IvDefense, EvDefense); // 已修正为 BaseDefense
+        public int Speed => CalculateStandardStat(Species.BaseSpeed, IvSpeed, EvSpeed); // 已修正为 BaseSpeed
+
+        public ElementType PrimaryType => Species.PrimaryType;
+
         /// <summary>
-        /// 构造函数
+        /// 构造函数，生成一个新的怪物实例
         /// </summary>
-        /// <param 物种参数="species"></param>
-        public MonsterRuntime(PokemonSpeciesData species)
+        public MonsterRuntime(PokemonSpeciesData species, int level)
         {
             Species = species;
-            CurrentHP = species.BaseHP;
+            Level = Mathf.Clamp(level, 1, 100);
+            CurrentStatus = StatusCondition.None;
 
-            //对技能列表遍历，如果字典技能不为空，且字典中存在技能列表中有的技能则加入
-            for (int i = 0; i < species.InitialSkills.Count; i++)
+            // 1. 生成随机个体值 (天赋)
+            GenerateIVs();
+            Debug.LogErrorFormat(species.DisplayName+"个体值为："+IvHP+","+ IvAttack + "," + IvDefense + "," + IvSpeed);
+
+            // 2. 初始努力值为0
+            ResetEVs();
+
+            // 3. 计算生成后的最大血量，并回满血
+            CurrentHP = MaxHP;
+            Debug.LogErrorFormat(species.DisplayName + "具体值为：" + MaxHP + "," + Attack + "," + Defense + "," + Speed);
+
+
+            // 4. 初始化技能PP
+            CurrentPP = new Dictionary<SkillData, int>();
+            foreach (var skill in species.InitialSkills)
             {
-                SkillData skill = species.InitialSkills[i];
-                if (skill != null && !_currentPP.ContainsKey(skill))    //
+                if (skill != null)
                 {
-                    _currentPP.Add(skill, skill.MaxPP);
+                    CurrentPP[skill] = skill.MaxPP;
                 }
             }
         }
 
-        public IReadOnlyDictionary<SkillData, int> GetSkillPP() => _currentPP;
-
-        public bool CanUseSkill(SkillData skill)
+        // 随机个体值
+        private void GenerateIVs()
         {
-            return skill != null && _currentPP.ContainsKey(skill) && _currentPP[skill] > 0;
+            IvHP = Random.Range(0, 32);
+            IvAttack = Random.Range(0, 32);
+            IvDefense = Random.Range(0, 32);
+            IvSpeed = Random.Range(0, 32);
         }
 
-        public bool TryConsumePP(SkillData skill)
+        private void ResetEVs()
         {
-            if (!CanUseSkill(skill))
-                return false;
+            EvHP = 0; EvAttack = 0; EvDefense = 0; EvSpeed = 0;
+        }
 
-            _currentPP[skill]--;
-            return true;
+        // 增加努力值 (带上限检查)
+        public void AddEVs(int hp, int atk, int def, int spd)
+        {
+            int GetTotalEVs() => EvHP + EvAttack + EvDefense + EvSpeed;
+
+            // 这里使用 while 或简单的判断来确保总和不超过 510
+            EvHP = Mathf.Min(255, EvHP + hp);
+            EvAttack = Mathf.Min(255, EvAttack + atk);
+            EvDefense = Mathf.Min(255, EvDefense + def);
+            EvSpeed = Mathf.Min(255, EvSpeed + spd);
+
+            // 如果总和溢出，简单地按比例回退（实际游戏中会有更复杂的取舍逻辑）
+            int total = GetTotalEVs();
+            if (total > 510)
+            {
+                // 暂时简单的防御性处理：禁止增加
+                EvHP -= hp; EvAttack -= atk; EvDefense -= def; EvSpeed -= spd;
+            }
+        }
+
+        // --- 经典能力值计算公式 ---
+
+        // HP公式: ((种族值×2 + 个体值 + 努力值÷4) × 等级 ÷ 100) + 10 + 等级
+        private int CalculateHpStat()
+        {
+            int baseCalc = (Species.BaseHP * 2) + IvHP + (EvHP / 4);
+            return (baseCalc * Level / 100) + 10 + Level;
+        }
+
+        // 其他属性公式: ((种族值×2 + 个体值 + 努力值÷4) × 等级 ÷ 100) + 5
+        private int CalculateStandardStat(int baseStat, int iv, int ev)
+        {
+            int baseCalc = (baseStat * 2) + iv + (ev / 4);
+            return (baseCalc * Level / 100) + 5;
         }
 
         public void ApplyDamage(int amount)
         {
-            if (amount < 0) amount = 0;
             CurrentHP -= amount;
             if (CurrentHP < 0) CurrentHP = 0;
+        }
+
+        public bool TryConsumePP(SkillData skill)
+        {
+            if (CurrentPP.TryGetValue(skill, out int pp) && pp > 0)
+            {
+                CurrentPP[skill] = pp - 1;
+                return true;
+            }
+            return false;
+        }
+
+        public bool TryApplyStatus(StatusCondition status)
+        {
+            if (CurrentStatus != StatusCondition.None || IsFainted || status == StatusCondition.None)
+                return false;
+            CurrentStatus = status;
+            return true;
         }
     }
 }

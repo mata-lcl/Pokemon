@@ -16,10 +16,16 @@ MonoBehaviour:
   DisplayName: "\u5C0F\u706B\u72D0"
   PrimaryType: 3
   BaseHP: 50
-  BaseAttack: 14
-  BaseDefense: 9
-  BaseSpeed: 12
+  BaseAttack: 10
+  BaseDefense: 10
+  BaseSpeed: 5
+  BaseExpYield: 50
+  EvYieldHP: 0
+  EvYieldAttack: 0
+  EvYieldDefense: 0
+  EvYieldSpeed: 0
   InitialSkills:
   - {fileID: 11400000, guid: 3bded21878e77b34ebb2480677a9457d, type: 2}
   - {fileID: 11400000, guid: b224051504c6e7c4883efd4aa7b668d2, type: 2}
+  - {fileID: 11400000, guid: 04192d7159180c84fbf5e0e423968c43, type: 2}
   BattleSprite: {fileID: 21300000, guid: 423f4ae2841286d45b72dd19f0cbc7e0, type: 3}
