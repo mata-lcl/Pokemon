@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Pokemon.Application
 {
-    public enum StepAnimType
+public enum StepAnimType
     {
         None,
         PlayerAttack,
@@ -24,29 +24,15 @@ namespace Pokemon.Application
         //新增2DSprite
         public StepAnimType AnimType;
     }
-
     public sealed class ExecuteTurnUseCase
     {
-
         private readonly DamageCalculator _damageCalculator;
-        /// <summary>
-        /// 构造函数，通过构造函数注入damageCalculator
-        /// 这个类只负责处理回合逻辑，伤害计算交给DamageCalculator
-        /// </summary>
+
         public ExecuteTurnUseCase(DamageCalculator damageCalculator)
         {
             _damageCalculator = damageCalculator;
         }
 
-        /// <summary>
-        /// 核心步骤，返回步骤而不是结果
-        /// 允许UI展示战斗过程
-        /// </summary>
-        /// <param 玩家宝可梦="player"></param>
-        /// <param 玩家宝可梦技能="playerSkill"></param>
-        /// <param 敌方="enemy"></param>
-        /// <param 敌方技能="enemySkill"></param>
-        /// <returns></returns>
         public List<TurnStep> Execute(
             MonsterRuntime player, SkillData playerSkill,
             MonsterRuntime enemy, SkillData enemySkill)
@@ -58,176 +44,146 @@ namespace Pokemon.Application
 
             if (playerFirst)
             {
+                // 玩家行动
                 ResolveAction(player, playerSkill, enemy, true, steps);
-                if (!enemy.IsFainted)
-                    ResolveAction(enemy, enemySkill, player, false, steps);
+                // 立即检查敌人是否倒下
+                if (CheckAndRecordFaint(player, enemy, steps)) return steps; 
+
+                // 敌人行动
+                ResolveAction(enemy, enemySkill, player, false, steps);
+                // 立即检查玩家是否倒下
+                if (CheckAndRecordFaint(player, enemy, steps)) return steps;
             }
             else
             {
+                // 敌人行动
                 ResolveAction(enemy, enemySkill, player, false, steps);
-                if (!player.IsFainted)
-                    ResolveAction(player, playerSkill, enemy, true, steps);
-            }
-            // 2. 回合末尾结算阶段（例如中毒扣血）
-            if (!player.IsFainted && !enemy.IsFainted)
-            {
-                ResolveEndOfTurn(player, enemy, steps);
+                if (CheckAndRecordFaint(player, enemy, steps)) return steps;
+
+                // 玩家行动
+                ResolveAction(player, playerSkill, enemy, true, steps);
+                if (CheckAndRecordFaint(player, enemy, steps)) return steps;
             }
 
-            // 3. 检查胜负
-            if (player.IsFainted || enemy.IsFainted)
-            {
-                steps.Add(new TurnStep
-                {
-                    Message = player.IsFainted ? "我方倒下了，战斗失败..." : "敌方倒下了，战斗胜利！",
-                    PlayerHpAfter = player.CurrentHP,
-                    EnemyHpAfter = enemy.CurrentHP,
-                    IsBattleEnd = true,
-                    PlayerWon = enemy.IsFainted
-                });
-            }
+            // 2. 回合末尾结算阶段（例如中毒扣血）
+            ResolveEndOfTurn(player, enemy, steps);
+            
+            // 再次检查末尾阶段是否有人被毒死
+            CheckAndRecordFaint(player, enemy, steps);
 
             return steps;
         }
 
-        /// <summary>
-        /// 处理回合信息，输出信息
-        /// </summary>
-        /// <param name="attacker"></param>
-        /// <param name="skill"></param>
-        /// <param name="defender"></param>
-        /// <param name="isPlayerAttacking"></param>
-        /// <param name="steps"></param>
-        #region 回合内判断，以及信息输出
+        // 抽取出来的辅助方法：检查是否有宝可梦倒下并记录
+        private bool CheckAndRecordFaint(MonsterRuntime player, MonsterRuntime enemy, List<TurnStep> steps)
+        {
+            if (player.IsFainted || enemy.IsFainted)
+            {
+                steps.Add(new TurnStep
+                {
+                    Message = player.IsFainted ? $"{player.Species.DisplayName} 倒下了..." : $"{enemy.Species.DisplayName} 倒下了！",
+                    PlayerHpAfter = player.CurrentHP,
+                    EnemyHpAfter = enemy.CurrentHP,
+                    IsBattleEnd = true,
+                    PlayerWon = enemy.IsFainted,
+                    AnimType = StepAnimType.None
+                });
+                return true;
+            }
+            return false;
+        }
+
         private void ResolveAction(
             MonsterRuntime attacker, SkillData skill,
             MonsterRuntime defender, bool isPlayerAttacking,
             List<TurnStep> steps)
         {
-            //string attackerName = isPlayerAttacking ? "我方" : "敌方";
             string attackerName = attacker.Species.DisplayName;
 
-            if (!attacker.TryConsumePP(skill))
+            // 1. PP 检查
+            if (skill == null || !attacker.TryConsumePP(skill))
             {
-                steps.Add(CreateStep($"{attackerName}想使用 {skill.DisplayName}，但是PP不足！", attacker, defender, isPlayerAttacking));
+                steps.Add(CreateStep($"{attackerName}想使用技能，但是PP不足！", attacker, defender, isPlayerAttacking));
                 return;
             }
 
+            // 2. 命中检查
             bool hit = _damageCalculator.CheckHit(skill);
+            
+            // 提示：使用了XX技能 (无论中没中都要先提示)
+            var useStep = CreateStep($"{attackerName}使用了 {skill.DisplayName}！", attacker, defender, isPlayerAttacking);
+            useStep.AnimType = isPlayerAttacking ? StepAnimType.PlayerAttack : StepAnimType.EnemyAttack;
+            steps.Add(useStep);
+
             if (!hit)
             {
-                steps.Add(CreateStep($"{attackerName}使用 {skill.DisplayName}，但是未命中！", attacker, defender, isPlayerAttacking));
+                steps.Add(CreateStep("但是未命中！", attacker, defender, isPlayerAttacking));
                 return;
             }
 
-            // 获取详细的伤害结果
-            var damageResult = _damageCalculator.CalculateDamage(attacker, defender, skill);
-            defender.ApplyDamage(damageResult.FinalDamage);
-
-            //插入伤害提示
-            //steps.Add(CreateStep($"{attackerName}使用 {skill.DisplayName}，造成了 {damageResult.FinalDamage} 点伤害！", attacker, defender, isPlayerAttacking));
-            //新增：受伤动画
-            var attackStep = CreateStep($"{attackerName}使用了 {skill.DisplayName}！", attacker, defender, isPlayerAttacking);
-            attackStep.AnimType = isPlayerAttacking ? StepAnimType.PlayerAttack : StepAnimType.EnemyAttack;
-            steps.Add(attackStep);
-
-
-            // --- 步骤 2: 伤害与受击闪烁 ---
-            var hitStep = CreateStep($"造成了 {damageResult.FinalDamage} 点伤害！", attacker, defender, isPlayerAttacking);
-            hitStep.AnimType = isPlayerAttacking ? StepAnimType.EnemyHit : StepAnimType.PlayerHit;
-            steps.Add(hitStep);
-
-            //根据倍率插入克制提示 (像宝可梦一样的经典节奏)
-            if (damageResult.TypeMultiplier > 1.1f)
+            // 3. 效果处理
+            if (skill.Category == SkillCategory.Status && skill.ApplyStatus == StatusCondition.Heal)
             {
-                steps.Add(CreateStep("效果拔群！", attacker, defender, isPlayerAttacking));
+                attacker.Heal(skill.EffectValue);
+                steps.Add(CreateStep($"{attackerName} 回复了 {skill.EffectValue} 点生命值！", attacker, defender, isPlayerAttacking));
             }
-            else if (damageResult.TypeMultiplier < 0.9f && damageResult.TypeMultiplier > 0.1f)
+            else
             {
-                steps.Add(CreateStep("效果不太好...", attacker, defender, isPlayerAttacking));
-            }
-            else if (damageResult.TypeMultiplier <= 0.1f)
-            {
-                steps.Add(CreateStep("似乎没有效果...", attacker, defender, isPlayerAttacking));
-            }
+                // 伤害计算
+                var damageResult = _damageCalculator.CalculateDamage(attacker, defender, skill);
+                defender.ApplyDamage(damageResult.FinalDamage);
 
-            // --- 新增：异常状态附加判定 ---
-            if (!defender.IsFainted && skill.ApplyStatus != StatusCondition.None)
-            {
-                if (Random.value <= skill.StatusChance)
+                // 受击动画步骤
+                var hitStep = CreateStep($"造成了 {damageResult.FinalDamage} 点伤害！", attacker, defender, isPlayerAttacking);
+                hitStep.AnimType = isPlayerAttacking ? StepAnimType.EnemyHit : StepAnimType.PlayerHit;
+                steps.Add(hitStep);
+
+                // 克制关系文本
+                if (damageResult.TypeMultiplier > 1.1f) steps.Add(CreateStep("效果拔群！", attacker, defender, isPlayerAttacking));
+                else if (damageResult.TypeMultiplier < 0.9f && damageResult.TypeMultiplier > 0.1f) steps.Add(CreateStep("效果不太好...", attacker, defender, isPlayerAttacking));
+                else if (damageResult.TypeMultiplier <= 0.1f) steps.Add(CreateStep("似乎没有效果...", attacker, defender, isPlayerAttacking));
+
+                // 异常状态附加
+                if (!defender.IsFainted && skill.ApplyStatus != StatusCondition.None && skill.ApplyStatus != StatusCondition.Heal)
                 {
-                    if (defender.TryApplyStatus(skill.ApplyStatus))
+                    if (Random.value <= skill.StatusChance)
                     {
-                        string statusMsg = skill.ApplyStatus == StatusCondition.Poison ? "中毒了" : "被烧伤了";
-                        steps.Add(CreateStep($"{defender.Species.DisplayName} {statusMsg}", attacker, defender, isPlayerAttacking));
+                        if (defender.TryApplyStatus(skill.ApplyStatus))
+                        {
+                            string statusMsg = skill.ApplyStatus == StatusCondition.Poison ? "中毒了！" : "进入了特殊状态";
+                            steps.Add(CreateStep($"{defender.Species.DisplayName} {statusMsg}", attacker, defender, isPlayerAttacking));
+                        }
                     }
                 }
             }
         }
-        #endregion
 
-
-        // --- 新增：回合末尾结算逻辑 ---
         private void ResolveEndOfTurn(MonsterRuntime player, MonsterRuntime enemy, List<TurnStep> steps)
         {
             ProcessStatusDamage(player, true, steps, player, enemy);
-            ProcessStatusDamage(enemy, false, steps, player, enemy);
+            if (!enemy.IsFainted) // 如果玩家被毒死了就不用判敌人了
+                ProcessStatusDamage(enemy, false, steps, player, enemy);
         }
 
-        private void ProcessStatusDamage(MonsterRuntime target, bool isPlayer,
-            List<TurnStep> steps,
-            MonsterRuntime playerRef, MonsterRuntime enemyRef)
+        private void ProcessStatusDamage(MonsterRuntime target, bool isPlayer, List<TurnStep> steps, MonsterRuntime playerRef, MonsterRuntime enemyRef)
         {
-            if (target.IsFainted) return;
+            if (target.IsFainted || target.CurrentStatus != StatusCondition.Poison) return;
 
-            //string targetName = isPlayer ? "我方" : "敌方";
-            string targetName = target.Species.DisplayName;
+            int poisonDamage = Mathf.Max(1, target.MaxHP / 8); // 应该是基于最大生命值 MaxHP
+            target.ApplyDamage(poisonDamage);
 
-            if (target.CurrentStatus == StatusCondition.Poison)
+            steps.Add(new TurnStep
             {
-                // 中毒扣除 1/8 最大生命值
-                int poisonDamage = Mathf.Max(1, target.Species.BaseHP / 8);
-                Debug.LogError("中毒" + poisonDamage);
-
-                // 记录中毒前的HP
-                int playerHpBefore = playerRef.CurrentHP;
-                int enemyHpBefore = enemyRef.CurrentHP;
-
-                // 应用伤害
-                target.ApplyDamage(poisonDamage);
-
-                // 记录中毒后的HP
-                int playerHpAfter = playerRef.CurrentHP;
-                int enemyHpAfter = enemyRef.CurrentHP;
-
-                //Debug.LogError($"中毒前: 玩家={playerHpBefore}, 敌人={enemyHpBefore}");
-                //Debug.LogError($"中毒后: 玩家={playerHpAfter}, 敌人={enemyHpAfter}");
-
-                // 修复：直接设置正确的HP值，不使用CreateStep
-                var poisonStep = new TurnStep
-                {
-                    Message = $"{targetName} 因中毒受到了{poisonDamage}点伤害！",
-                    PlayerHpAfter = playerHpAfter,
-                    EnemyHpAfter = enemyHpAfter,
-                    IsBattleEnd = false,
-                    AnimType = isPlayer ? StepAnimType.PlayerHit : StepAnimType.EnemyHit
-                };
-
-                steps.Add(poisonStep);
-            }
+                Message = $"{target.Species.DisplayName} 因为中毒受到了 {poisonDamage} 点伤害！",
+                PlayerHpAfter = playerRef.CurrentHP,
+                EnemyHpAfter = enemyRef.CurrentHP,
+                IsBattleEnd = false,
+                AnimType = isPlayer ? StepAnimType.PlayerHit : StepAnimType.EnemyHit
+            });
         }
 
-        /// <summary>
-        /// 辅助方法，用于快速生成当前的快照状态
-        /// </summary>
-        /// <param name="msg"></param>
-        /// <param name="attacker"></param>
-        /// <param name="defender"></param>
-        /// <param name="isPlayerAttacking"></param>
-        /// <returns></returns>
         private TurnStep CreateStep(string msg, MonsterRuntime attacker, MonsterRuntime defender, bool isPlayerAttacking)
         {
-            // 注意这里：因为我们现在有回合末尾结算，所以我们需要直接读取双方当前的 HP
             return new TurnStep
             {
                 Message = msg,

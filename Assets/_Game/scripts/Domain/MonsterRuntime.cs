@@ -16,6 +16,9 @@ namespace Pokemon.Domain
         public Dictionary<SkillData, int> CurrentPP { get; private set; }
         public bool IsFainted => CurrentHP <= 0;
 
+        // --- 当前经验 ---- V0.1.2新增
+        public int CurrentExp { get; private set; }
+
         // --- 个体值 (IVs: 0~31) ---
         public int IvHP { get; private set; }
         public int IvAttack { get; private set; }
@@ -45,6 +48,9 @@ namespace Pokemon.Domain
             Species = species;
             Level = Mathf.Clamp(level, 1, 100);
             CurrentStatus = StatusCondition.None;
+
+            //初始化当前经验
+            CurrentExp = level * level * level;     //V0.1.2新增
 
             // 1. 生成随机个体值 (天赋)
             GenerateIVs();
@@ -117,6 +123,38 @@ namespace Pokemon.Domain
         {
             int baseCalc = (baseStat * 2) + iv + (ev / 4);
             return (baseCalc * Level / 100) + 5;
+        }
+
+        // --- 新增：增加经验与升级逻辑 --- //V0.1.2新增
+        private int GetExpToNextLevel() => (Level + 1) * (Level + 1) * (Level + 1);
+
+        public bool AddExp(int amount, out int levelsGained)
+        {
+            levelsGained = 0;
+            if (Level >= 100) return false;
+
+            CurrentExp += amount;
+            bool leveledUp = false;
+
+            // 经验值足够时可能连升多级
+            while (Level < 100 && CurrentExp >= GetExpToNextLevel())
+            {
+                int oldMaxHp = MaxHP;
+                Level++;
+                levelsGained++;
+                leveledUp = true;
+
+                // 升级时最大生命增加，现有的生命值等比增加
+                int hpIncrease = MaxHP - oldMaxHp;
+                Heal(hpIncrease);
+            }
+            return leveledUp;
+        }
+
+        // 新增：回血方法（防止直接操作属性）//V0.1.2新增
+        public void Heal(int amount)
+        {
+            CurrentHP = Mathf.Min(MaxHP, CurrentHP + amount);
         }
 
         public void ApplyDamage(int amount)
