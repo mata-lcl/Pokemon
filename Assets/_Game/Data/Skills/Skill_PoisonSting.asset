@@ -15,9 +15,10 @@ MonoBehaviour:
   Id: 004
   DisplayName: "\u6BD2\u9488"
   Type: 1
-  TargetType: 1
+  Category: 0
   Power: 10
   Accuracy: 1
   MaxPP: 20
   ApplyStatus: 1
   StatusChance: 1
+  EffectValue: 0

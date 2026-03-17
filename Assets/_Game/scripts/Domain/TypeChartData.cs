@@ -9,14 +9,14 @@ namespace Pokemon.Domain
         [System.Serializable]
         public class TypeModifierEntry
         {
-            public ElementType AttackType = ElementType.Normal;
-            public ElementType DefenseType = ElementType.Normal;
+            public PokemonType AttackType = PokemonType.Normal;
+            public PokemonType DefenseType = PokemonType.Normal;
             public float Multiplier = 1f;
         }
 
         public List<TypeModifierEntry> Entries = new List<TypeModifierEntry>();
 
-        public float GetMultiplier(ElementType attackType, ElementType defenseType)
+        public float GetMultiplier(PokemonType attackType, PokemonType defenseType)
         {
             for (int i = 0; i < Entries.Count; i++)
             {

@@ -38,7 +38,7 @@ namespace Pokemon.Domain
         public int Defense => CalculateStandardStat(Species.BaseDefense, IvDefense, EvDefense); // 已修正为 BaseDefense
         public int Speed => CalculateStandardStat(Species.BaseSpeed, IvSpeed, EvSpeed); // 已修正为 BaseSpeed
 
-        public ElementType PrimaryType => Species.PrimaryType;
+        public PokemonType PrimaryType => Species.PrimaryType;
 
         /// <summary>
         /// 构造函数，生成一个新的怪物实例

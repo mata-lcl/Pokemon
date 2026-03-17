@@ -15,7 +15,10 @@ MonoBehaviour:
   Id: 002
   DisplayName: "\u706B\u82B1"
   Type: 3
-  TargetType: 1
+  Category: 0
   Power: 45
-  Accuracy: 0.95
+  Accuracy: 100
   MaxPP: 15
+  ApplyStatus: 0
+  StatusChance: 0
+  EffectValue: 0

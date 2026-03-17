@@ -1,42 +1,56 @@
+using System.Collections.Generic;
 using UnityEngine;
-
+// 技能分类
 namespace Pokemon.Domain
 {
-    public enum SkillCategory
-    {
-        Physical, // 物理伤害
-        Special,  // 特殊伤害 (目前可以统归为伤害类)
-        Status,   // 变化类技能 (如回血、加 Buff 等)
-    }
-    //状态
-    public enum StatusCondition
-    {
-        None,
-        Poison, // 中毒：每回合扣血
-        BuffAttack,  // 攻击提升
-        BuffDefense, // 防御提升
-        Heal
-    }
-
-
     [CreateAssetMenu(fileName = "Skill_", menuName = "Pokemon/Skill Data")]
     public class SkillData : ScriptableObject
     {
-        [Header("技能")]
+        [Tooltip("技能的唯一标识符，用于代码中引用")]
         public string Id;
+
+        [Tooltip("技能在游戏中显示的名称")]
         public string DisplayName;
 
-        [Header("技能信息")]
-        public ElementType Type = ElementType.Normal;
-        public SkillCategory Category = SkillCategory.Physical;
-        public TargetType TargetType = TargetType.SingleEnemy;
-        public int Power = 40;
-        [Range(0f, 1f)] public float Accuracy = 1f;
-        public int MaxPP = 20;
+        [Tooltip("技能所属的属性类型（火、水、电等）")]
+        public PokemonType Type;
 
-        [Header("特殊效果")]
-        public StatusCondition ApplyStatus = StatusCondition.None; // 该技能可能造成的异常状态
-        [Range(0f, 1f)] public float StatusChance = 0f;            // 造成异常状态的几率
-        public int EffectValue = 0;
+        [Tooltip("技能类别：物理、特殊、变化")]
+        public SkillCategory Category;
+
+        [Tooltip("技能的基础威力（伤害技能有效）")]
+        public int Power;
+
+        [Tooltip("技能的基础命中率（0-1）")]
+        [Range(0, 1)]
+        public int Accuracy;
+
+        [Tooltip("技能的最大PP值（使用次数）")]
+        [Range(1, 100)]
+        public int MaxPP;
+
+        // 特殊效果配置（旧字段保留，作为配置项）
+        public StatusCondition ApplyStatus;
+        [Range(0, 1)] public float StatusChance;
+        public int EffectValue;
+
+        // --- 核心重构：获取此技能的所有效果 ---
+        public List<ISkillEffect> GetEffects()
+        {
+            var results = new List<ISkillEffect>();
+
+            // 1. 如果有威力，添加伤害效果
+            if (Power > 0)
+                results.Add(new Effects.DamageEffect());
+
+            // 2. 如果是回复逻辑
+            if (ApplyStatus == StatusCondition.Heal)
+                results.Add(new Effects.HealEffect(EffectValue));
+
+            // 3. TODO: 未来你可以通过判断 ApplyStatus == Poison 
+            //    来 new 一个 AddStatusEffect(StatusCondition.Poison)
+
+            return results;
+        }
     }
 }

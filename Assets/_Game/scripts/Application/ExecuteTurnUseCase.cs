@@ -94,67 +94,66 @@ public enum StepAnimType
         }
 
         private void ResolveAction(
-            MonsterRuntime attacker, SkillData skill,
-            MonsterRuntime defender, bool isPlayerAttacking,
-            List<TurnStep> steps)
+       MonsterRuntime attacker, SkillData skill,
+       MonsterRuntime defender, bool isPlayerAttacking,
+       List<TurnStep> steps)
         {
-            string attackerName = attacker.Species.DisplayName;
+            if (skill == null) return;
 
-            // 1. PP 检查
-            if (skill == null || !attacker.TryConsumePP(skill))
+            // 1. 命中判定
+            if (!_damageCalculator.CheckHit(skill))
             {
-                steps.Add(CreateStep($"{attackerName}想使用技能，但是PP不足！", attacker, defender, isPlayerAttacking));
+                steps.Add(new TurnStep { Message = $"{skill.DisplayName} 未命中！" });
                 return;
             }
 
-            // 2. 命中检查
-            bool hit = _damageCalculator.CheckHit(skill);
-            
-            // 提示：使用了XX技能 (无论中没中都要先提示)
-            var useStep = CreateStep($"{attackerName}使用了 {skill.DisplayName}！", attacker, defender, isPlayerAttacking);
-            useStep.AnimType = isPlayerAttacking ? StepAnimType.PlayerAttack : StepAnimType.EnemyAttack;
-            steps.Add(useStep);
-
-            if (!hit)
+            // 2. 预计算伤害 (如果是物理/特殊攻击)
+            DamageResult? dmg = null;
+            if (skill.Category != SkillCategory.Status)
             {
-                steps.Add(CreateStep("但是未命中！", attacker, defender, isPlayerAttacking));
-                return;
+                dmg = _damageCalculator.CalculateDamage(attacker, defender, skill);
             }
 
-            // 3. 效果处理
-            if (skill.Category == SkillCategory.Status && skill.ApplyStatus == StatusCondition.Heal)
+            // 3. 构建上下文
+            var context = new EffectContext
             {
-                attacker.Heal(skill.EffectValue);
-                steps.Add(CreateStep($"{attackerName} 回复了 {skill.EffectValue} 点生命值！", attacker, defender, isPlayerAttacking));
-            }
-            else
+                User = attacker,
+                Target = defender,
+                Skill = skill,
+                Damage = dmg,
+                Steps = steps
+            };
+
+            // 4. 执行所有效果 (自动遍历，不再需要 if-else)
+            foreach (var effect in skill.GetEffects())
             {
-                // 伤害计算
-                var damageResult = _damageCalculator.CalculateDamage(attacker, defender, skill);
-                defender.ApplyDamage(damageResult.FinalDamage);
-
-                // 受击动画步骤
-                var hitStep = CreateStep($"造成了 {damageResult.FinalDamage} 点伤害！", attacker, defender, isPlayerAttacking);
-                hitStep.AnimType = isPlayerAttacking ? StepAnimType.EnemyHit : StepAnimType.PlayerHit;
-                steps.Add(hitStep);
-
-                // 克制关系文本
-                if (damageResult.TypeMultiplier > 1.1f) steps.Add(CreateStep("效果拔群！", attacker, defender, isPlayerAttacking));
-                else if (damageResult.TypeMultiplier < 0.9f && damageResult.TypeMultiplier > 0.1f) steps.Add(CreateStep("效果不太好...", attacker, defender, isPlayerAttacking));
-                else if (damageResult.TypeMultiplier <= 0.1f) steps.Add(CreateStep("似乎没有效果...", attacker, defender, isPlayerAttacking));
-
-                // 异常状态附加
-                if (!defender.IsFainted && skill.ApplyStatus != StatusCondition.None && skill.ApplyStatus != StatusCondition.Heal)
+                if (effect.CanProcess(context))
                 {
-                    if (Random.value <= skill.StatusChance)
-                    {
-                        if (defender.TryApplyStatus(skill.ApplyStatus))
-                        {
-                            string statusMsg = skill.ApplyStatus == StatusCondition.Poison ? "中毒了！" : "进入了特殊状态";
-                            steps.Add(CreateStep($"{defender.Species.DisplayName} {statusMsg}", attacker, defender, isPlayerAttacking));
-                        }
-                    }
+                    effect.Execute(context);
                 }
+            }
+
+            // 5. 更新每一步的最新的血量状态 (统一修正)
+            UpdateStepsHp(steps, isPlayerAttacking, attacker, defender);
+        }
+
+        // 统一更新血量的方法，防止在每个 Effect 里判断谁是玩家
+        private void UpdateStepsHp(List<TurnStep> steps, bool isPlayerAttacking, MonsterRuntime attacker, MonsterRuntime defender)
+        {
+            for (int i = 0; i < steps.Count; i++)
+            {
+                var s = steps[i];
+                if (isPlayerAttacking)
+                {
+                    s.PlayerHpAfter = attacker.CurrentHP;
+                    s.EnemyHpAfter = defender.CurrentHP;
+                }
+                else
+                {
+                    s.PlayerHpAfter = defender.CurrentHP;
+                    s.EnemyHpAfter = attacker.CurrentHP;
+                }
+                steps[i] = s;
             }
         }
 

@@ -14,7 +14,7 @@ namespace Pokemon.Domain
         public string DisplayName;
 
         [Header("类型")]
-        public ElementType PrimaryType = ElementType.Normal;
+        public PokemonType PrimaryType = PokemonType.Normal;
 
         [Header("种族值 (不可更改)")]
         [Tooltip("血量")] public int BaseHP = 50;
