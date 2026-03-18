@@ -100,6 +100,13 @@ public enum StepAnimType
         {
             if (skill == null) return;
 
+            // 【修复 1】：在使用技能前，先生成一个预告步骤，触发攻击（冲撞）动画！
+            steps.Add(CreateStep(
+                $"{attacker.Species.DisplayName} 使用了 {skill.DisplayName}！",
+                attacker, defender, isPlayerAttacking,
+                isPlayerAttacking ? StepAnimType.PlayerAttack : StepAnimType.EnemyAttack // 设定攻击动画
+            ));
+
             // 1. 命中判定
             if (!_damageCalculator.CheckHit(skill))
             {
@@ -121,7 +128,8 @@ public enum StepAnimType
                 Target = defender,
                 Skill = skill,
                 Damage = dmg,
-                Steps = steps
+                Steps = steps,
+                IsPlayerAttacking = isPlayerAttacking // 【新增】传给特效模块
             };
 
             // 4. 执行所有效果 (自动遍历，不再需要 if-else)
@@ -166,22 +174,28 @@ public enum StepAnimType
 
         private void ProcessStatusDamage(MonsterRuntime target, bool isPlayer, List<TurnStep> steps, MonsterRuntime playerRef, MonsterRuntime enemyRef)
         {
-            if (target.IsFainted || target.CurrentStatus != StatusCondition.Poison) return;
+            // 1. 基础拦截：如果已经倒下，直接返回
+            if (target.IsFainted) return;
 
-            int poisonDamage = Mathf.Max(1, target.MaxHP / 8); // 应该是基于最大生命值 MaxHP
-            target.ApplyDamage(poisonDamage);
-
-            steps.Add(new TurnStep
+            // 2. 将状态和最大血量丢给规则类，让它告诉我扣多少血、叫什么名字
+            if (StatusMechanics.TryGetEndOfTurnDamage(target.CurrentStatus, target.MaxHP, out int damage, out string statusName))
             {
-                Message = $"{target.Species.DisplayName} 因为中毒受到了 {poisonDamage} 点伤害！",
-                PlayerHpAfter = playerRef.CurrentHP,
-                EnemyHpAfter = enemyRef.CurrentHP,
-                IsBattleEnd = false,
-                AnimType = isPlayer ? StepAnimType.PlayerHit : StepAnimType.EnemyHit
-            });
+                // 3. 只有当返回 true 时（确实需要扣血），才执行扣血和动画逻辑
+                target.ApplyDamage(damage);
+
+                steps.Add(new TurnStep
+                {
+                    Message = $"{target.Species.DisplayName} 因为{statusName}受到了 {damage} 点伤害！",
+                    PlayerHpAfter = playerRef.CurrentHP,
+                    EnemyHpAfter = enemyRef.CurrentHP,
+                    IsBattleEnd = false,
+                    AnimType = isPlayer ? StepAnimType.PlayerHit : StepAnimType.EnemyHit
+                });
+            }
         }
 
-        private TurnStep CreateStep(string msg, MonsterRuntime attacker, MonsterRuntime defender, bool isPlayerAttacking)
+        // 【修复 2】：修改你原有的 CreateStep，让它支持传入 AnimType，减少重复代码
+        private TurnStep CreateStep(string msg, MonsterRuntime attacker, MonsterRuntime defender, bool isPlayerAttacking, StepAnimType animType = StepAnimType.None)
         {
             return new TurnStep
             {
@@ -189,7 +203,7 @@ public enum StepAnimType
                 PlayerHpAfter = isPlayerAttacking ? attacker.CurrentHP : defender.CurrentHP,
                 EnemyHpAfter = isPlayerAttacking ? defender.CurrentHP : attacker.CurrentHP,
                 IsBattleEnd = false,
-                AnimType = StepAnimType.None
+                AnimType = animType // 赋予动画类型
             };
         }
     }

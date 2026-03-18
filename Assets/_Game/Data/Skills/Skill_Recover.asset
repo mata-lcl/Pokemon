@@ -16,10 +16,9 @@ MonoBehaviour:
   DisplayName: "\u81EA\u6211\u518D\u751F"
   Type: 1
   Category: 2
-  TargetType: 1
   Power: 40
   Accuracy: 1
   MaxPP: 20
-  ApplyStatus: 4
+  ApplyStatus: 2
   StatusChance: 0
   EffectValue: 40

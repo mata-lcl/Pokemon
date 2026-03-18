@@ -19,6 +19,5 @@ MonoBehaviour:
   Power: 45
   Accuracy: 100
   MaxPP: 15
-  ApplyStatus: 0
-  StatusChance: 0
-  EffectValue: 0
+  Effects:
+  - {fileID: 11400000, guid: 3ee2f98b9f5f0234ba56a6f9a2367be5, type: 2}

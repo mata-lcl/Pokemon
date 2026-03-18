@@ -17,13 +17,12 @@ namespace Pokemon.Domain
 
     public enum StatusCondition
     {
-        None,
-        Poison,   // 中毒
-        Heal,     // 治疗
-        Paralyze, // 麻痹
-        Sleep,    // 睡眠
-        Burn,     // 灼伤
-        Freeze    // 冰冻
+        None = 0,
+        Poison = 1,   // 中毒
+        Burn = 2,     // 灼伤
+        Paralyze = 3, // 麻痹 (减速，概率不能行动)
+        Sleep = 4,    // 睡眠 (几回合内不能行动)
+        Freeze = 5    // 冰冻 (不能行动，受火系伤害解除)
     }
 
     public enum SkillCategory

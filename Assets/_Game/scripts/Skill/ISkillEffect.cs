@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Pokemon.Domain
 {
-    // 战斗快照：传递给效果执行器的所有必要信息
+    // 战斗信息数据包，包含执行效果所需的全部信息
     public class EffectContext
     {
         public MonsterRuntime User;      // 使用者
@@ -10,6 +10,7 @@ namespace Pokemon.Domain
         public SkillData Skill;          // 技能数据
         public DamageResult? Damage;     // 威力计算结果（可选）
         public List<Application.TurnStep> Steps; // 记录步骤的引用
+        public bool IsPlayerAttacking;
     }
 
     public interface ISkillEffect
