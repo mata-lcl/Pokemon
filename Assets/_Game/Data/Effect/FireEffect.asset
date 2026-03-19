@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 265697d70ccde7a4c8d4a9bccd5134c1, type: 3}
   m_Name: FireEffect
   m_EditorClassIdentifier: 
-  StatusToApply: 5
+  StatusToApply: 2
   Chance: 1

@@ -11,6 +11,10 @@ namespace Pokemon.Domain
         public DamageResult? Damage;     // 威力计算结果（可选）
         public List<Application.TurnStep> Steps; // 记录步骤的引用
         public bool IsPlayerAttacking;
+
+        // 【新增】：不论谁施法，这两个变量永远指向正确的 UI 阵营
+        public MonsterRuntime PlayerRef;
+        public MonsterRuntime EnemyRef;
     }
 
     public interface ISkillEffect

@@ -1,17 +1,11 @@
 using Pokemon.Domain;
+using Pokemon.Presentation;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Pokemon.Application
 {
-public enum StepAnimType
-    {
-        None,
-        PlayerAttack,
-        EnemyAttack,
-        PlayerHit,
-        EnemyHit
-    }
+
     // 定义一个回合内的单个"步骤/画面"
     //不可变的数据快照
     public struct TurnStep
@@ -129,7 +123,10 @@ public enum StepAnimType
                 Skill = skill,
                 Damage = dmg,
                 Steps = steps,
-                IsPlayerAttacking = isPlayerAttacking // 【新增】传给特效模块
+                IsPlayerAttacking = isPlayerAttacking,// 【新增】传给特效模块
+
+                PlayerRef = isPlayerAttacking ? attacker : defender,
+                EnemyRef = isPlayerAttacking ? defender : attacker
             };
 
             // 4. 执行所有效果 (自动遍历，不再需要 if-else)
@@ -141,28 +138,7 @@ public enum StepAnimType
                 }
             }
 
-            // 5. 更新每一步的最新的血量状态 (统一修正)
-            UpdateStepsHp(steps, isPlayerAttacking, attacker, defender);
-        }
-
-        // 统一更新血量的方法，防止在每个 Effect 里判断谁是玩家
-        private void UpdateStepsHp(List<TurnStep> steps, bool isPlayerAttacking, MonsterRuntime attacker, MonsterRuntime defender)
-        {
-            for (int i = 0; i < steps.Count; i++)
-            {
-                var s = steps[i];
-                if (isPlayerAttacking)
-                {
-                    s.PlayerHpAfter = attacker.CurrentHP;
-                    s.EnemyHpAfter = defender.CurrentHP;
-                }
-                else
-                {
-                    s.PlayerHpAfter = defender.CurrentHP;
-                    s.EnemyHpAfter = attacker.CurrentHP;
-                }
-                steps[i] = s;
-            }
+            
         }
 
         private void ResolveEndOfTurn(MonsterRuntime player, MonsterRuntime enemy, List<TurnStep> steps)

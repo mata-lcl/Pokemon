@@ -28,9 +28,9 @@ namespace Pokemon.Domain.Effects
                     context.Steps.Add(new Application.TurnStep
                     {
                         Message = $"{context.Target.Species.DisplayName} {statusName}了！",
-                        PlayerHpAfter = context.User.CurrentHP,
-                        EnemyHpAfter = context.Target.CurrentHP,
-                        AnimType = Application.StepAnimType.None // 挂状态不需要受击动画，或者你可以加个特定动画
+                        PlayerHpAfter = context.PlayerRef.CurrentHP,
+                        EnemyHpAfter = context.EnemyRef.CurrentHP,
+                        AnimType = Domain.StepAnimType.None // 挂状态不需要受击动画，或者你可以加个特定动画
                     });
                 }
             }

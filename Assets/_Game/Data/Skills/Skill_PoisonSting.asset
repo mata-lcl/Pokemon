@@ -15,9 +15,10 @@ MonoBehaviour:
   Id: 004
   DisplayName: "\u6BD2\u9488"
   Type: 1
-  Category: 0
+  Category: 1
   Power: 10
   Accuracy: 1
   MaxPP: 20
   Effects:
   - {fileID: 11400000, guid: 3ee2f98b9f5f0234ba56a6f9a2367be5, type: 2}
+  - {fileID: 11400000, guid: 2c8a21efd3448d54180a2dbb079043f8, type: 2}

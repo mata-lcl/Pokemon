@@ -31,4 +31,13 @@ namespace Pokemon.Domain
         Special,  // 特殊攻击：受攻击者的特攻(SpAtk)和特防(SpDef)影响
         Status    // 变化/状态技能：不直接造成伤害，而是改变属性、状态或天气
     }
+
+    public enum StepAnimType
+    {
+        None,
+        PlayerAttack,
+        EnemyAttack,
+        PlayerHit,
+        EnemyHit
+    }
 }
