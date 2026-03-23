@@ -27,11 +27,19 @@ namespace Pokemon.Application
             _damageCalculator = damageCalculator;
         }
 
+        /// <summary>
+        /// 战斗执行器，负责处理一回合内玩家和敌人的行动逻辑生成可视化战斗过程
+        /// </summary>
+        /// <param name="player"></param>
+        /// <param name="playerSkill"></param>
+        /// <param name="enemy"></param>
+        /// <param name="enemySkill"></param>
+        /// <returns></returns>
         public List<TurnStep> Execute(
             MonsterRuntime player, SkillData playerSkill,
             MonsterRuntime enemy, SkillData enemySkill)
         {
-            var steps = new List<TurnStep>();
+            var steps = new List<TurnStep>();       //存储本回合所有步骤
 
             // 1. 判断先后手
             bool playerFirst = player.Speed >= enemy.Speed;

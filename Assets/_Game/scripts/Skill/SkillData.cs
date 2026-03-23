@@ -21,9 +21,9 @@ namespace Pokemon.Domain
         [Tooltip("技能的威力（参与伤害计算）")]
         public int Power;
 
-        [Tooltip("技能的命中率，0-100")] // 由于你用int，我建议提示写0-100
-        [Range(0, 100)]
-        public int Accuracy;
+        [Tooltip("技能的命中率，0-100")]
+        [Range(0, 1)]
+        public float Accuracy;
 
         [Tooltip("技能最大PP值")]
         [Range(1, 100)]

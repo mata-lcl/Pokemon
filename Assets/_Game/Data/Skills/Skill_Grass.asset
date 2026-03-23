@@ -15,7 +15,9 @@ MonoBehaviour:
   Id: 003
   DisplayName: "\u6811\u53F6"
   Type: 4
-  TargetType: 1
+  Category: 0
   Power: 40
-  Accuracy: 0.95
+  Accuracy: 1
   MaxPP: 20
+  Effects:
+  - {fileID: 11400000, guid: 3ee2f98b9f5f0234ba56a6f9a2367be5, type: 2}
