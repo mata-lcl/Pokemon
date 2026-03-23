@@ -15,12 +15,15 @@ namespace Pokemon.Domain
 
         [Header("类型")]
         public PokemonType PrimaryType = PokemonType.Normal;
+        public PokemonType SecondaryType = PokemonType.None;
 
         [Header("种族值 (不可更改)")]
         [Tooltip("血量")] public int BaseHP = 50;
         [Tooltip("攻击")] public int BaseAttack = 10;
         [Tooltip("防御")] public int BaseDefense = 10;
         [Tooltip("速度")] public int BaseSpeed = 10;
+        [Tooltip("特攻")] public int BaseSpAttack = 50;  // 【新增】基础特攻
+        [Tooltip("特防")] public int BaseSpDefense = 50; // 【新增】基础特防
 
         // --- V0.1新增：战斗结算奖励 ---
         [Header("击败该宝可梦提供的奖励")]
@@ -32,7 +35,12 @@ namespace Pokemon.Domain
         public int EvYieldAttack = 0;
         public int EvYieldDefense = 0;
         public int EvYieldSpeed = 0;
+        public int EvYieldSpAttack = 0;  // 【新增】击败后提供的特攻EV
+        public int EvYieldSpDefense = 0; // 【新增】击败后提供的特防EV
         // -------------------------
+
+        [Header("特性列表")]
+        public List<AbilityData> Abilities = new List<AbilityData>();
 
         [Header("学习技能")]
         public List<SkillData> InitialSkills = new List<SkillData>();

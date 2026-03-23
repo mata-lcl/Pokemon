@@ -40,4 +40,11 @@ namespace Pokemon.Domain
         PlayerHit,
         EnemyHit
     }
+
+    public enum ItemType
+    {
+        HealHP,    // 回复HP
+        HealPP,    // 回复PP (未来扩展)
+        Pokeball   // 精灵球 (未来扩展)
+    }
 }

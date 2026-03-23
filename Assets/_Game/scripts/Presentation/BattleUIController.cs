@@ -54,6 +54,7 @@ namespace Pokemon.Presentation
 
         public void SetLog(string message)
         {
+            Debug.Log($"[UI LOG] ÕıÔÚ³¢ÊÔÏÔÊ¾: {message}");
             logText.text = message;
         }
 

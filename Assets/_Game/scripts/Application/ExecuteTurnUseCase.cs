@@ -120,7 +120,8 @@ namespace Pokemon.Application
             DamageResult? dmg = null;
             if (skill.Category != SkillCategory.Status)
             {
-                dmg = _damageCalculator.CalculateDamage(attacker, defender, skill);
+                //dmg = _damageCalculator.CalculateDamage(attacker, defender, skill, steps);
+                dmg = _damageCalculator.CalculateDamage(attacker, defender, skill, steps);
             }
 
             // 3. 构建上下文
@@ -146,8 +147,11 @@ namespace Pokemon.Application
                 }
             }
 
-            
+            // --- 新增：技能及其效果执行完后，检查防御方是否触发了特性 ---
+            // 5. 【新增检查点】伤害打完了，看看被打的目标(defender)是否需要发动猛火
+            CheckAbilityCrisisTrigger(defender, !isPlayerAttacking, steps, context.PlayerRef, context.EnemyRef);
         }
+
 
         private void ResolveEndOfTurn(MonsterRuntime player, MonsterRuntime enemy, List<TurnStep> steps)
         {
@@ -175,7 +179,16 @@ namespace Pokemon.Application
                     IsBattleEnd = false,
                     AnimType = isPlayer ? StepAnimType.PlayerHit : StepAnimType.EnemyHit
                 });
+
+                // --- 新增：扣血后立即检查特性 ---
+                CheckAbilityCrisisTrigger(target, isPlayer, steps, playerRef, enemyRef);
             }
+        }
+        private void CheckAbilityCrisisTrigger(MonsterRuntime target, bool isTargetPlayer, List<TurnStep> steps, MonsterRuntime playerRef, MonsterRuntime enemyRef)
+        {
+            // 只要有特性，就调用通用的接口方法
+            // 以后增加“引火”、“威吓”或任何新特性，这里一行代码都不用改
+            target.ActiveAbility?.CheckAndProcessNotification(target, steps, playerRef, enemyRef);
         }
 
         // 【修复 2】：修改你原有的 CreateStep，让它支持传入 AnimType，减少重复代码
