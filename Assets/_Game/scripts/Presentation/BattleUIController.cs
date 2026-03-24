@@ -9,6 +9,19 @@ namespace Pokemon.Presentation
 {
     public class BattleUIController : MonoBehaviour
     {
+        // --- 新增：面板引用 ---
+        [Header("菜单控制")]
+        [SerializeField] private GameObject mainActionPanel; // 包含 4 个主按钮的父物体
+        [SerializeField] private GameObject skillPanel;      // 包含技能按钮的父物体
+        [SerializeField] private GameObject itemPanel;       // 包含道具列表的父物体
+
+        [Header("主菜单按钮")]
+        [SerializeField] private Button fightBtn;    // 战斗按钮
+        [SerializeField] private Button bagBtn;      // 道具按钮
+        [SerializeField] private Button runBtn;      // 逃走按钮
+        [SerializeField] private Button skillBackBtn; // 技能页面的“返回”按钮
+
+        // --- 原有槽位保留 ---
         [Header("UI文本")]
         [SerializeField] private TMP_Text playerNameText;
         [SerializeField] private TMP_Text enemyNameText;
@@ -20,25 +33,80 @@ namespace Pokemon.Presentation
         [SerializeField] private Button[] skillButtons;
         [SerializeField] private TMP_Text[] skillBtnTexts;
 
+        // --- 事件 ---
+        public event Action<int> OnSkillClicked;
+        public event Action<ItemData> OnItemClicked;
+        public event Action OnRunClicked; // 新增：逃跑点击事件
+
         /// <summary>
         /// 向外暴露玩家点击事件
         /// 核心设计：公开一个事件，将用户输入转发给外部
         /// 实现了观察者模式(Observer Pattern)，UI不处理业务逻辑
         /// </summary>
-        public event Action<int> OnSkillClicked;    //委托，参数是技能索引
 
         private void Awake()
         {
-            // 初始化按钮监听，将点击事件转发给外部（协调器）
+            // --- 核心逻辑修改 ---
+
+            // 1. 主菜单点击：切换到技能面板
+            fightBtn.onClick.AddListener(() => ShowSubPanel(skillPanel));
+
+            // 2. 主菜单点击：进入背包（可以在这里调用刷新背包列表的方法）
+            bagBtn.onClick.AddListener(() => {
+                //RefreshItemList(); //TODO
+                ShowSubPanel(itemPanel);
+            });
+
+            // 3. 返回按钮：从技能/道具页面回到主菜单
+            skillBackBtn.onClick.AddListener(() => ShowSubPanel(mainActionPanel));
+
+            // 4. 逃跑
+            runBtn.onClick.AddListener(() => OnRunClicked?.Invoke());
+
+            // 5. 保留原有技能按钮初始化（索引转发）
             for (int i = 0; i < skillButtons.Length; i++)
             {
                 int index = i;
-                skillButtons[i].onClick.AddListener(() =>
-                {
-                    OnSkillClicked?.Invoke(index);
-                });
+                skillButtons[i].onClick.AddListener(() => OnSkillClicked?.Invoke(index));
             }
         }
+
+        /// <summary>
+        /// 切换面板的通用方法
+        /// </summary>
+        private void ShowSubPanel(GameObject targetPanel)
+        {
+            mainActionPanel.SetActive(targetPanel == mainActionPanel);
+            skillPanel.SetActive(targetPanel == skillPanel);
+            if (itemPanel != null) itemPanel.SetActive(targetPanel == itemPanel);
+        }
+
+        /// <summary>
+        /// 战斗开始执行时，强制关闭所有面板
+        /// </summary>
+        public void HideAllPanels()
+        {
+            mainActionPanel.SetActive(false);
+            skillPanel.SetActive(false);
+            if (itemPanel != null) itemPanel.SetActive(false);
+        }
+
+        // 当你想让玩家重新选择时（例如回合结束），调用这个
+        public void ResetToMain()
+        {
+            // 1. 必须显示包含“战斗/道具/逃跑”按钮的父物体
+            mainActionPanel.SetActive(true);
+
+            // 2. 隐藏其他的子菜单面板
+            skillPanel.SetActive(false);
+            itemPanel?.SetActive(false);
+        }
+        // 在道具 UI 按钮点击的代码逻辑中触发它
+        public void ItemButtonCallback(ItemData item)
+        {
+            OnItemClicked?.Invoke(item);
+        }
+
 
         public void SetupNames(string playerName, string enemyName)
         {

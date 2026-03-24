@@ -24,8 +24,6 @@ namespace Pokemon.Presentation
         [SerializeField] private BattleUnitView playerView;
         [SerializeField] private BattleUnitView enemyView;
 
-        public ItemData testPotion;
-
         private MonsterRuntime _player;
         private MonsterRuntime _enemy;
         private ExecuteTurnUseCase _turnUseCase;
@@ -42,8 +40,7 @@ namespace Pokemon.Presentation
 
         private void InitBattle()
         {
-            PlayerParty.AddItem(testPotion, 3);
-
+            
             if (PlayerParty.ActivePokemon == null)
             {
                 PlayerParty.ActivePokemon = new MonsterRuntime(playerSpecies, 5);
@@ -59,21 +56,37 @@ namespace Pokemon.Presentation
                 if (skill != null) _playerSkills.Add(skill);
             }
 
+            // 1. 订阅 UI 事件
             uiController.OnSkillClicked += HandlePlayerAction;
+            uiController.OnItemClicked += HandleUseItem;      // 订阅道具点击
+            uiController.OnRunClicked += HandleRunAttempt;    // 订阅逃跑点击
+
+            // 2. 初始 UI 设置
             uiController.SetupNames(_player.Species.DisplayName, _enemy.Species.DisplayName);
             uiController.UpdateHp(_player.CurrentHP, _player.MaxHP, _enemy.CurrentHP, _enemy.MaxHP);
             uiController.RefreshSkills(_playerSkills, _player.CurrentPP);
-            uiController.SetLog("战斗开始！请选择技能。");
+
+            // 3. 确保初始显示主菜单
+            uiController.ResetToMain();
+            uiController.SetLog($"野生的 {_enemy.Species.DisplayName} 出现了！");
         }
 
         private void OnDestroy()
         {
-            if (uiController != null) uiController.OnSkillClicked -= HandlePlayerAction;
+            if (uiController != null)
+            {
+                uiController.OnSkillClicked -= HandlePlayerAction;
+                uiController.OnItemClicked -= HandleUseItem;
+                uiController.OnRunClicked -= HandleRunAttempt;
+            }
         }
 
         private void HandlePlayerAction(int skillIndex)
         {
             if (_battleEnded) return;
+
+            // 立即隐藏 UI，进入演算阶段
+            uiController.HideAllPanels();
 
             SkillData playerSkill = _playerSkills[skillIndex];
             SkillData enemySkill = PickFirstAvailableSkill(_enemy);
@@ -81,36 +94,62 @@ namespace Pokemon.Presentation
             List<TurnStep> steps = _turnUseCase.Execute(_player, playerSkill, _enemy, enemySkill);
             StartCoroutine(PlayTurnRoutine(steps));
         }
+        // 逃跑处理
+        private void HandleRunAttempt()
+        {
+            if (_battleEnded) return;
+            uiController.HideAllPanels();
+
+            // 简单逻辑：直接成功。复杂逻辑可以加随机率或速度判定
+            uiController.SetLog("逃跑成功！");
+            Invoke("ResetScene", 1.5f);
+        }
 
         public void HandleUseItem(ItemData item)
         {
             if (_battleEnded) return;
-            if (PlayerParty.UseItem(item))
+
+            if (item is IUsable usable)
             {
-                StartCoroutine(ItemTurnRoutine(item));
+                var context = new EffectContext { User = _player, Target = _enemy, Steps = new List<TurnStep>() };
+
+                if (usable.CanUse(context))
+                {
+                    //uiController.HideAllActionUI(); // 隐藏 UI
+                    usable.OnUse(context);
+
+                    if (usable.IsConsumable) PlayerParty.RemoveItem(item, 1);
+
+                    // 执行道具流程
+                    StartCoroutine(ItemTurnRoutine(context.Steps));
+                }
+                else
+                {
+                    uiController.SetLog("现在无法使用该道具！");
+                }
             }
         }
 
-        private IEnumerator ItemTurnRoutine(ItemData item)
+        private IEnumerator ItemTurnRoutine(List<TurnStep> itemSteps)
         {
             uiController.SetInteractable(false);
 
-            if (item.Type == ItemType.HealHP)
+            // 1. 播放道具使用的动画和文字信息
+            yield return StartCoroutine(PlayTurnRoutine(itemSteps));
+
+            // 2. 如果战斗没结束且敌人没倒下，敌人进行反击
+            if (!_battleEnded && !_enemy.IsFainted)
             {
-                _player.Heal(item.EffectValue);
-                uiController.SetLog($"使用了 {item.DisplayName}！{_player.Species.DisplayName} 恢复了生命值。");
-                uiController.UpdateHp(_player.CurrentHP, _player.MaxHP, _enemy.CurrentHP, _enemy.MaxHP);
+                uiController.SetLog($"野生的 {_enemy.Species.DisplayName} 趁机发起了攻击！");
                 yield return new WaitForSeconds(stepDelaySeconds);
-            }
 
-            if (!_enemy.IsFainted)
-            {
-                var enemySkill = _enemy.Species.InitialSkills[Random.Range(0, _enemy.Species.InitialSkills.Count)];
-                uiController.SetLog($"野生的 {_enemy.Species.DisplayName} 乘机发起了攻击！");
+                SkillData enemySkill = PickFirstAvailableSkill(_enemy);
 
-                ExecuteTurnUseCase mockUseCase = new ExecuteTurnUseCase(new DamageCalculator(typeChart));
-                var steps = mockUseCase.Execute(_player, null, _enemy, enemySkill);
-                yield return StartCoroutine(PlayTurnRoutine(steps));
+                // 注意：这里只执行敌人的单方面行动
+                // 为此你可以给 ExecuteTurnUseCase 增加一个简单的单目标执行方法，或者通过 null 传参
+                List<TurnStep> counterAttackSteps = _turnUseCase.Execute(null, null, _enemy, enemySkill);
+
+                yield return StartCoroutine(PlayTurnRoutine(counterAttackSteps));
             }
         }
 
@@ -183,9 +222,11 @@ namespace Pokemon.Presentation
 
             if (!_battleEnded)
             {
-                uiController.SetLog("请选择下一步行动。");
+                // 回合结束，重置到主菜单供玩家重新选择
+                uiController.SetLog("要做什么？");
                 uiController.RefreshSkills(_playerSkills, _player.CurrentPP);
-                uiController.SetInteractable(true);
+                uiController.ResetToMain(); // 这里调用你 UI 控制器里的切换到主面板的方法
+                uiController.SetInteractable(true); // 恢复交互
             }
         }
 
