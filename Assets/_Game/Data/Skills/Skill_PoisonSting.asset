@@ -19,6 +19,9 @@ MonoBehaviour:
   Power: 10
   Accuracy: 1
   MaxPP: 20
+  effectConfigs:
+  - Effect: {fileID: 11400000, guid: 2c8a21efd3448d54180a2dbb079043f8, type: 2}
+    Chance: 1
   Effects:
   - {fileID: 11400000, guid: 3ee2f98b9f5f0234ba56a6f9a2367be5, type: 2}
   - {fileID: 11400000, guid: 2c8a21efd3448d54180a2dbb079043f8, type: 2}

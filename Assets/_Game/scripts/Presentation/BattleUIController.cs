@@ -20,6 +20,7 @@ namespace Pokemon.Presentation
         [SerializeField] private Button bagBtn;      // 道具按钮
         [SerializeField] private Button runBtn;      // 逃走按钮
         [SerializeField] private Button skillBackBtn; // 技能页面的“返回”按钮
+        [SerializeField] private Button BagBackBtn;  // 道具页面的“返回”按钮
 
         // --- 原有槽位保留 ---
         [Header("UI文本")]
@@ -59,6 +60,8 @@ namespace Pokemon.Presentation
 
             // 3. 返回按钮：从技能/道具页面回到主菜单
             skillBackBtn.onClick.AddListener(() => ShowSubPanel(mainActionPanel));
+
+            BagBackBtn.onClick.AddListener(() => ShowSubPanel(mainActionPanel));
 
             // 4. 逃跑
             runBtn.onClick.AddListener(() => OnRunClicked?.Invoke());

@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: FireEffect
   m_EditorClassIdentifier: 
   StatusToApply: 2
-  Chance: 1
+  Chance: 0.9

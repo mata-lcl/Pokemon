@@ -1909,7 +1909,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 690344222}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -1919,7 +1919,7 @@ RectTransform:
   - {fileID: 743366946}
   - {fileID: 568575491}
   - {fileID: 662908587}
-  m_Father: {fileID: 1456243532}
+  m_Father: {fileID: 1111179746}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -2929,6 +2929,8 @@ RectTransform:
   - {fileID: 1556787364}
   - {fileID: 1967053717}
   - {fileID: 1456243532}
+  - {fileID: 690344223}
+  - {fileID: 1909937763}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -2955,6 +2957,7 @@ MonoBehaviour:
   bagBtn: {fileID: 143795756}
   runBtn: {fileID: 1735898860}
   skillBackBtn: {fileID: 662908588}
+  BagBackBtn: {fileID: 42868327}
   playerNameText: {fileID: 812092125}
   enemyNameText: {fileID: 25612601}
   playerHpText: {fileID: 170862969}
@@ -3048,13 +3051,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1228957390}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
   m_LocalPosition: {x: 4.99, y: -0.04818091, z: 0}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!114 &1228957393
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3391,8 +3394,6 @@ RectTransform:
   - {fileID: 1813773712}
   - {fileID: 2082718227}
   - {fileID: 143795755}
-  - {fileID: 690344223}
-  - {fileID: 1909937763}
   m_Father: {fileID: 1111179746}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -4612,7 +4613,7 @@ RectTransform:
   m_Children:
   - {fileID: 42868326}
   - {fileID: 1817678938}
-  m_Father: {fileID: 1456243532}
+  m_Father: {fileID: 1111179746}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -5031,6 +5032,7 @@ MonoBehaviour:
   bagBtn: {fileID: 0}
   runBtn: {fileID: 0}
   skillBackBtn: {fileID: 0}
+  BagBackBtn: {fileID: 0}
   playerNameText: {fileID: 812092125}
   enemyNameText: {fileID: 25612601}
   playerHpText: {fileID: 170862969}
