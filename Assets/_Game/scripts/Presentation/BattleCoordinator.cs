@@ -102,7 +102,13 @@ namespace Pokemon.Presentation
 
             // 简单逻辑：直接成功。复杂逻辑可以加随机率或速度判定
             uiController.SetLog("逃跑成功！");
-            Invoke("ResetScene", 1.5f);
+            //Invoke(nameof(ReturnToWorld), 1.5f);
+            SceneTransitionManager.Instance.ReturnToWorld();
+        }
+
+        private void ReturnToWorld()
+        {
+            SceneManager.LoadScene("World");
         }
 
         public void HandleUseItem(ItemData item)

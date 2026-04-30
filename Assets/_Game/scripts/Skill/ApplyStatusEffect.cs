@@ -20,7 +20,10 @@ namespace Pokemon.Domain.Effects
             {
                 context.Steps.Add(new TurnStep
                 {
-                    Message = $"{context.Target.Species.DisplayName}{StatusToApply.ToChineseName()} 了!"
+                    Message = $"{context.Target.Species.DisplayName}{StatusToApply.ToChineseName()} 了!",
+                    PlayerHpAfter = context.PlayerRef.CurrentHP,
+                    EnemyHpAfter = context.EnemyRef.CurrentHP,
+                    AnimType = Domain.StepAnimType.None // 挂状态不需要受击动画，或者你可以加个特定动画
                 });
             }
             return;
