@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5661e9892548c75449ea51bf203a49f7, type: 3}
+  m_Name: Skill_TingQiao
+  m_EditorClassIdentifier: 
+  Id: 006
+  DisplayName: "\u542C\u6865"
+  Type: 1
+  Category: 0
+  Power: 1
+  Accuracy: 1
+  MaxPP: 10
+  effectConfigs: []
+  Effects:
+  - {fileID: 11400000, guid: 5af2514c59e0a864f9add0e164e05561, type: 2}

@@ -1,10 +1,8 @@
-
-
 using UnityEngine;
 
 namespace Pokemon.Domain
 {
-    [CreateAssetMenu(fileName = "New Pokeball", menuName = "Pokemon/Item/Pokeball")]
+    [CreateAssetMenu(fileName = "Pokeball_", menuName = "Pokemon/Item/Pokeball")]
     public class PokeballData : ItemData, IUsable
     {
         //抓捕率修正值，默认为1.0f，表示不修改抓捕率

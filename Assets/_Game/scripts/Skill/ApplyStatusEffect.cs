@@ -23,7 +23,7 @@ namespace Pokemon.Domain.Effects
                     Message = $"{context.Target.Species.DisplayName}{StatusToApply.ToChineseName()} 了!",
                     PlayerHpAfter = context.PlayerRef.CurrentHP,
                     EnemyHpAfter = context.EnemyRef.CurrentHP,
-                    AnimType = Domain.StepAnimType.None // 挂状态不需要受击动画，或者你可以加个特定动画
+                    AnimType = Domain.StepAnimType.None // 挂状态不需要受击动画，或者可以加个特定动画
                 });
             }
             return;

@@ -32,6 +32,7 @@ MonoBehaviour:
   Abilities:
   - {fileID: 11400000, guid: d222a01686a8b554789846d7cb08e43a, type: 2}
   InitialSkills:
+  - {fileID: 11400000, guid: 54304e8ee56b56941ae9ea708a7e1c5d, type: 2}
   - {fileID: 11400000, guid: 3bded21878e77b34ebb2480677a9457d, type: 2}
   - {fileID: 11400000, guid: b224051504c6e7c4883efd4aa7b668d2, type: 2}
   - {fileID: 11400000, guid: 04192d7159180c84fbf5e0e423968c43, type: 2}
