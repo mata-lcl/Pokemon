@@ -4,28 +4,28 @@ using Unity.VisualScripting.Dependencies.NCalc;
 namespace Pokemon.Application
 {
     /// <summary>
-    /// Õ½¶·»ØºÏÖ´ĞĞÓÃÀı£¬²ÉÓÃÃüÁîÄ£Ê½ºÍÓÃÀıÄ£Ê½Éè¼Æ
+    /// æˆ˜æ–—å›åˆæ‰§è¡Œç”¨ä¾‹ï¼Œé‡‡ç”¨å‘½ä»¤æ¨¡å¼å’Œç”¨ä¾‹æ¨¡å¼è®¾è®¡
     /// </summary>
     public sealed class ExecuteTurnUseCase_Old
     {
         public struct TurnResult
         {
-            public bool PlayerActed;    //Íæ¼Ò»ØºÏ
-            public bool EnemyActed;     //µĞ·½»ØºÏ
-            public bool PlayerHit;      //Íæ¼ÒÃüÖĞ
-            public bool EnemyHit;       //µĞÈËÃüÖĞ
-            public int DamageToEnemy;   //¶ÔµĞÈËÉËº¦
-            public int DamageToPlayer;  //¶ÔÍæ¼ÒÉËº¦
-            public bool BattleEnded;    //¶ÔÕ½½áÊø
-            public bool PlayerWon;      //Íæ¼ÒÊ¤Àû
+            public bool PlayerActed;    //ç©å®¶å›åˆ
+            public bool EnemyActed;     //æ•Œæ–¹å›åˆ
+            public bool PlayerHit;      //ç©å®¶å‘½ä¸­
+            public bool EnemyHit;       //æ•Œäººå‘½ä¸­
+            public int DamageToEnemy;   //å¯¹æ•Œäººä¼¤å®³
+            public int DamageToPlayer;  //å¯¹ç©å®¶ä¼¤å®³
+            public bool BattleEnded;    //å¯¹æˆ˜ç»“æŸ
+            public bool PlayerWon;      //ç©å®¶èƒœåˆ©
         }
 
-        //Ö»¶Á È·±£Ïß³Ì°²È«ºÍ²»¿É±äĞÔ
+        //åªè¯» ç¡®ä¿çº¿ç¨‹å®‰å…¨å’Œä¸å¯å˜æ€§
         private readonly DamageCalculator _damageCalculator;
 
         /// <summary>
-        /// ¹¹Ôìº¯Êı£¬Í¨¹ı¹¹Ôìº¯Êı×¢ÈëdamageCalculator
-        /// Õâ¸öÀàÖ»¸ºÔğ´¦Àí»ØºÏÂß¼­£¬ÉËº¦¼ÆËã½»¸øDamageCalculator
+        /// æ„é€ å‡½æ•°ï¼Œé€šè¿‡æ„é€ å‡½æ•°æ³¨å…¥damageCalculator
+        /// è¿™ä¸ªç±»åªè´Ÿè´£å¤„ç†å›åˆé€»è¾‘ï¼Œä¼¤å®³è®¡ç®—äº¤ç»™DamageCalculator
         /// </summary>
         /// <param name="damageCalculator"></param>
         public ExecuteTurnUseCase_Old(DamageCalculator damageCalculator)
@@ -34,7 +34,7 @@ namespace Pokemon.Application
         }
 
         /// <summary>
-        /// ºËĞÄ·½·¨
+        /// æ ¸å¿ƒæ–¹æ³•
         /// </summary>
         /// <param name="player"></param>
         /// <param name="playerSkill"></param>
@@ -74,7 +74,7 @@ namespace Pokemon.Application
         }
 
         /// <summary>
-        /// Ö´ĞĞµ¥´Î¹¥»÷µÄÂß¼­Á´
+        /// æ‰§è¡Œå•æ¬¡æ”»å‡»çš„é€»è¾‘é“¾
         /// </summary>
         /// <param name="attacker"></param>
         /// <param name="skill"></param>
@@ -88,11 +88,11 @@ namespace Pokemon.Application
             ref TurnResult result,
             bool isPlayerAction)
         {
-            //ÅĞ¶ÏÊÇ·ñ»¹ÓĞ¼¼ÄÜPP
+            //åˆ¤æ–­æ˜¯å¦è¿˜æœ‰æŠ€èƒ½PP
             if (!attacker.TryConsumePP(skill))
                 return;
 
-            //¼ì²éÊÇ·ñÃüÖĞ
+            //æ£€æŸ¥æ˜¯å¦å‘½ä¸­
             bool hit = _damageCalculator.CheckHit(skill);
             //int damage = 0;
             var damage = _damageCalculator.CalculateDamage(attacker, defender, skill);

@@ -43,7 +43,7 @@ public class SceneTransitionManager : MonoBehaviour
         {
             player.transform.position = playerPositionBeforeBattle;
 
-            // 禁用碰撞器，直到玩家移动
+            // 绂佺敤纰版挒鍣紝鐩村埌鐜╁绉诲姩
             PlayerMovement controller = player.GetComponent<PlayerMovement>();
             if (controller != null)
             {

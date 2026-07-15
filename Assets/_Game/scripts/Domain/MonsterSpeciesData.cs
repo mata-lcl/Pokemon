@@ -9,28 +9,28 @@ namespace Pokemon.Domain
 
     public class PokemonSpeciesData : ScriptableObject
     {
-        [Header("Éí·İĞÅÏ¢")]
+        [Header("èº«ä»½ä¿¡æ¯")]
         public int ID;
         public string DisplayName;
 
-        [Header("ÀàĞÍ")]
-        public PokemonType PrimaryType = PokemonType.Normal;        //Ö÷ÊôĞÔ
-        public PokemonType SecondaryType = PokemonType.None;        //¸±ÊôĞÔ
+        [Header("ç±»å‹")]
+        public PokemonType PrimaryType = PokemonType.Normal;        //ä¸»å±æ€§
+        public PokemonType SecondaryType = PokemonType.None;        //å‰¯å±æ€§
 
-        [Header("ÖÖ×åÖµ (²»¿É¸ü¸Ä)")]
-        [Tooltip("ÑªÁ¿")] public int BaseHP = 50;
-        [Tooltip("¹¥»÷")] public int BaseAttack = 10;
-        [Tooltip("·ÀÓù")] public int BaseDefense = 10;
-        [Tooltip("ËÙ¶È")] public int BaseSpeed = 10;
-        [Tooltip("ÌØ¹¥")] public int BaseSpAttack = 50;  
-        [Tooltip("ÌØ·À")] public int BaseSpDefense = 50; 
+        [Header("ç§æ—å€¼ (ä¸å¯æ›´æ”¹)")]
+        [Tooltip("è¡€é‡")] public int BaseHP = 50;
+        [Tooltip("æ”»å‡»")] public int BaseAttack = 10;
+        [Tooltip("é˜²å¾¡")] public int BaseDefense = 10;
+        [Tooltip("é€Ÿåº¦")] public int BaseSpeed = 10;
+        [Tooltip("ç‰¹æ”»")] public int BaseSpAttack = 50;  
+        [Tooltip("ç‰¹é˜²")] public int BaseSpDefense = 50; 
 
-        // --- V0.1ĞÂÔö£ºÕ½¶·½áËã½±Àø ---
-        [Header("»÷°Ü¸Ã±¦¿ÉÃÎÌá¹©µÄ½±Àø")]
-        [Tooltip("»ù´¡¾­Ñé²ú³ö")]
+        // --- V0.1æ–°å¢ï¼šæˆ˜æ–—ç»“ç®—å¥–åŠ± ---
+        [Header("å‡»è´¥è¯¥å®å¯æ¢¦æä¾›çš„å¥–åŠ±")]
+        [Tooltip("åŸºç¡€ç»éªŒäº§å‡º")]
         public int BaseExpYield = 50;
 
-        [Tooltip("»÷°Üºó¸øÊ¤Àû·½¼ÓµÄ¸÷ÏîÑ§Ï°Á¦(EVs)")]
+        [Tooltip("å‡»è´¥åç»™èƒœåˆ©æ–¹åŠ çš„å„é¡¹å­¦ä¹ åŠ›(EVs)")]
         public int EvYieldHP = 0;
         public int EvYieldAttack = 0;
         public int EvYieldDefense = 0;
@@ -39,15 +39,19 @@ namespace Pokemon.Domain
         public int EvYieldSpDefense = 0; 
         // -------------------------
 
-        [Header("ÌØĞÔÁĞ±í")]
+        [Header("ç‰¹æ€§åˆ—è¡¨")]
         public List<AbilityData> Abilities = new List<AbilityData>();
 
-        [Header("Ñ§Ï°¼¼ÄÜ")]
+        [Header("å­¦ä¹ æŠ€èƒ½")]
         public List<SkillData> InitialSkills = new List<SkillData>();
 
-        //ĞÂÔö
-        [Header("¾«ÁéÍ¼Æ¬")]
+        //æ–°å¢
+        [Header("ç²¾çµå›¾ç‰‡")]
         public Sprite BattleSprite;
+
+        [Header("æ•æ‰")]
+        [Tooltip("åŸºç¡€æ•è·ç‡ï¼ˆ0-255ï¼Œè¶Šé«˜è¶Šå®¹æ˜“æŠ“ï¼‰")]
+        public int CatchRate = 45;
     }
 }
 

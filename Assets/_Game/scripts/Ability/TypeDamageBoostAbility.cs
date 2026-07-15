@@ -4,62 +4,62 @@ using UnityEngine;
 
 namespace Pokemon.Domain
 {
-    // Ôö¼ÓÒ»¸ö²Ëµ¥Ïî£¬¿ÉÒÔ´´½¨³ö²»Í¬µÄÊµÀı
+    // å¢åŠ ä¸€ä¸ªèœå•é¡¹ï¼Œå¯ä»¥åˆ›å»ºå‡ºä¸åŒçš„å®ä¾‹
     [CreateAssetMenu(fileName = "NewTypeBoostAbility", menuName = "Pokemon/Abilities/Type Boost")]
     public class TypeDamageBoostAbility : AbilityData
     {
-        [Header("´¥·¢ÉèÖÃ")]
-        [SerializeField] private PokemonType targetType; // ´¥·¢¼Ó³ÉµÄÊôĞÔ£¨Èç£ºGrass£©
-        [SerializeField] private float hpThreshold = 0.333f; // ´¥·¢µÄÑªÁ¿·§Öµ£¨1/3£©
-        [SerializeField] private float multiplier = 1.5f;    // ¼Ó³É±¶ÂÊ  
+        [Header("è§¦å‘è®¾ç½®")]
+        [SerializeField] private PokemonType targetType; // è§¦å‘åŠ æˆçš„å±æ€§ï¼ˆå¦‚ï¼šGrassï¼‰
+        [SerializeField] private float hpThreshold = 0.333f; // è§¦å‘çš„è¡€é‡é˜€å€¼ï¼ˆ1/3ï¼‰
+        [SerializeField] private float multiplier = 1.5f;    // åŠ æˆå€ç‡  
 
         public override float GetDamageMultiplier(MonsterRuntime owner, MonsterRuntime opponent, SkillData skill, List<TurnStep> steps)
         {
-            // 1. ¼ì²éÊôĞÔ
+            // 1. æ£€æŸ¥å±æ€§
             if (skill.Type != targetType) return 1.0f;
 
-            // 2. ¼ì²éÑªÁ¿£¨Ê¹ÓÃ³Ë·¨±ÜÃâ¸¡µãÎó²î£©
+            // 2. æ£€æŸ¥è¡€é‡ï¼ˆä½¿ç”¨ä¹˜æ³•é¿å…æµ®ç‚¹è¯¯å·®ï¼‰
             bool isLowHP = (owner.CurrentHP <= owner.MaxHP * hpThreshold);
 
             if (isLowHP)
             {
-                //¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤
+                //Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·
                 //if (steps != null)
                 //{
-                //    // ÔÚÄúµÄ¼Ü¹¹ÖĞ£¬ÎÒÃÇĞèÒªÅĞ¶Ïµ±Ç° owner ÊÇË­À´Ìî³ä HP ¿ìÕÕ
-                //    // ¼ÙÉèÎÒÃÇ´¦ÓÚ´¥·¢ÕßµÄ»ØºÏ(owner ¼´Îª¹¥»÷Õß)
+                //    // åœ¨æ‚¨çš„æ¶æ„ä¸­ï¼Œæˆ‘ä»¬éœ€è¦åˆ¤æ–­å½“å‰ owner æ˜¯è°æ¥å¡«å…… HP å¿«ç…§
+                //    // å‡è®¾æˆ‘ä»¬å¤„äºè§¦å‘è€…çš„å›åˆ(owner å³ä¸ºæ”»å‡»è€…)
                 //    steps?.Add(new TurnStep
                 //    {
-                //        //Èç¹ûĞèÒª¿ÉÒÔÔÚÕâÀïÔö¼ÓÆäËû¼¼ÄÜµÄËµÃ÷
-                //        Message = $"{owner.Species.DisplayName} µÄ {this.AbilityName} ·¢¶¯ÁË£¡",
+                //        //å¦‚æœéœ€è¦å¯ä»¥åœ¨è¿™é‡Œå¢åŠ å…¶ä»–æŠ€èƒ½çš„è¯´æ˜
+                //        Message = $"{owner.Species.DisplayName} çš„ {this.AbilityName} å‘åŠ¨äº†ï¼",
 
-                //        // ÕâÀïĞèÒªÒ»ÖÖ·½Ê½ÖªµÀË­ÊÇÍæ¼Ò¡£
-                //        // ÔİÊ±¼ÇÂ¼µ±Ç°ÑªÁ¿¡£×¢Òâ£ºÕâÀïĞèÒªÈ·±£ UI ²»»áÒòÎªÕâĞ©¿ìÕÕµ¼ÖÂÑªÌõ»ØÍË
-                //        PlayerHpAfter = owner.CurrentHP, // Õâ²¿·Ö½¨ÒéÍ¨¹ı×¢Èë»ò²ÎÊı»ñÈ¡Êµ¼ÊµÄÊµÊ±ÒıÓÃ
+                //        // è¿™é‡Œéœ€è¦ä¸€ç§æ–¹å¼çŸ¥é“è°æ˜¯ç©å®¶ã€‚
+                //        // æš‚æ—¶è®°å½•å½“å‰è¡€é‡ã€‚æ³¨æ„ï¼šè¿™é‡Œéœ€è¦ç¡®ä¿ UI ä¸ä¼šå› ä¸ºè¿™äº›å¿«ç…§å¯¼è‡´è¡€æ¡å›é€€
+                //        PlayerHpAfter = owner.CurrentHP, // è¿™éƒ¨åˆ†å»ºè®®é€šè¿‡æ³¨å…¥æˆ–å‚æ•°è·å–å®é™…çš„å®æ—¶å¼•ç”¨
                 //        EnemyHpAfter = opponent.CurrentHP,
                 //        IsBattleEnd = false,
                 //        AnimType = StepAnimType.None
                 //    });
                 //}
-                //¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤¡¤
-                Debug.Log($"<color=orange>[ÌØĞÔ´¥·¢]</color> {owner.Species.DisplayName} ´¥·¢ÁËÃÍ»ğ£¡±¶ÂÊ x{multiplier}");
-                return multiplier; // Í¨³£Îª 1.5f
+                //Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·Â·
+                Debug.Log($"<color=orange>[ç‰¹æ€§è§¦å‘]</color> {owner.Species.DisplayName} è§¦å‘äº†çŒ›ç«ï¼å€ç‡ x{multiplier}");
+                return multiplier; // é€šå¸¸ä¸º 1.5f
             }
 
             return 1.0f;
         }
 
-        // Ö»ÓĞ×Ô¼ºÖªµÀÊ²Ã´Ê±ºò¸Ãµ¯´°
+        // åªæœ‰è‡ªå·±çŸ¥é“ä»€ä¹ˆæ—¶å€™è¯¥å¼¹çª—
         public override bool CheckAndProcessNotification(MonsterRuntime owner, List<TurnStep> steps, MonsterRuntime playerRef, MonsterRuntime enemyRef)
         {
-            // Èç¹ûÑªÁ¿µÍÓÚ 1/3 ÇÒÎ´µ¹ÏÂ
+            // å¦‚æœè¡€é‡ä½äº 1/3 ä¸”æœªå€’ä¸‹
             if (owner.CurrentHP <= owner.MaxHP * hpThreshold && !owner.HasTriggeredCrisisAbility)
             {
-                // ÕâÀï¿ÉÒÔ¼ÓÒ»¸ö±ê¼Ç·ÀÖ¹ÖØ¸´µ¯³ö£¬ÀıÈç owner.HasAbilityTriggered
-                owner.HasTriggeredCrisisAbility = true; // ±ê¼Ç±¾³¡Õ½¶·ÒÑ´¥·¢¹ı£¬·ÀÖ¹Ë¢ÆÁ
+                // è¿™é‡Œå¯ä»¥åŠ ä¸€ä¸ªæ ‡è®°é˜²æ­¢é‡å¤å¼¹å‡ºï¼Œä¾‹å¦‚ owner.HasAbilityTriggered
+                owner.HasTriggeredCrisisAbility = true; // æ ‡è®°æœ¬åœºæˆ˜æ–—å·²è§¦å‘è¿‡ï¼Œé˜²æ­¢åˆ·å±
                 steps.Add(new TurnStep
                 {
-                    Message = $"{owner.Species.DisplayName} µÄ {AbilityName} ·¢¶¯ÁË£¡",
+                    Message = $"{owner.Species.DisplayName} çš„ {AbilityName} å‘åŠ¨äº†ï¼",
                     PlayerHpAfter = playerRef.CurrentHP,
                     EnemyHpAfter = enemyRef.CurrentHP,
                     AnimType = StepAnimType.None

@@ -4,29 +4,29 @@ using Pokemon.Domain;
 namespace Pokemon.Presentation
 {
     /// <summary>
-    /// Õ½¶·µ÷ÊÔ¹¤¾ß£ºÍ¨¹ı¿ì½İ¼üÊµÊ±ĞŞ¸ÄÕ½¶·×´Ì¬
+    /// æˆ˜æ–—è°ƒè¯•å·¥å…·ï¼šé€šè¿‡å¿«æ·é”®å®æ—¶ä¿®æ”¹æˆ˜æ–—çŠ¶æ€
     /// </summary>
     public class BattleDebugger : MonoBehaviour
     {
-        [Header("°ó¶¨ÒıÓÃ")]
+        [Header("ç»‘å®šå¼•ç”¨")]
         [SerializeField] private BattleCoordinator coordinator;
 
-        [Header("µ÷ÊÔÅäÖÃ")]
-        [Tooltip("°´ÏÂ´Ë¼ü½«Íæ¼ÒÑªÁ¿Éè¶¨ÎªÃÍ»ğ´¥·¢Ïß (1/4)")]
+        [Header("è°ƒè¯•é…ç½®")]
+        [Tooltip("æŒ‰ä¸‹æ­¤é”®å°†ç©å®¶è¡€é‡è®¾å®šä¸ºçŒ›ç«è§¦å‘çº¿ (1/4)")]
         [SerializeField] private KeyCode lowHPKey = KeyCode.H;
 
-        [Tooltip("°´ÏÂ´Ë¼üË²¼ä»÷°Ü¶ÔÊÖ")]
+        [Tooltip("æŒ‰ä¸‹æ­¤é”®ç¬é—´å‡»è´¥å¯¹æ‰‹")]
         [SerializeField] private KeyCode instantWinKey = KeyCode.K;
 
-        [Tooltip("°´ÏÂ´Ë¼ü»Ö¸´ÂúÑª")]
+        [Tooltip("æŒ‰ä¸‹æ­¤é”®æ¢å¤æ»¡è¡€")]
         [SerializeField] private KeyCode healKey = KeyCode.R;
 
         private void Update()
         {
             if (coordinator == null) return;
 
-            // »ñÈ¡µ±Ç°Õ½¶·ÖĞµÄÊµÀı£¨ÀûÓÃ·´Éä»òĞŞ¸Ä BattleCoordinator ½«Æä¹«¿ª£©
-            // ÕâÀï¼ÙÉèÎÒÃÇÔÚ BattleCoordinator ÖĞÌí¼ÓÁË¶Ô _player ºÍ _enemy µÄ·ÃÎÊÈ¨ÏŞ
+            // è·å–å½“å‰æˆ˜æ–—ä¸­çš„å®ä¾‹ï¼ˆåˆ©ç”¨åå°„æˆ–ä¿®æ”¹ BattleCoordinator å°†å…¶å…¬å¼€ï¼‰
+            // è¿™é‡Œå‡è®¾æˆ‘ä»¬åœ¨ BattleCoordinator ä¸­æ·»åŠ äº†å¯¹ _player å’Œ _enemy çš„è®¿é—®æƒé™
 
             if (Input.GetKeyDown(lowHPKey))
             {
@@ -49,12 +49,12 @@ namespace Pokemon.Presentation
             var player = GetPlayer();
             if (player == null) return;
 
-            // ÉèÖÃÎª MaxHP µÄ 25%£¬È·±£´¥·¢ 1/3 µÄÃÍ»ğÌØĞÔ
+            // è®¾ç½®ä¸º MaxHP çš„ 25%ï¼Œç¡®ä¿è§¦å‘ 1/3 çš„çŒ›ç«ç‰¹æ€§
             int targetHP = player.MaxHP / 4;
             player.DebugSetHP(targetHP);
 
             RefreshUI();
-            Debug.Log($"<color=orange>[Debugger]</color> Íæ¼ÒÑªÁ¿ÒÑÉèÎª²ĞÑª: {player.CurrentHP}/{player.MaxHP}");
+            Debug.Log($"<color=orange>[Debugger]</color> ç©å®¶è¡€é‡å·²è®¾ä¸ºæ®‹è¡€: {player.CurrentHP}/{player.MaxHP}");
         }
 
         private void KillEnemy()
@@ -64,7 +64,7 @@ namespace Pokemon.Presentation
 
             enemy.DebugSetHP(0);
             RefreshUI();
-            Debug.Log("<color=red>[Debugger]</color> ¶Ô·½ÒÑµ¹ÏÂ");
+            Debug.Log("<color=red>[Debugger]</color> å¯¹æ–¹å·²å€’ä¸‹");
         }
 
         private void FullHealPlayer()
@@ -74,10 +74,10 @@ namespace Pokemon.Presentation
 
             player.DebugSetHP(player.MaxHP);
             RefreshUI();
-            Debug.Log("<color=green>[Debugger]</color> Íæ¼ÒÒÑÂúÑª¸´»î");
+            Debug.Log("<color=green>[Debugger]</color> ç©å®¶å·²æ»¡è¡€å¤æ´»");
         }
 
-        // ¸¨Öú·½·¨£ºÍ¨¹ı·´Éä»ò¹«¿ª×Ö¶Î»ñÈ¡Ë½ÓĞ±äÁ¿
+        // è¾…åŠ©æ–¹æ³•ï¼šé€šè¿‡åå°„æˆ–å…¬å¼€å­—æ®µè·å–ç§æœ‰å˜é‡
         private MonsterRuntime GetPlayer() =>
             (MonsterRuntime)typeof(BattleCoordinator).GetField("_player", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(coordinator);
 
@@ -86,11 +86,11 @@ namespace Pokemon.Presentation
 
         private void RefreshUI()
         {
-            // Í¨¹ıµ÷ÓÃ coordinator µÄ UI ¸üĞÂÂß¼­Í¬²½»­Ãæ
-            // ¼ÙÉèÎÒÃÇÉÔÎ¢ĞŞ¸Ä BattleCoordinator ±©Â¶Ò»¸öË¢ĞÂ UI µÄ·½·¨
+            // é€šè¿‡è°ƒç”¨ coordinator çš„ UI æ›´æ–°é€»è¾‘åŒæ­¥ç”»é¢
+            // å‡è®¾æˆ‘ä»¬ç¨å¾®ä¿®æ”¹ BattleCoordinator æš´éœ²ä¸€ä¸ªåˆ·æ–° UI çš„æ–¹æ³•
             coordinator.SendMessage("InitBattleUI", null, SendMessageOptions.DontRequireReceiver);
 
-            // »òÕßÖ±½ÓÇ¿ÖÆË¢ĞÂ
+            // æˆ–è€…ç›´æ¥å¼ºåˆ¶åˆ·æ–°
             var ui = typeof(BattleCoordinator).GetField("uiController", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(coordinator) as BattleUIController;
             if (ui != null)
             {

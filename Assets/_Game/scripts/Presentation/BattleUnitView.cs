@@ -22,12 +22,12 @@ namespace Pokemon.Presentation
             }
         }
 
-        // ¼òµ¥µÄ¡°ÏòÇ°×²»÷¡±¶¯»­
+        // ç®€å•çš„â€œå‘å‰æ’å‡»â€åŠ¨ç”»
         public IEnumerator PlayAttackAnimation(bool isPlayer)
         {
             Vector3 targetPos = _originalPosition + (isPlayer ? Vector3.right : Vector3.left) * 1.5f;
 
-            // ³å¹ıÈ¥
+            // å†²è¿‡å»
             float t = 0;
             while (t < 0.1f)
             {
@@ -36,7 +36,7 @@ namespace Pokemon.Presentation
                 yield return null;
             }
 
-            // ÍË»ØÀ´
+            // é€€å›æ¥
             t = 0;
             while (t < 0.15f)
             {
@@ -47,7 +47,7 @@ namespace Pokemon.Presentation
             transform.position = _originalPosition;
         }
 
-        // ¼òµ¥µÄ¡°ÊÜ»÷ÉÁºì¡±¶¯»­
+        // ç®€å•çš„â€œå—å‡»é—ªçº¢â€åŠ¨ç”»
         public IEnumerator PlayHitAnimation()
         {
             if (spriteRenderer == null) yield break;

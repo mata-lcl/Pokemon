@@ -2,32 +2,32 @@ using UnityEngine;
 
 namespace Pokemon.Domain
 {
-    // Òì³£×´Ì¬»úÖÆÀà£º×¨ÃÅ´æ·Å¸÷ÖÖ×´Ì¬µÄÓ²ºËÔËËã¹æÔò
+    // å¼‚å¸¸çŠ¶æ€æœºåˆ¶ç±»ï¼šä¸“é—¨å­˜æ”¾å„ç§çŠ¶æ€çš„ç¡¬æ ¸è¿ç®—è§„åˆ™
     public static class StatusMechanics
     {
         /// <summary>
-        /// ³¢ÊÔ»ñÈ¡»ØºÏÄ©Î²µÄÒì³£×´Ì¬ÉËº¦
+        /// å°è¯•è·å–å›åˆæœ«å°¾çš„å¼‚å¸¸çŠ¶æ€ä¼¤å®³
         /// </summary>
-        /// <returns>Èç¹ûÓĞÉËº¦Ôò·µ»Ø true£¬·ñÔò·µ»Ø false</returns>
+        /// <returns>å¦‚æœæœ‰ä¼¤å®³åˆ™è¿”å› trueï¼Œå¦åˆ™è¿”å› false</returns>
         public static bool TryGetEndOfTurnDamage(StatusCondition status, int maxHp, out int damage, out string statusName)
         {
             switch (status)
             {
                 case StatusCondition.Poison:
-                    damage = Mathf.Max(1, maxHp / 8); // ÖĞ¶¾¿Û 1/8
-                    statusName = "ÖĞ¶¾";
+                    damage = Mathf.Max(1, maxHp / 8); // ä¸­æ¯’æ‰£ 1/8
+                    statusName = "ä¸­æ¯’";
                     return true;
 
                 case StatusCondition.Burn:
-                    damage = Mathf.Max(1, maxHp / 16); // ×ÆÉÕ¿Û 1/16
-                    statusName = "×ÆÉÕ";
+                    damage = Mathf.Max(1, maxHp / 16); // ç¼çƒ§æ‰£ 1/16
+                    statusName = "ç¼çƒ§";
                     return true;
 
-                // Î´À´Äã¿ÉÒÔÔÚÕâÀï¼ÓÉÏ"¼ÄÉúÖÖ×Ó"¡¢"¾ç¶¾£¨µİÔöÉËº¦£©"µÈÂß¼­
+                // æœªæ¥ä½ å¯ä»¥åœ¨è¿™é‡ŒåŠ ä¸Š"å¯„ç”Ÿç§å­"ã€"å‰§æ¯’ï¼ˆé€’å¢ä¼¤å®³ï¼‰"ç­‰é€»è¾‘
                 // case StatusCondition.BadlyPoisoned: ...
 
                 default:
-                    // Ë¯Ãß¡¢Âé±Ô¡¢±ù¶³ »òÕß None£¬»ØºÏÄ©²»¿ÛÑª
+                    // ç¡çœ ã€éº»ç—¹ã€å†°å†» æˆ–è€… Noneï¼Œå›åˆæœ«ä¸æ‰£è¡€
                     damage = 0;
                     statusName = string.Empty;
                     return false;

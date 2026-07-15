@@ -3,9 +3,9 @@ using UnityEngine;
 namespace Pokemon.Domain.Effects
 {
     [CreateAssetMenu(fileName = "HealEffect", menuName = "Pokemon/Effects/Heal")]
-    public class HealEffect : SkillEffectSO // ¸ÄÎª¼Ì³Ğ SkillEffectSO
+    public class HealEffect : SkillEffectSO // æ”¹ä¸ºç»§æ‰¿ SkillEffectSO
     {
-        [Tooltip("¹Ì¶¨»Ø¸´ÉúÃüÖµµÄÊıÖµ")]
+        [Tooltip("å›ºå®šå›å¤ç”Ÿå‘½å€¼çš„æ•°å€¼")]
         [SerializeField] private int _amount;
 
         public override bool CanProcess(EffectContext context) => true;
@@ -14,12 +14,7 @@ namespace Pokemon.Domain.Effects
         {
             context.User.Heal(_amount);
 
-            context.Steps.Add(new Application.TurnStep
-            {
-                Message = $"{context.User.Species.DisplayName} »Ö¸´ÁË {_amount} µãÉúÃüÖµ£¡",
-                PlayerHpAfter = context.User.CurrentHP, // ²¹È«ÑªÁ¿¿ìÕÕ£¬²¥·ÅUIĞèÒª
-                EnemyHpAfter = context.Target.CurrentHP
-            });
+            context.AddStep($"{context.User.Species.DisplayName} æ¢å¤äº† {_amount} ç‚¹ç”Ÿå‘½å€¼ï¼");
         }
     }
 }

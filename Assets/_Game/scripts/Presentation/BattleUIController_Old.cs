@@ -10,24 +10,24 @@ namespace Pokemon.Presentation
     public class BattleUIController_Old : MonoBehaviour
     {
         /// <summary>
-        /// ĞòÁĞ»¯
-        /// Í¨¹ıUnity±à¼­Æ÷ÍÏ×§¸³Öµ£¬ÊµÏÖÊı¾İÓëÂß¼­·ÖÀë
+        /// åºåˆ—åŒ–
+        /// é€šè¿‡Unityç¼–è¾‘å™¨æ‹–æ‹½èµ‹å€¼ï¼Œå®ç°æ•°æ®ä¸é€»è¾‘åˆ†ç¦»
         /// </summary>
-        [Header("Êı¾İ")]
+        [Header("æ•°æ®")]
         [SerializeField] private PokemonSpeciesData playerSpecies;
         [SerializeField] private PokemonSpeciesData enemySpecies;
         [SerializeField] private TypeChartData typeChart;
 
-        [Header("UIÎÄ±¾")]
+        [Header("UIæ–‡æœ¬")]
         [SerializeField] private TMP_Text playerNameText;
         [SerializeField] private TMP_Text enemyNameText;
         [SerializeField] private TMP_Text playerHpText;
         [SerializeField] private TMP_Text enemyHpText;
         [SerializeField] private TMP_Text logText;
 
-        [Header("¼¼ÄÜ°´Å¥(×î¶à4¸ö)")]
-        [SerializeField] private Button[] skillButtons;      // °´Ë³ĞòÍÏ4¸ö°´Å¥
-        [SerializeField] private TMP_Text[] skillBtnTexts;   // Ã¿¸ö°´Å¥ÉÏµÄÎÄ×Ö£¨Í¬Ë³Ğò£©
+        [Header("æŠ€èƒ½æŒ‰é’®(æœ€å¤š4ä¸ª)")]
+        [SerializeField] private Button[] skillButtons;      // æŒ‰é¡ºåºæ‹–4ä¸ªæŒ‰é’®
+        [SerializeField] private TMP_Text[] skillBtnTexts;   // æ¯ä¸ªæŒ‰é’®ä¸Šçš„æ–‡å­—ï¼ˆåŒé¡ºåºï¼‰
 
         private MonsterRuntime _player;
         private MonsterRuntime _enemy;
@@ -57,26 +57,26 @@ namespace Pokemon.Presentation
             BuildPlayerSkillList();
             BindSkillButtons();
             RefreshHpUI();
-            SetLog("Õ½¶·¿ªÊ¼£¡ÇëÑ¡Ôñ¼¼ÄÜ¡£");
+            SetLog("æˆ˜æ–—å¼€å§‹ï¼è¯·é€‰æ‹©æŠ€èƒ½ã€‚");
         }
 
         private bool ValidateRefs()
         {
             if (playerSpecies == null || enemySpecies == null)
             {
-                Debug.LogError("[BattleUIController] playerSpecies/enemySpecies Î´°ó¶¨¡£");
+                Debug.LogError("[BattleUIController] playerSpecies/enemySpecies æœªç»‘å®šã€‚");
                 return false;
             }
 
             if (skillButtons == null || skillBtnTexts == null || skillButtons.Length == 0)
             {
-                Debug.LogError("[BattleUIController] Çë°ó¶¨¼¼ÄÜ°´Å¥ºÍ°´Å¥ÎÄ×Ö¡£");
+                Debug.LogError("[BattleUIController] è¯·ç»‘å®šæŠ€èƒ½æŒ‰é’®å’ŒæŒ‰é’®æ–‡å­—ã€‚");
                 return false;
             }
 
             if (skillButtons.Length != skillBtnTexts.Length)
             {
-                Debug.LogError("[BattleUIController] skillButtons Óë skillBtnTexts ÊıÁ¿ĞèÒ»ÖÂ¡£");
+                Debug.LogError("[BattleUIController] skillButtons ä¸ skillBtnTexts æ•°é‡éœ€ä¸€è‡´ã€‚");
                 return false;
             }
 
@@ -95,8 +95,8 @@ namespace Pokemon.Presentation
         }
 
         /// <summary>
-        /// ¼¼ÄÜ°´Å¥°ó¶¨£¬¶¯Ì¬¼¤»î/½ûÓÃ°´Å¥£ºÓĞ¼¼ÄÜµÄ°´Å¥ÏÔÊ¾£¬¶àÓàµÄÒş²Ø
-        /// ¹Ø¼ü¼¼ÇÉ£ºint idx = i½â¾öÑ­»·±äÁ¿±Õ°üÎÊÌâ£¿
+        /// æŠ€èƒ½æŒ‰é’®ç»‘å®šï¼ŒåŠ¨æ€æ¿€æ´»/ç¦ç”¨æŒ‰é’®ï¼šæœ‰æŠ€èƒ½çš„æŒ‰é’®æ˜¾ç¤ºï¼Œå¤šä½™çš„éšè—
+        /// å…³é”®æŠ€å·§ï¼šint idx = iè§£å†³å¾ªç¯å˜é‡é—­åŒ…é—®é¢˜ï¼Ÿ
         /// </summary>
         private void BindSkillButtons()
         {
@@ -109,7 +109,7 @@ namespace Pokemon.Presentation
                 {
                     SkillData skill = _playerSkills[i];
                     skillButtons[i].gameObject.SetActive(true);
-                    skillButtons[i].interactable = true;        //ÉèÖÃ°´Å¥Îª¿É½»»¥
+                    skillButtons[i].interactable = true;        //è®¾ç½®æŒ‰é’®ä¸ºå¯äº¤äº’
                     skillBtnTexts[i].text = skill.DisplayName;
 
                     skillButtons[i].onClick.AddListener(() => OnClickPlayerSkill(idx));
@@ -131,7 +131,7 @@ namespace Pokemon.Presentation
 
             if (enemySkill == null)
             {
-                EndBattle(playerWon: true, "µĞÈËPPºÄ¾¡£¬ÎŞ·¨ĞĞ¶¯¡£ÄãÓ®ÁË£¡");
+                EndBattle(playerWon: true, "æ•ŒäººPPè€—å°½ï¼Œæ— æ³•è¡ŒåŠ¨ã€‚ä½ èµ¢äº†ï¼");
                 return;
             }
 
@@ -139,9 +139,9 @@ namespace Pokemon.Presentation
 
             string log = "";
             if (result.PlayerActed)
-                log += $"ÎÒ·½Ê¹ÓÃ {playerSkill.DisplayName}£º{(result.PlayerHit ? "ÃüÖĞ" : "Î´ÃüÖĞ")} ÉËº¦ {result.DamageToEnemy}\n";
+                log += $"æˆ‘æ–¹ä½¿ç”¨ {playerSkill.DisplayName}ï¼š{(result.PlayerHit ? "å‘½ä¸­" : "æœªå‘½ä¸­")} ä¼¤å®³ {result.DamageToEnemy}\n";
             if (result.EnemyActed)
-                log += $"µĞ·½Ê¹ÓÃ {enemySkill.DisplayName}£º{(result.EnemyHit ? "ÃüÖĞ" : "Î´ÃüÖĞ")} ÉËº¦ {result.DamageToPlayer}\n";
+                log += $"æ•Œæ–¹ä½¿ç”¨ {enemySkill.DisplayName}ï¼š{(result.EnemyHit ? "å‘½ä¸­" : "æœªå‘½ä¸­")} ä¼¤å®³ {result.DamageToPlayer}\n";
 
             RefreshHpUI();
             RefreshSkillButtonState();
@@ -149,7 +149,7 @@ namespace Pokemon.Presentation
 
             if (result.BattleEnded)
             {
-                EndBattle(result.PlayerWon, result.PlayerWon ? "Õ½¶·½áÊø£¬ÄãÓ®ÁË£¡" : "Õ½¶·½áÊø£¬ÄãÊäÁË£¡");
+                EndBattle(result.PlayerWon, result.PlayerWon ? "æˆ˜æ–—ç»“æŸï¼Œä½ èµ¢äº†ï¼" : "æˆ˜æ–—ç»“æŸï¼Œä½ è¾“äº†ï¼");
             }
         }
 

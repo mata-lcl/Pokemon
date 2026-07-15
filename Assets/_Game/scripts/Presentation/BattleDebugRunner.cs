@@ -24,7 +24,7 @@ namespace Pokemon.Presentation
         {
             if (playerSpecies == null || enemySpecies == null)
             {
-                Debug.LogError("[BattleDebugRunner] ÇëÏÈÔÚ Inspector °ó¶¨ playerSpecies / enemySpecies¡£");
+                Debug.LogError("[BattleDebugRunner] è¯·å…ˆåœ¨ Inspector ç»‘å®š playerSpecies / enemySpeciesã€‚");
                 enabled = false;
                 return;
             }
@@ -38,7 +38,7 @@ namespace Pokemon.Presentation
             Debug.Log("=== Battle Start ===");
             Debug.Log($"Player: {_player.Species.DisplayName} HP={_player.CurrentHP} SPD={_player.Speed}");
             Debug.Log($"Enemy : {_enemy.Species.DisplayName} HP={_enemy.CurrentHP} SPD={_enemy.Speed}");
-            Debug.Log("°´ Space Ö´ÐÐÒ»»ØºÏ¡£");
+            Debug.Log("æŒ‰ Space æ‰§è¡Œä¸€å›žåˆã€‚");
         }
 
         private void Update()
@@ -58,34 +58,34 @@ namespace Pokemon.Presentation
 
             if (playerSkill == null)
             {
-                Debug.LogWarning("Íæ¼ÒÎÞ¿ÉÓÃ¼¼ÄÜ£¨PPºÄ¾¡£©");
+                Debug.LogWarning("çŽ©å®¶æ— å¯ç”¨æŠ€èƒ½ï¼ˆPPè€—å°½ï¼‰");
                 _battleEnded = true;
                 return;
             }
 
             if (enemySkill == null)
             {
-                Debug.LogWarning("µÐÈËÎÞ¿ÉÓÃ¼¼ÄÜ£¨PPºÄ¾¡£©");
+                Debug.LogWarning("æ•Œäººæ— å¯ç”¨æŠ€èƒ½ï¼ˆPPè€—å°½ï¼‰");
                 _battleEnded = true;
                 return;
             }
 
             bool playerFirst = _player.Speed >= _enemy.Speed;
-            Debug.Log($"\n--- Turn --- ÏÈÊÖ: {(playerFirst ? "Player" : "Enemy")}");
+            Debug.Log($"\n--- Turn --- å…ˆæ‰‹: {(playerFirst ? "Player" : "Enemy")}");
 
             var result = _executeTurnUseCase.Execute(_player, playerSkill, _enemy, enemySkill);
 
             if (result.PlayerActed)
             {
-                Debug.Log($"{_player.Species.DisplayName} Ê¹ÓÃ {playerSkill.DisplayName} -> {(result.PlayerHit ? "ÃüÖÐ" : "Î´ÃüÖÐ")} ÉËº¦: {result.DamageToEnemy}");
+                Debug.Log($"{_player.Species.DisplayName} ä½¿ç”¨ {playerSkill.DisplayName} -> {(result.PlayerHit ? "å‘½ä¸­" : "æœªå‘½ä¸­")} ä¼¤å®³: {result.DamageToEnemy}");
             }
 
             if (result.EnemyActed)
             {
-                Debug.Log($"{_enemy.Species.DisplayName} Ê¹ÓÃ {enemySkill.DisplayName} -> {(result.EnemyHit ? "ÃüÖÐ" : "Î´ÃüÖÐ")} ÉËº¦: {result.DamageToPlayer}");
+                Debug.Log($"{_enemy.Species.DisplayName} ä½¿ç”¨ {enemySkill.DisplayName} -> {(result.EnemyHit ? "å‘½ä¸­" : "æœªå‘½ä¸­")} ä¼¤å®³: {result.DamageToPlayer}");
             }
 
-            Debug.Log($"µ±Ç°HP => {_player.Species.DisplayName}:{_player.CurrentHP} | {_enemy.Species.DisplayName}:{_enemy.CurrentHP}");
+            Debug.Log($"å½“å‰HP => {_player.Species.DisplayName}:{_player.CurrentHP} | {_enemy.Species.DisplayName}:{_enemy.CurrentHP}");
 
             if (result.BattleEnded)
             {

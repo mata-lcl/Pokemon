@@ -7,7 +7,7 @@ namespace Pokemon.Presentation
 {
     public class BattleCoordinator_Old : MonoBehaviour
     {
-        [Header("Êı¾İ")]
+        [Header("æ•°æ®")]
         [SerializeField] private PokemonSpeciesData playerSpecies;
         [SerializeField] private PokemonSpeciesData enemySpecies;
         [SerializeField] private TypeChartData typeChart;
@@ -25,7 +25,7 @@ namespace Pokemon.Presentation
         {
             if (uiController == null)
             {
-                Debug.LogError("[BattleCoordinator] UI Controller Î´°ó¶¨£¡");
+                Debug.LogError("[BattleCoordinator] UI Controller æœªç»‘å®šï¼");
                 return;
             }
 
@@ -33,7 +33,7 @@ namespace Pokemon.Presentation
         }
 
         /// <summary>
-        /// ³õÊ¼»¯Õ½¶·
+        /// åˆå§‹åŒ–æˆ˜æ–—
         /// </summary>
         private void InitBattle()
         {
@@ -42,21 +42,21 @@ namespace Pokemon.Presentation
 
             _turnUseCase = new ExecuteTurnUseCase_Old(new DamageCalculator(typeChart));
 
-            // ÌáÈ¡Íæ¼Ò¼¼ÄÜÁĞ±í£¨¹Ì¶¨Ë³Ğò£©
+            // æå–ç©å®¶æŠ€èƒ½åˆ—è¡¨ï¼ˆå›ºå®šé¡ºåºï¼‰
             _playerSkills = new List<SkillData>();
             foreach (var skill in _player.CurrentPP.Keys)
             {
                 if (skill != null) _playerSkills.Add(skill);
             }
 
-            // ¼àÌıUIµã»÷ÊÂ¼ş
+            // ç›‘å¬UIç‚¹å‡»äº‹ä»¶
             uiController.OnSkillClicked += HandlePlayerAction;
 
-            // ³õÊ¼»¯UI±íÏÖ
+            // åˆå§‹åŒ–UIè¡¨ç°
             uiController.SetupNames(_player.Species.DisplayName, _enemy.Species.DisplayName);
             uiController.UpdateHp(_player.CurrentHP, _player.Species.BaseHP, _enemy.CurrentHP, _enemy.Species.BaseHP);
             uiController.RefreshSkills(_playerSkills, _player.CurrentPP);
-            uiController.SetLog("Õ½¶·¿ªÊ¼£¡ÇëÑ¡Ôñ¼¼ÄÜ¡£");
+            uiController.SetLog("æˆ˜æ–—å¼€å§‹ï¼è¯·é€‰æ‹©æŠ€èƒ½ã€‚");
         }
 
         private void OnDestroy()
@@ -77,35 +77,35 @@ namespace Pokemon.Presentation
 
             if (enemySkill == null)
             {
-                EndBattle("µĞÈËPPºÄ¾¡£¬ÎŞ·¨ĞĞ¶¯¡£ÄãÓ®ÁË£¡");
+                EndBattle("æ•ŒäººPPè€—å°½ï¼Œæ— æ³•è¡ŒåŠ¨ã€‚ä½ èµ¢äº†ï¼");
                 return;
             }
 
-            // Ëø¶¨UI£¬·ÀÖ¹Á¬µã£¨ÕâÔÚºóĞø¼Ó¶¯»­Ê±¼«ÆäÖØÒª£©
+            // é”å®šUIï¼Œé˜²æ­¢è¿ç‚¹ï¼ˆè¿™åœ¨åç»­åŠ åŠ¨ç”»æ—¶æå…¶é‡è¦ï¼‰
             uiController.SetInteractable(false);
 
-            // Ö´ĞĞºËĞÄ»ØºÏÂß¼­
+            // æ‰§è¡Œæ ¸å¿ƒå›åˆé€»è¾‘
             var result = _turnUseCase.Execute(_player, playerSkill, _enemy, enemySkill);
 
-            // ¹¹½¨Õ½±¨ÈÕÖ¾
+            // æ„å»ºæˆ˜æŠ¥æ—¥å¿—
             string log = "";
             if (result.PlayerActed)
-                log += $"{_player.Species.DisplayName}Ê¹ÓÃ {playerSkill.DisplayName}£º{(result.PlayerHit ? "ÃüÖĞ" : "Î´ÃüÖĞ")} ÉËº¦ {result.DamageToEnemy}\n";
+                log += $"{_player.Species.DisplayName}ä½¿ç”¨ {playerSkill.DisplayName}ï¼š{(result.PlayerHit ? "å‘½ä¸­" : "æœªå‘½ä¸­")} ä¼¤å®³ {result.DamageToEnemy}\n";
             if (result.EnemyActed)
-                log += $"{_enemy.Species.DisplayName}Ê¹ÓÃ {enemySkill.DisplayName}£º{(result.EnemyHit ? "ÃüÖĞ" : "Î´ÃüÖĞ")} ÉËº¦ {result.DamageToPlayer}\n";
+                log += $"{_enemy.Species.DisplayName}ä½¿ç”¨ {enemySkill.DisplayName}ï¼š{(result.EnemyHit ? "å‘½ä¸­" : "æœªå‘½ä¸­")} ä¼¤å®³ {result.DamageToPlayer}\n";
 
-            // ¸üĞÂUI
+            // æ›´æ–°UI
             uiController.UpdateHp(_player.CurrentHP, _player.Species.BaseHP, _enemy.CurrentHP, _enemy.Species.BaseHP);
             uiController.RefreshSkills(_playerSkills, _player.CurrentPP);
             uiController.SetLog(log.TrimEnd());
 
             if (result.BattleEnded)
             {
-                EndBattle(result.PlayerWon ? "Õ½¶·½áÊø£¬ÄãÓ®ÁË£¡" : "Õ½¶·½áÊø£¬ÄãÊäÁË£¡");
+                EndBattle(result.PlayerWon ? "æˆ˜æ–—ç»“æŸï¼Œä½ èµ¢äº†ï¼" : "æˆ˜æ–—ç»“æŸï¼Œä½ è¾“äº†ï¼");
             }
             else
             {
-                // Õ½¶·Ã»½áÊø£¬Ë¢ĞÂ¼¼ÄÜ×´Ì¬²¢½âËøUI
+                // æˆ˜æ–—æ²¡ç»“æŸï¼Œåˆ·æ–°æŠ€èƒ½çŠ¶æ€å¹¶è§£é”UI
                 uiController.RefreshSkills(_playerSkills, _player.CurrentPP);
             }
         }

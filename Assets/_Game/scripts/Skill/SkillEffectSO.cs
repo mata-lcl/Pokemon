@@ -3,10 +3,10 @@ using UnityEngine;
 
 namespace Pokemon.Domain
 {
-    // ³éÏó»ùÀà£ºËùÓĞ¾ßÌå¼¼ÄÜĞ§¹û£¨ÉËº¦¡¢»ØÑª¡¢ÉÏ¶¾£©¶¼Òª¼Ì³ĞËü
+    // æŠ½è±¡åŸºç±»ï¼šæ‰€æœ‰å…·ä½“æŠ€èƒ½æ•ˆæœï¼ˆä¼¤å®³ã€å›è¡€ã€ä¸Šæ¯’ï¼‰éƒ½è¦ç»§æ‰¿å®ƒ
     public abstract class SkillEffectSO : ScriptableObject, ISkillEffect
     {
-        // abstract Ç¿ÖÆ×ÓÀà±ØĞëÊµÏÖÕâÁ½¸ö·½·¨
+        // abstract å¼ºåˆ¶å­ç±»å¿…é¡»å®ç°è¿™ä¸¤ä¸ªæ–¹æ³•
         public abstract bool CanProcess(EffectContext context);
         public abstract void Execute(EffectContext context);
     }

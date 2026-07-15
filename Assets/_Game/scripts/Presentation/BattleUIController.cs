@@ -9,73 +9,80 @@ namespace Pokemon.Presentation
 {
     public class BattleUIController : MonoBehaviour
     {
-        // --- ĞÂÔö£ºÃæ°åÒıÓÃ ---
-        [Header("²Ëµ¥¿ØÖÆ")]
-        [SerializeField] private GameObject mainActionPanel; // °üº¬ 4 ¸öÖ÷°´Å¥µÄ¸¸ÎïÌå
-        [SerializeField] private GameObject skillPanel;      // °üº¬¼¼ÄÜ°´Å¥µÄ¸¸ÎïÌå
-        [SerializeField] private GameObject itemPanel;       // °üº¬µÀ¾ßÁĞ±íµÄ¸¸ÎïÌå
+        // --- é¢æ¿å¼•ç”¨ ---
+        [Header("èœå•æ§åˆ¶")]
+        [SerializeField] private GameObject mainActionPanel; // åŒ…å«ä¸»æŒ‰é’®çš„çˆ¶ç‰©ä½“
+        [SerializeField] private GameObject skillPanel;      // åŒ…å«æŠ€èƒ½æŒ‰é’®çš„çˆ¶ç‰©ä½“
+        [SerializeField] private GameObject itemPanel;       // åŒ…å«é“å…·åˆ—è¡¨çš„çˆ¶ç‰©ä½“
 
-        [Header("Ö÷²Ëµ¥°´Å¥")]
-        [SerializeField] private Button fightBtn;    // Õ½¶·°´Å¥
-        [SerializeField] private Button bagBtn;      // µÀ¾ß°´Å¥
-        [SerializeField] private Button runBtn;      // ÌÓ×ß°´Å¥
-        [SerializeField] private Button skillBackBtn; // ¼¼ÄÜÒ³ÃæµÄ¡°·µ»Ø¡±°´Å¥
-        [SerializeField] private Button BagBackBtn;  // µÀ¾ßÒ³ÃæµÄ¡°·µ»Ø¡±°´Å¥
+        [Header("ä¸»èœå•æŒ‰é’®")]
+        [SerializeField] private Button fightBtn;    // æˆ˜æ–—æŒ‰é’®
+        [SerializeField] private Button bagBtn;      // é“å…·æŒ‰é’®
+        [SerializeField] private Button runBtn;      // é€ƒèµ°æŒ‰é’®
+        [SerializeField] private Button skillBackBtn; // æŠ€èƒ½é¡µé¢çš„"è¿”å›"æŒ‰é’®
+        [SerializeField] private Button BagBackBtn;  // é“å…·é¡µé¢çš„"è¿”å›"æŒ‰é’®
 
-        // --- Ô­ÓĞ²ÛÎ»±£Áô ---
-        [Header("UIÎÄ±¾")]
+        // --- UIæ–‡æœ¬ ---
+        [Header("UIæ–‡æœ¬")]
         [SerializeField] private TMP_Text playerNameText;
         [SerializeField] private TMP_Text enemyNameText;
         [SerializeField] private TMP_Text playerHpText;
         [SerializeField] private TMP_Text enemyHpText;
         [SerializeField] private TMP_Text logText;
 
-        [Header("UI¼¼ÄÜ°´Å¥")]
+        [Header("UIæŠ€èƒ½æŒ‰é’®")]
         [SerializeField] private Button[] skillButtons;
         [SerializeField] private TMP_Text[] skillBtnTexts;
 
-        // --- ÊÂ¼ş ---
+        [Header("UIé“å…·æŒ‰é’®")]
+        [SerializeField] private Button[] itemButtons;
+        [SerializeField] private TMP_Text[] itemBtnTexts;
+
+        // --- äº‹ä»¶ ---
         public event Action<int> OnSkillClicked;
         public event Action<ItemData> OnItemClicked;
-        public event Action OnRunClicked; // ĞÂÔö£ºÌÓÅÜµã»÷ÊÂ¼ş
+        public event Action OnRunClicked;
 
-        /// <summary>
-        /// ÏòÍâ±©Â¶Íæ¼Òµã»÷ÊÂ¼ş
-        /// ºËĞÄÉè¼Æ£º¹«¿ªÒ»¸öÊÂ¼ş£¬½«ÓÃ»§ÊäÈë×ª·¢¸øÍâ²¿
-        /// ÊµÏÖÁË¹Û²ìÕßÄ£Ê½(Observer Pattern)£¬UI²»´¦ÀíÒµÎñÂß¼­
-        /// </summary>
+        private List<ItemData> _cachedItems;
 
         private void Awake()
         {
-            // --- ºËĞÄÂß¼­ĞŞ¸Ä ---
-
-            // 1. Ö÷²Ëµ¥µã»÷£ºÇĞ»»µ½¼¼ÄÜÃæ°å
+            // ä¸»èœå•ï¼šåˆ‡æ¢åˆ°æŠ€èƒ½é¢æ¿
             fightBtn.onClick.AddListener(() => ShowSubPanel(skillPanel));
 
-            // 2. Ö÷²Ëµ¥µã»÷£º½øÈë±³°ü£¨¿ÉÒÔÔÚÕâÀïµ÷ÓÃË¢ĞÂ±³°üÁĞ±íµÄ·½·¨£©
+            // ä¸»èœå•ï¼šè¿›å…¥é“å…·é¢æ¿
             bagBtn.onClick.AddListener(() => {
-                //RefreshItemList(); //TODO
+                RefreshItemList();
                 ShowSubPanel(itemPanel);
             });
 
-            // 3. ·µ»Ø°´Å¥£º´Ó¼¼ÄÜ/µÀ¾ßÒ³Ãæ»Øµ½Ö÷²Ëµ¥
+            // è¿”å›æŒ‰é’®
             skillBackBtn.onClick.AddListener(() => ShowSubPanel(mainActionPanel));
-
             BagBackBtn.onClick.AddListener(() => ShowSubPanel(mainActionPanel));
 
-            // 4. ÌÓÅÜ
+            // é€ƒè·‘
             runBtn.onClick.AddListener(() => OnRunClicked?.Invoke());
 
-            // 5. ±£ÁôÔ­ÓĞ¼¼ÄÜ°´Å¥³õÊ¼»¯£¨Ë÷Òı×ª·¢£©
+            // æŠ€èƒ½æŒ‰é’®ç»‘å®š
             for (int i = 0; i < skillButtons.Length; i++)
             {
                 int index = i;
                 skillButtons[i].onClick.AddListener(() => OnSkillClicked?.Invoke(index));
             }
+
+            // é“å…·æŒ‰é’®ç»‘å®š
+            for (int i = 0; i < itemButtons.Length; i++)
+            {
+                int index = i;
+                itemButtons[i].onClick.AddListener(() => {
+                    if (index < _cachedItems.Count)
+                        ItemButtonCallback(_cachedItems[index]);
+                });
+            }
         }
 
         /// <summary>
-        /// ÇĞ»»Ãæ°åµÄÍ¨ÓÃ·½·¨
+        /// åˆ‡æ¢é¢æ¿çš„é€šç”¨æ–¹æ³•
         /// </summary>
         private void ShowSubPanel(GameObject targetPanel)
         {
@@ -85,7 +92,7 @@ namespace Pokemon.Presentation
         }
 
         /// <summary>
-        /// Õ½¶·¿ªÊ¼Ö´ĞĞÊ±£¬Ç¿ÖÆ¹Ø±ÕËùÓĞÃæ°å
+        /// æˆ˜æ–—å¼€å§‹æ—¶ï¼Œå¼ºåˆ¶å…³é—­æ‰€æœ‰é¢æ¿
         /// </summary>
         public void HideAllPanels()
         {
@@ -94,22 +101,47 @@ namespace Pokemon.Presentation
             if (itemPanel != null) itemPanel.SetActive(false);
         }
 
-        // µ±ÄãÏëÈÃÍæ¼ÒÖØĞÂÑ¡ÔñÊ±£¨ÀıÈç»ØºÏ½áÊø£©£¬µ÷ÓÃÕâ¸ö
+        /// <summary>
+        /// é‡ç½®åˆ°ä¸»èœå•é¢æ¿
+        /// </summary>
         public void ResetToMain()
         {
-            // 1. ±ØĞëÏÔÊ¾°üº¬¡°Õ½¶·/µÀ¾ß/ÌÓÅÜ¡±°´Å¥µÄ¸¸ÎïÌå
             mainActionPanel.SetActive(true);
-
-            // 2. Òş²ØÆäËûµÄ×Ó²Ëµ¥Ãæ°å
             skillPanel.SetActive(false);
             itemPanel?.SetActive(false);
         }
-        // ÔÚµÀ¾ß UI °´Å¥µã»÷µÄ´úÂëÂß¼­ÖĞ´¥·¢Ëü
+
+        /// <summary>
+        /// é“å…·æŒ‰é’®ç‚¹å‡»å›è°ƒ
+        /// </summary>
         public void ItemButtonCallback(ItemData item)
         {
             OnItemClicked?.Invoke(item);
         }
 
+        /// <summary>
+        /// åˆ·æ–°é“å…·åˆ—è¡¨ï¼ˆä» PlayerParty.Inventory è¯»å–ï¼‰
+        /// </summary>
+        public void RefreshItemList()
+        {
+            _cachedItems = PlayerParty.GetUsableItems();
+
+            for (int i = 0; i < itemButtons.Length; i++)
+            {
+                if (i < _cachedItems.Count)
+                {
+                    ItemData item = _cachedItems[i];
+                    int count = PlayerParty.Inventory[item];
+                    itemButtons[i].gameObject.SetActive(true);
+                    itemButtons[i].interactable = count > 0;
+                    itemBtnTexts[i].text = $"{item.DisplayName} x{count}";
+                }
+                else
+                {
+                    itemButtons[i].gameObject.SetActive(false);
+                }
+            }
+        }
 
         public void SetupNames(string playerName, string enemyName)
         {
@@ -125,7 +157,7 @@ namespace Pokemon.Presentation
 
         public void SetLog(string message)
         {
-            Debug.Log($"[UI LOG] ÕıÔÚ³¢ÊÔÏÔÊ¾: {message}");
+            Debug.Log($"[UI LOG] æ­£åœ¨å°è¯•æ˜¾ç¤º: {message}");
             logText.text = message;
         }
 
@@ -133,20 +165,19 @@ namespace Pokemon.Presentation
         {
             foreach (var btn in skillButtons)
             {
-                // ½öµ±°´Å¥´¦ÓÚ¼¤»î×´Ì¬Ê±²Å¸Ä±ä½»»¥ĞÔ
                 if (btn.gameObject.activeSelf)
-                {
                     btn.interactable = interactable;
-                }
+            }
+            foreach (var btn in itemButtons)
+            {
+                if (btn.gameObject.activeSelf)
+                    btn.interactable = interactable;
             }
         }
 
         /// <summary>
-        /// ¼¼ÄÜUIË¢ĞÂ£¬±éÀúËùÓĞ¼¼ÄÜ²Û£¬
-        /// ½«ÓĞ¶ÔÓ¦¼¼ÄÜ£º¼¤»î°´Å¥£¬ÉèÖÃ½»»¥ĞÔ£¨PP>0£©£¬¸üĞÂÎÄ±¾
+        /// æŠ€èƒ½UIåˆ·æ–°
         /// </summary>
-        /// <param ÒªÏÔÊ¾µÄ¼¼ÄÜÁĞ±í="skills"></param>
-        /// <param ¼¼ÄÜµ½PPÖµµÄÓ³Éä="ppMap"></param>
         public void RefreshSkills(List<SkillData> skills, IReadOnlyDictionary<SkillData, int> ppMap)
         {
             for (int i = 0; i < skillButtons.Length; i++)

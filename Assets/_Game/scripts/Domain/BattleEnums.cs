@@ -18,18 +18,18 @@ namespace Pokemon.Domain
     public enum StatusCondition
     {
         None = 0,
-        Poison = 1,   // ÖĞ¶¾
-        Burn = 2,     // ×ÆÉË
-        Paralyze = 3, // Âé±Ô (¼õËÙ£¬¸ÅÂÊ²»ÄÜĞĞ¶¯)
-        Sleep = 4,    // Ë¯Ãß (¼¸»ØºÏÄÚ²»ÄÜĞĞ¶¯)
-        Freeze = 5    // ±ù¶³ (²»ÄÜĞĞ¶¯£¬ÊÜ»ğÏµÉËº¦½â³ı)
+        Poison = 1,   // ä¸­æ¯’
+        Burn = 2,     // ç¼ä¼¤
+        Paralyze = 3, // éº»ç—¹ (å‡é€Ÿï¼Œæ¦‚ç‡ä¸èƒ½è¡ŒåŠ¨)
+        Sleep = 4,    // ç¡çœ  (å‡ å›åˆå†…ä¸èƒ½è¡ŒåŠ¨)
+        Freeze = 5    // å†°å†» (ä¸èƒ½è¡ŒåŠ¨ï¼Œå—ç«ç³»ä¼¤å®³è§£é™¤)
     }
 
     public enum SkillCategory
     {
-        Physical, // ÎïÀí¹¥»÷£ºÊÜ¹¥»÷ÕßµÄ¹¥»÷Á¦(Attack)ºÍ·ÀÓùÁ¦(Defense)Ó°Ïì
-        Special,  // ÌØÊâ¹¥»÷£ºÊÜ¹¥»÷ÕßµÄÌØ¹¥(SpAtk)ºÍÌØ·À(SpDef)Ó°Ïì
-        Status    // ±ä»¯/×´Ì¬¼¼ÄÜ£º²»Ö±½ÓÔì³ÉÉËº¦£¬¶øÊÇ¸Ä±äÊôĞÔ¡¢×´Ì¬»òÌìÆø
+        Physical, // ç‰©ç†æ”»å‡»ï¼šå—æ”»å‡»è€…çš„æ”»å‡»åŠ›(Attack)å’Œé˜²å¾¡åŠ›(Defense)å½±å“
+        Special,  // ç‰¹æ®Šæ”»å‡»ï¼šå—æ”»å‡»è€…çš„ç‰¹æ”»(SpAtk)å’Œç‰¹é˜²(SpDef)å½±å“
+        Status    // å˜åŒ–/çŠ¶æ€æŠ€èƒ½ï¼šä¸ç›´æ¥é€ æˆä¼¤å®³ï¼Œè€Œæ˜¯æ”¹å˜å±æ€§ã€çŠ¶æ€æˆ–å¤©æ°”
     }
 
     public enum StepAnimType
@@ -43,8 +43,8 @@ namespace Pokemon.Domain
 
     public enum ItemType
     {
-        HealHP,    // »Ø¸´HP
-        HealPP,    // »Ø¸´PP (Î´À´À©Õ¹)
-        Pokeball   // ¾«ÁéÇò (Î´À´À©Õ¹)
+        HealHP,    // å›å¤HP
+        HealPP,    // å›å¤PP (æœªæ¥æ‰©å±•)
+        Pokeball   // ç²¾çµçƒ (æœªæ¥æ‰©å±•)
     }
 }

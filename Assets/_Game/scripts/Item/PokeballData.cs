@@ -1,3 +1,5 @@
+using Pokemon.Application;
+using Pokemon.Domain;
 using UnityEngine;
 
 namespace Pokemon.Domain
@@ -5,26 +7,46 @@ namespace Pokemon.Domain
     [CreateAssetMenu(fileName = "Pokeball_", menuName = "Pokemon/Item/Pokeball")]
     public class PokeballData : ItemData, IUsable
     {
-        //×¥²¶ÂÊĞŞÕıÖµ£¬Ä¬ÈÏÎª1.0f£¬±íÊ¾²»ĞŞ¸Ä×¥²¶ÂÊ
+        [Tooltip("æ•è·ç‡ä¿®æ­£å€ç‡ï¼Œé»˜è®¤1.0ä¸ä¿®æ”¹")]
         public float CatchRateModifier = 1.0f;
-        //ÊÇ·ñÏûºÄÆ·£¬Ä¬ÈÏÎªtrue£¬±íÊ¾Ê¹ÓÃºó»áÏûºÄµôÒ»¸öµÀ¾ß
+        //æ˜¯å¦æ¶ˆè€—å“ï¼Œé»˜è®¤ä¸ºtrueï¼Œè¡¨ç¤ºä½¿ç”¨åä¼šæ¶ˆè€—æ‰ä¸€ä¸ªé“å…·
         public bool IsConsumable => true;
 
         public bool CanUse(EffectContext context)
         {
-            return true;// Ö»ÒªÊÇÒ°ÍâÕ½¶·¾ÍÄÜÓÃ
+            return true;// åªè¦æ˜¯é‡å¤–æˆ˜æ–—å°±èƒ½ç”¨
         }
 
         public void OnUse(EffectContext context)
         {
-            // ²¶×½¼ÆËãÂß¼­
-            float chance = (3f * context.Target.MaxHP - 2f * context.Target.CurrentHP) / (3f * context.Target.MaxHP);
-            bool success = Random.value < (chance * CatchRateModifier * 0.3f);
+            int catchRate = context.Target.Species.CatchRate;
+            float statusBonus = 1f; // æœªæ¥å¯æ‰©å±•ï¼šä¸­æ¯’/éº»ç—¹/å†°å†»å¢åŠ æ•è·ç‡
 
-            context.Steps.Add(new Application.TurnStep
+            // æ•è·ç‡å…¬å¼ï¼š(1 - 2*å½“å‰HP/3*æœ€å¤§HP) * ç§æ—æ•è·ç‡ * çƒä¿®æ­£ / 255
+            float hpFactor = (3f * context.Target.MaxHP - 2f * context.Target.CurrentHP) / (3f * context.Target.MaxHP);
+            float chance = hpFactor * catchRate * CatchRateModifier * statusBonus / 255f;
+            chance = Mathf.Clamp01(chance);
+
+            bool success = Random.value < chance;
+
+            if (success)
             {
-                Message = success ? $"³É¹¦²¶×½ÁË {context.Target.Species.DisplayName}£¡" : "°¥Ñ½£¬Ã»×¥µ½£¡"
-            });
+                // æ•æ‰æˆåŠŸï¼šç»“æŸæˆ˜æ–—
+                context.Steps.Add(new TurnStep
+                {
+                    Message = $"æˆåŠŸæ•æ‰äº† {context.Target.Species.DisplayName}ï¼",
+                    PlayerHpAfter = context.PlayerRef.CurrentHP,
+                    EnemyHpAfter = context.EnemyRef.CurrentHP,
+                    IsBattleEnd = true,
+                    CaughtSuccess = true,
+                    AnimType = StepAnimType.None
+                });
+            }
+            else
+            {
+                // æ•æ‰å¤±è´¥ï¼šæˆ˜æ–—ç»§ç»­
+                context.AddStep($"å“å‘€ï¼Œ{context.Target.Species.DisplayName} æŒ£è„±äº†ï¼");
+            }
         }
     }
 }

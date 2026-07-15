@@ -9,62 +9,96 @@ namespace Pokemon.Domain
     public class EffectConfig
     {
         public SkillEffectSO Effect;
-        [Range(0f, 1f)] public float Chance = 1f; // ´¥·¢¼¸ÂÊ
+        [Range(0f, 1f)] public float Chance = 1f; // è§¦å‘å‡ ç‡
     }
 
     [CreateAssetMenu(fileName = "Skill_", menuName = "Pokemon/Skill Data")]
     public class SkillData : ScriptableObject
     {
-        [Tooltip("¼¼ÄÜÎ¨Ò»±êÊ¶´úÂë")]
+        [Tooltip("æŠ€èƒ½å”¯ä¸€æ ‡è¯†ä»£ç ")]
         public string Id;
 
-        [Tooltip("ÓÎÏ·ÄÚÏÔÊ¾Ãû³Æ")]
+        [Tooltip("æ¸¸æˆå†…æ˜¾ç¤ºåç§°")]
         public string DisplayName;
 
-        [Tooltip("ÊôĞÔ£¨»ğ¡¢Ë®¡¢²İµÈ£©")]
+        [Tooltip("å±æ€§ï¼ˆç«ã€æ°´ã€è‰ç­‰ï¼‰")]
         public PokemonType Type;
 
-        [Tooltip("·ÖÀà£¨ÎïÀí¡¢ÌØÊâ¡¢±ä»¯£©")]
+        [Tooltip("åˆ†ç±»ï¼ˆç‰©ç†ã€ç‰¹æ®Šã€å˜åŒ–ï¼‰")]
         public SkillCategory Category;
 
-        [Tooltip("¼¼ÄÜµÄÍşÁ¦£¨²ÎÓëÉËº¦¼ÆËã£©")]
+        [Tooltip("æŠ€èƒ½çš„å¨åŠ›ï¼ˆå‚ä¸ä¼¤å®³è®¡ç®—ï¼‰")]
         public int Power;
 
-        [Tooltip("¼¼ÄÜµÄÃüÖĞÂÊ£¬0-1")]
+        [Tooltip("æŠ€èƒ½çš„å‘½ä¸­ç‡ï¼Œ0-1")]
         [Range(0f, 1f)]
         public float Accuracy;
 
-        [Tooltip("¼¼ÄÜ×î´óPPÖµ")]
+        [Tooltip("æŠ€èƒ½æœ€å¤§PPå€¼")]
         [Range(1, 100)]
         public int MaxPP;
 
-        // ---------- Ä£¿é»¯×éºÏÅäÖÃ ----------
+        // ---------- æ•ˆæœé…ç½®ï¼ˆç»Ÿä¸€å…¥å£ï¼‰ ----------
 
-        [Header("¸ÅÂÊĞ§¹ûÁĞ±í£¨¿ÉÉè´¥·¢¼¸ÂÊ£©")]
+        [Header("æ•ˆæœé…ç½®åˆ—è¡¨ï¼ˆå¯è®¾è§¦å‘å‡ ç‡,é»˜è®¤1.0=å¿…å®šè§¦å‘ï¼‰")]
         [SerializeField]
         private List<EffectConfig> effectConfigs = new List<EffectConfig>();
 
-        [Header("¼¼ÄÜĞ§¹ûÁĞ±í£¨ÍÏ×§Ä£°å×ÊÔ´µ½ÕâÀï£©")]
-        [Tooltip("ÏµÍ³»á´ÓÉÏµ½ÏÂÒÀ´ÎÖ´ĞĞÕâÀïµÄĞ§¹û")]
+        [Obsolete("Legacy field, kept for asset backward compatibility. Use effectConfigs instead.")]
+        [HideInInspector]
         public List<SkillEffectSO> Effects = new List<SkillEffectSO>();
 
-        // Íâ²¿»ñÈ¡Êµ¼Ê¼¼ÄÜĞ§¹û½Ó¿Ú
-        public List<ISkillEffect> GetEffects()
+        /// <summary>
+        /// è·å–æœ¬å›åˆå®é™…è§¦å‘çš„æ•ˆæœï¼ˆå·²åšæ¦‚ç‡ç­›é€‰ï¼‰
+        /// æ—§èµ„äº§ï¼ˆEffects éç©ºï¼‰ï¼šå…¨éƒ¨è§¦å‘ï¼Œå¿½ç•¥ effectConfigs
+        /// å·²è¿ç§»èµ„äº§ï¼ˆEffects ä¸ºç©ºï¼‰ï¼šæŒ‰ effectConfigs çš„ Chance æ¦‚ç‡è§¦å‘
+        /// </summary>
+        public IEnumerable<ISkillEffect> GetEffects()
         {
-            return new List<ISkillEffect>(Effects);
-        }
-
-        // ·µ»Ø±¾»ØºÏÊµ¼Ê´¥·¢µÄĞ§¹û£¨ÒÑ×ö¸ÅÂÊÉ¸Ñ¡£©
-        public IEnumerable<SkillEffectSO> GetEffectConfigs()
-        {
-            foreach (var config in effectConfigs)
+            if (Effects.Count > 0)
             {
-                if (config.Effect != null && Random.value <= config.Chance)
+                // æ—§èµ„äº§å›é€€ï¼šæ‰€æœ‰æ•ˆæœå¿…å®šè§¦å‘
+#pragma warning disable CS0612
+                foreach (var effect in Effects)
+                    if (effect != null)
+                        yield return effect;
+#pragma warning restore CS0612
+            }
+            else
+            {
+                // å·²è¿ç§»ï¼šæŒ‰æ¦‚ç‡è§¦å‘
+                foreach (var config in effectConfigs)
                 {
-                    //Debug.Log($"¼¼ÄÜ {DisplayName} ´¥·¢ÁËĞ§¹û {config.Effect.name} (¸ÅÂÊ {config.Chance * 100}%)");
-                    yield return config.Effect;
+                    if (config.Effect != null && Random.value <= config.Chance)
+                        yield return config.Effect;
                 }
             }
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Editor-only: å°† Effects è¿ç§»åˆ° effectConfigsï¼ˆChance=1.0ï¼‰ã€‚
+        /// åœ¨ Inspector ä¸­å³é”®æŠ€èƒ½èµ„äº§å³å¯ä½¿ç”¨ã€‚
+        /// </summary>
+        [ContextMenu("Migrate Effects â†’ EffectConfigs")]
+        public void MigrateEffectsToConfigs()
+        {
+            if (Effects.Count == 0)
+            {
+                Debug.Log($"[{DisplayName}] æ²¡æœ‰éœ€è¦è¿ç§»çš„æ—§ç‰ˆ Effectsã€‚");
+                return;
+            }
+
+            foreach (var effect in Effects)
+            {
+                if (effect != null && effectConfigs.TrueForAll(c => c.Effect != effect))
+                    effectConfigs.Add(new EffectConfig { Effect = effect, Chance = 1f });
+            }
+
+            Effects.Clear();
+            UnityEditor.EditorUtility.SetDirty(this);
+            Debug.Log($"[{DisplayName}] å·²å°† Effects è¿ç§»åˆ° effectConfigsã€‚");
+        }
+#endif
     }
 }

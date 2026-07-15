@@ -2,23 +2,23 @@ using System.Collections.Generic;
 
 namespace Pokemon.Domain
 {
-    // ����ʹ�ýӿڣ����������ս���˵��򱳰��е��ʹ��
+    // 主动使用接口：用于玩家在战斗菜单或背包中点击使用
     public interface IUsable
     {
-        // �����Լ�飺ʹ�óɹ����Ƿ��������
+        // 消耗性检查：使用成功后是否减少数量
         bool IsConsumable { get; }
-        // �߼���飺���������𣿣�����Ѫ��ʱ��������ҩ��
+        // 逻辑检查：现在能用吗？（比如血满时不能用伤药）
         bool CanUse(EffectContext context);
-        // ִ��Ч��
+        // 执行效果
         void OnUse(EffectContext context);
     }
 
-    // Я�������ӿڣ�����ս���߼��е��������ڹ���
+    // 携带触发接口：用于战斗逻辑中的生命周期钩子
     public interface IHeldTrigger
     {
-        // ����ǰ���ӣ����������ӳ�
+        // 攻击前钩子：用于威力加成
         void OnBeforeAttack(EffectContext context);
-        // �غϽ������ӣ�����ÿ�غϻ�Ѫ��
+        // 回合结束钩子：用于每回合回血等
         void OnTurnEnd(MonsterRuntime owner, List<Application.TurnStep> steps);
     }
 }

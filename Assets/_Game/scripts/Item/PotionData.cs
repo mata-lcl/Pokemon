@@ -7,9 +7,9 @@ public class PotionData : ItemData, IUsable
 {
     public int HealAmount = 20;
 
-    public bool IsConsumable => true; // Ò©Ë®ÓÃÍê¾ÍÃ»ÁË
+    public bool IsConsumable => true; // è¯æ°´ç”¨å®Œå°±æ²¡äº†
 
-    // Âß¼­¼ì²é£ºÈç¹ûÑªÂú£¬Ôò²»ÄÜÊ¹ÓÃ
+    // é€»è¾‘æ£€æŸ¥ï¼šå¦‚æœè¡€æ»¡ï¼Œåˆ™ä¸èƒ½ä½¿ç”¨
     public bool CanUse(EffectContext context)
     {
         return context.User.CurrentHP < context.User.MaxHP;
@@ -17,16 +17,16 @@ public class PotionData : ItemData, IUsable
 
     public void OnUse(EffectContext context)
     {
-        // 1. Ö´ĞĞÑªÁ¿»Ö¸´
+        // 1. æ‰§è¡Œè¡€é‡æ¢å¤
         context.User.Heal(HealAmount);
 
-        // 2. Ìí¼Óµ½¶¯»­/ÏûÏ¢¶ÓÁĞÖĞ
+        // 2. æ·»åŠ åˆ°åŠ¨ç”»/æ¶ˆæ¯é˜Ÿåˆ—ä¸­
         context.Steps.Add(new TurnStep
         {
-            Message = $"{context.User.Species.DisplayName} »Ö¸´ÁË {HealAmount} µãÉúÃüÖµ£¡",
-            PlayerHpAfter = context.User.CurrentHP, // ¸üĞÂµ±Ç°ÑªÁ¿µ½ UI
+            Message = $"{context.User.Species.DisplayName} æ¢å¤äº† {HealAmount} ç‚¹ç”Ÿå‘½å€¼ï¼",
+            PlayerHpAfter = context.User.CurrentHP, // æ›´æ–°å½“å‰è¡€é‡åˆ° UI
             EnemyHpAfter = context.Target.CurrentHP,
-            AnimType = StepAnimType.None // »òÕßÌí¼ÓÒ»¸ö»Ö¸´ÌØĞ§µÄÃ¶¾Ù
+            AnimType = StepAnimType.None // æˆ–è€…æ·»åŠ ä¸€ä¸ªæ¢å¤ç‰¹æ•ˆçš„æšä¸¾
         });
     }
 }

@@ -3,7 +3,7 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] private float minMoveDistanceToEnableCollider = 1f; // ĞèÒªÒÆ¶¯µÄ×îĞ¡¾àÀë
+    [SerializeField] private float minMoveDistanceToEnableCollider = 1f; // éœ€è¦ç§»åŠ¨çš„æœ€å°è·ç¦»
     [SerializeField] private LayerMask grassLayer;
     [SerializeField] private LayerMask obstacleLayer;
 
@@ -11,16 +11,16 @@ public class PlayerMovement : MonoBehaviour
     private Vector2 input;
     private bool isMoving;
     private Vector3 targetPosition;
-    private Vector3 positionWhenDisabled; // ½ûÓÃÅö×²Æ÷Ê±µÄÎ»ÖÃ
+    private Vector3 positionWhenDisabled; // ç¦ç”¨ç¢°æ’å™¨æ—¶çš„ä½ç½®
     private Collider2D playerCollider;
     private Vector3 lastPosition;
-    private bool colliderDisabledByBattle = false; // ĞÂÔö±êÖ¾
+    private bool colliderDisabledByBattle = false; // æ–°å¢æ ‡å¿—
 
     public void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         playerCollider = GetComponent<Collider2D>();
-        rb.bodyType = RigidbodyType2D.Kinematic; // È·±£ÊÇ Kinematic
+        rb.bodyType = RigidbodyType2D.Kinematic; // ç¡®ä¿æ˜¯ Kinematic
     }
 
     private void Start()
@@ -66,13 +66,13 @@ public class PlayerMovement : MonoBehaviour
             Vector2 movement = input.normalized * moveSpeed * Time.fixedDeltaTime;
             Vector2 newPosition = rb.position + movement;
 
-            // Ö»¼ì²âÕÏ°­Îï²ã
+            // åªæ£€æµ‹éšœç¢ç‰©å±‚
             RaycastHit2D hit = Physics2D.Raycast(rb.position, input.normalized, movement.magnitude + 0.1f, obstacleLayer);
 
             if (hit.collider != null)
             {
-                //Debug.Log($"¼ì²âµ½ÕÏ°­: {hit.collider.name}");
-                return; // ×èÖ¹ÒÆ¶¯
+                //Debug.Log($"æ£€æµ‹åˆ°éšœç¢: {hit.collider.name}");
+                return; // é˜»æ­¢ç§»åŠ¨
             }
 
             rb.MovePosition(newPosition);
@@ -97,17 +97,17 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnPlayerMoved()
     {
-        // ÕâÀï¿ÉÒÔÌí¼ÓÒ»Ğ©Íæ¼ÒÒÆ¶¯ºóµÄÂß¼­£¬±ÈÈç²¥·Å½Å²½Éù¡¢¸üĞÂ¶¯»­×´Ì¬µÈ
+        // è¿™é‡Œå¯ä»¥æ·»åŠ ä¸€äº›ç©å®¶ç§»åŠ¨åçš„é€»è¾‘ï¼Œæ¯”å¦‚æ’­æ”¾è„šæ­¥å£°ã€æ›´æ–°åŠ¨ç”»çŠ¶æ€ç­‰
         if (playerCollider != null && !playerCollider.enabled)
             playerCollider.enabled = true;
     }
     /// <summary>
-    /// ¸ºÔğ¼ì²âTilemapÉÏµÄ²İ´ÔÍ¼²ã£¬Èç¹ûÍæ¼ÒÔÚ²İ´ÔÉÏ²¢ÇÒ´¥·¢ÂÊÂú×ãÌõ¼ş£¬Ôò½øÈëÕ½¶·³¡¾°
+    /// è´Ÿè´£æ£€æµ‹Tilemapä¸Šçš„è‰ä¸›å›¾å±‚ï¼Œå¦‚æœç©å®¶åœ¨è‰ä¸›ä¸Šå¹¶ä¸”è§¦å‘ç‡æ»¡è¶³æ¡ä»¶ï¼Œåˆ™è¿›å…¥æˆ˜æ–—åœºæ™¯
     /// </summary>
     private void CheckForGrass()
     {
         Collider2D hit = Physics2D.OverlapCircle(transform.position, 0.2f, grassLayer);
-        if (hit != null && Random.value < 0.5f) // 20%´¥·¢ÂÊ
+        if (hit != null && Random.value < 0.5f) // 20%è§¦å‘ç‡
         {
             TriggerBattle();
         }
@@ -117,7 +117,7 @@ public class PlayerMovement : MonoBehaviour
         if (playerCollider != null)
             playerCollider.enabled = false;
             colliderDisabledByBattle = true;
-            positionWhenDisabled = transform.position; // ¼ÇÂ¼½ûÓÃÊ±µÄÎ»ÖÃ
+            positionWhenDisabled = transform.position; // è®°å½•ç¦ç”¨æ—¶çš„ä½ç½®
     }
 
     private void TriggerBattle()

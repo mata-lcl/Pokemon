@@ -1,13 +1,12 @@
-using Pokemon.Domain;
 using UnityEngine;
 
-namespace okemon.Domain.Effects
+namespace Pokemon.Domain.Effects
 {
     [CreateAssetMenu(fileName = "RecoilEffect", menuName = "Pokemon/Effects/Recoil")]
     public class RecoilEffect : SkillEffectSO
     {
-        [Range(0f,3f)]
-        [Tooltip("·´ÉË±¶ÂÊ")]
+        [Range(0f, 3f)]
+        [Tooltip("åä¼¤å€ç‡")]
         public float RecoilMultiplier = 1.5f;
 
         public override bool CanProcess(EffectContext context)
@@ -17,17 +16,12 @@ namespace okemon.Domain.Effects
 
         public override void Execute(EffectContext context)
         {
-           int recoilDamage = Mathf.RoundToInt(context.Damage.Value.FinalDamage * RecoilMultiplier);
-            context.Target.ApplyDamage(recoilDamage);
+            int recoilDamage = Mathf.RoundToInt(context.Damage.Value.FinalDamage * RecoilMultiplier);
+            // åä¼¤åº”æ‰“åœ¨ä½¿ç”¨è€…è‡ªå·±èº«ä¸Š
+            context.User.ApplyDamage(recoilDamage);
 
-            context.Steps.Add(new Pokemon.Application.TurnStep  
-            {
-               Message = $"{context.Target.Species.DisplayName} ÊÜµ½ÁË {recoilDamage} µã·´ÉË",
-               PlayerHpAfter = context.PlayerRef.CurrentHP,
-               EnemyHpAfter = context.EnemyRef.CurrentHP,
-               AnimType = context.IsPlayerAttacking ? StepAnimType.PlayerHit : StepAnimType.EnemyHit
-            });
+            StepAnimType hitAnim = context.IsPlayerAttacking ? StepAnimType.PlayerHit : StepAnimType.EnemyHit;
+            context.AddStep($"{context.User.Species.DisplayName} å—åˆ°äº† {recoilDamage} ç‚¹åä¼¤", hitAnim);
         }
     }
-
 }

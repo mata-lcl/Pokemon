@@ -1,12 +1,21 @@
 using System.Collections.Generic;
-using System.Linq; // ÓÃÓÚ·½±ãÉ¸Ñ¡
+using System.Linq; // ç”¨äºæ–¹ä¾¿ç­›é€‰
 
 namespace Pokemon.Domain
 {
     public static class PlayerParty
     {
         public static MonsterRuntime ActivePokemon { get; set; }
+        public static List<MonsterRuntime> Party = new List<MonsterRuntime>();  // ç²¾çµèƒŒåŒ…
         public static Dictionary<ItemData, int> Inventory = new Dictionary<ItemData, int>();
+
+        /// <summary>
+        /// å°†æ•æ‰åˆ°çš„ç²¾çµåŠ å…¥èƒŒåŒ…
+        /// </summary>
+        public static void AddMonster(MonsterRuntime monster)
+        {
+            Party.Add(monster);
+        }
 
         public static void AddItem(ItemData item, int count = 1)
         {
@@ -14,7 +23,7 @@ namespace Pokemon.Domain
             else Inventory[item] = count;
         }
 
-        // ½öÔÚÂß¼­Ö´ĞĞ³É¹¦ºó¿Û³ı£¨ÓÉ BattleCoordinator µ÷ÓÃ£©
+        // ä»…åœ¨é€»è¾‘æ‰§è¡ŒæˆåŠŸåæ‰£é™¤ï¼ˆç”± BattleCoordinator è°ƒç”¨ï¼‰
         public static void RemoveItem(ItemData item, int count = 1)
         {
             if (Inventory.ContainsKey(item))
@@ -24,13 +33,13 @@ namespace Pokemon.Domain
             }
         }
 
-        // --- ¸¨Öú·½·¨£º»ñÈ¡²»Í¬ÀàĞÍµÄµÀ¾ßÁĞ±í£¨ÓÃÓÚ UI ÏÔÊ¾£© ---
+        // --- è¾…åŠ©æ–¹æ³•ï¼šè·å–ä¸åŒç±»å‹çš„é“å…·åˆ—è¡¨ï¼ˆç”¨äº UI æ˜¾ç¤ºï¼‰ ---
 
-        // »ñÈ¡ËùÓĞ¿ÉÖ÷¶¯Ê¹ÓÃµÄµÀ¾ß£¨ÉËÒ©¡¢¾«ÁéÇò£©
+        // è·å–æ‰€æœ‰å¯ä¸»åŠ¨ä½¿ç”¨çš„é“å…·ï¼ˆä¼¤è¯ã€ç²¾çµçƒï¼‰
         public static List<ItemData> GetUsableItems() =>
             Inventory.Keys.Where(i => i is IUsable).ToList();
 
-        // »ñÈ¡ËùÓĞ¿ÉĞ¯´øµÄµÀ¾ß£¨Ë¿³ñÎ§½íµÈ£©
+        // è·å–æ‰€æœ‰å¯æºå¸¦çš„é“å…·ï¼ˆä¸ç»¸å›´å·¾ç­‰ï¼‰
         public static List<ItemData> GetHeldItems() =>
             Inventory.Keys.Where(i => i is IHeldTrigger).ToList();
     }

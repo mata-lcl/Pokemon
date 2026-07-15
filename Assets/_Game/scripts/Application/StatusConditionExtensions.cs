@@ -6,12 +6,12 @@ namespace Pokemon.Domain
         {
             return status switch
             {
-                StatusCondition.None => "ÎÞ",
-                StatusCondition.Poison => "ÖÐ¶¾",
-                StatusCondition.Burn => "×ÆÉÕ",
-                StatusCondition.Paralyze => "Âé±Ô",
-                StatusCondition.Sleep => "Ë¯Ãß",
-                StatusCondition.Freeze => "±ù¶³",
+                StatusCondition.None => "æ— ",
+                StatusCondition.Poison => "ä¸­æ¯’",
+                StatusCondition.Burn => "ç¼çƒ§",
+                StatusCondition.Paralyze => "éº»ç—¹",
+                StatusCondition.Sleep => "ç¡çœ ",
+                StatusCondition.Freeze => "å†°å†»",
                 _ => status.ToString()
             };
         }

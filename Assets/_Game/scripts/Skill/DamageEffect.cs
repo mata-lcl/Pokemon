@@ -2,31 +2,25 @@ using UnityEngine;
 
 namespace Pokemon.Domain.Effects
 {
-    // Ìí¼Ó CreateAssetMenu£¬Ê¹Æä¿ÉÒÔÔÚ Project ´°¿ÚÖĞÓÒ¼ü´´½¨
+    // æ·»åŠ  CreateAssetMenuï¼Œä½¿å…¶å¯ä»¥åœ¨ Project çª—å£ä¸­å³é”®åˆ›å»º
     [CreateAssetMenu(fileName = "DamageEffect", menuName = "Pokemon/Effects/Damage")]
-    public class DamageEffect : SkillEffectSO // ¸ÄÎª¼Ì³Ğ SkillEffectSO
+    public class DamageEffect : SkillEffectSO // æ”¹ä¸ºç»§æ‰¿ SkillEffectSO
     {
-        // Ê¹ÓÃ override ÖØĞ´»ùÀàµÄ³éÏó·½·¨
+        // ä½¿ç”¨ override é‡å†™åŸºç±»çš„æŠ½è±¡æ–¹æ³•
         public override bool CanProcess(EffectContext context) => context.Damage != null;
 
         public override void Execute(EffectContext context)
         {
             context.Target.ApplyDamage(context.Damage.Value.FinalDamage);
 
-            // 2. ¡¾¹Ø¼üÂß¼­¡¿£ºÅĞ¶ÏÊÇË­ÔÚ°¤´ò£¬·ÖÅä¶ÔÓ¦µÄÊÜ»÷¶¯»­£¡
-            // Èç¹ûÊÇÍæ¼Ò·¢ÆğµÄ¹¥»÷£¬ÄÇ°¤´òµÄ¾ÍÊÇµĞÈË (EnemyHit)
-            // Èç¹û²»ÊÇÍæ¼Ò·¢ÆğµÄ¹¥»÷£¬ÄÇ°¤´òµÄ¾ÍÊÇÍæ¼Ò (PlayerHit)
-            Domain.StepAnimType hitAnim = context.IsPlayerAttacking
-                ? Domain.StepAnimType.EnemyHit
-                : Domain.StepAnimType.PlayerHit;
+            // åˆ¤æ–­æ˜¯è°åœ¨æŒ¨æ‰“ï¼Œåˆ†é…å¯¹åº”çš„å—å‡»åŠ¨ç”»
+            StepAnimType hitAnim = context.IsPlayerAttacking
+                ? StepAnimType.EnemyHit
+                : StepAnimType.PlayerHit;
 
-            context.Steps.Add(new Application.TurnStep
-            {
-                Message = $"{context.User.Species.DisplayName} Ôì³ÉÁË {context.Damage.Value.FinalDamage} µãÉËº¦",
-                PlayerHpAfter = context.PlayerRef.CurrentHP,
-                EnemyHpAfter = context.EnemyRef.CurrentHP,
-                AnimType = hitAnim 
-            });
+            context.AddStep(
+                $"{context.User.Species.DisplayName} é€ æˆäº† {context.Damage.Value.FinalDamage} ç‚¹ä¼¤å®³",
+                hitAnim);
         }
     }
 }

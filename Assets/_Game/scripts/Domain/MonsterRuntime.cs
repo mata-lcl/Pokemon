@@ -6,7 +6,7 @@ using Random = UnityEngine.Random;
 namespace Pokemon.Domain
 {
     /// <summary>
-    /// Í³¼ÆÊıÖµ¸Ä±äÊ±µÄÊÂ¼ş²ÎÊı
+    /// ç»Ÿè®¡æ•°å€¼æ”¹å˜æ—¶çš„äº‹ä»¶å‚æ•°
     /// </summary>
     public struct StatChangedEventArgs
     {
@@ -15,7 +15,7 @@ namespace Pokemon.Domain
     }
 
     /// <summary>
-    /// µÈ¼¶ÌáÉıÊ±µÄÊÂ¼ş²ÎÊı
+    /// ç­‰çº§æå‡æ—¶çš„äº‹ä»¶å‚æ•°
     /// </summary>
     public struct LevelUpEventArgs
     {
@@ -26,19 +26,19 @@ namespace Pokemon.Domain
     public class MonsterRuntime
     {
         // ==========================================
-        // 1. ¹Û²ìÕßÊÂ¼ş (Observer Events)
+        // 1. è§‚å¯Ÿè€…äº‹ä»¶ (Observer Events)
         // ==========================================
-        public event Action<StatChangedEventArgs> OnHPChanged;      // HP±ä»¯Ê±´¥·¢
-        public event Action<LevelUpEventArgs> OnLeveledUp;         // Éı¼¶Ê±´¥·¢
-        public event Action OnStatsRecalculated;                   // ÊıÖµÃæ°å¸üĞÂÊ±´¥·¢£¨EV/IV¸Ä±ä£©
+        public event Action<StatChangedEventArgs> OnHPChanged;      // HPå˜åŒ–æ—¶è§¦å‘
+        public event Action<LevelUpEventArgs> OnLeveledUp;         // å‡çº§æ—¶è§¦å‘
+        public event Action OnStatsRecalculated;                   // æ•°å€¼é¢æ¿æ›´æ–°æ—¶è§¦å‘ï¼ˆEV/IVæ”¹å˜ï¼‰
 
         // ==========================================
-        // 2. »ù´¡Êı¾İ×Ö¶Î
+        // 2. åŸºç¡€æ•°æ®å­—æ®µ
         // ==========================================
         public PokemonSpeciesData Species { get; private set; }
         public int Level { get; private set; }
 
-        public bool HasTriggeredCrisisAbility { get; set; } // ÓÃÓÚ±ê¼ÇÊÇ·ñÒÑ´¥·¢¹ıÎ£»úÌØĞÔ£¬·ÀÖ¹ÖØ¸´µ¯´°
+        public bool HasTriggeredCrisisAbility { get; set; } // ç”¨äºæ ‡è®°æ˜¯å¦å·²è§¦å‘è¿‡å±æœºç‰¹æ€§ï¼Œé˜²æ­¢é‡å¤å¼¹çª—
 
         private int _currentHP;
         public int CurrentHP
@@ -47,27 +47,27 @@ namespace Pokemon.Domain
             private set
             {
                 _currentHP = Mathf.Clamp(value, 0, MaxHP);
-                // ´¥·¢¹Û²ìÕß£ºHP±äÁË
+                // è§¦å‘è§‚å¯Ÿè€…ï¼šHPå˜äº†
                 OnHPChanged?.Invoke(new StatChangedEventArgs { NewValue = _currentHP, MaxValue = MaxHP });
             }
         }
 
-        // --- ÌØĞÔÓëµÀ¾ß ---
-        public AbilityData ActiveAbility { get; private set; } // ĞŞ¸ÄÎªµ¥Êı£¬Í¨³£Ò»Ö»±¦¿ÉÃÎÖ»ÓĞÒ»¸ö»î¶¯ÌØĞÔ
+        // --- ç‰¹æ€§ä¸é“å…· ---
+        public AbilityData ActiveAbility { get; private set; } // ä¿®æ”¹ä¸ºå•æ•°ï¼Œé€šå¸¸ä¸€åªå®å¯æ¢¦åªæœ‰ä¸€ä¸ªæ´»åŠ¨ç‰¹æ€§
         public ItemData HeldItem { get; set; }
 
-        // --- ×´Ì¬Óë¼¼ÄÜ ---
+        // --- çŠ¶æ€ä¸æŠ€èƒ½ ---
         public StatusCondition CurrentStatus { get; private set; }
         public Dictionary<SkillData, int> CurrentPP { get; private set; }
         public bool IsFainted => CurrentHP <= 0;
         public int CurrentExp { get; private set; }
 
         // ==========================================
-        // 3. ¸öÌåÖµ (IVs) Óë Å¬Á¦Öµ (EVs) ×Ö¶Î
-        // Ê¹ÓÃ×Ö¶Î¶ø·ÇÊôĞÔ£¬ÒÔ±ãÔÚ AddEVs ÖĞÊ¹ÓÃ ref ¹Ø¼ü×Ö
+        // 3. ä¸ªä½“å€¼ (IVs) ä¸ åŠªåŠ›å€¼ (EVs) å­—æ®µ
+        // ä½¿ç”¨å­—æ®µè€Œéå±æ€§ï¼Œä»¥ä¾¿åœ¨ AddEVs ä¸­ä½¿ç”¨ ref å…³é”®å­—
         // ==========================================
 
-        // ¸öÌåÖµ (0-31)
+        // ä¸ªä½“å€¼ (0-31)
         public int IvHP { get; private set; }
         public int IvAttack { get; private set; }
         public int IvDefense { get; private set; }
@@ -75,7 +75,7 @@ namespace Pokemon.Domain
         public int IvSpecialAttack { get; private set; }
         public int IvSpecialDefense { get; private set; }
 
-        // Å¬Á¦Öµ (0-255)
+        // åŠªåŠ›å€¼ (0-255)
         private int _evHP;
         private int _evAttack;
         private int _evDefense;
@@ -91,7 +91,7 @@ namespace Pokemon.Domain
         public int EvSpecialDefense => _evSpecialDefense;
 
         // ==========================================
-        // 4. ×îÖÕÃæ°åÊıÖµ (»ùÓÚ¹«Ê½¶¯Ì¬¼ÆËã)
+        // 4. æœ€ç»ˆé¢æ¿æ•°å€¼ (åŸºäºå…¬å¼åŠ¨æ€è®¡ç®—)
         // ==========================================
         public int MaxHP => CalculateHpStat();
         public int Attack => CalculateStandardStat(Species.BaseAttack, IvAttack, _evAttack);
@@ -101,7 +101,7 @@ namespace Pokemon.Domain
         public int SpecialDefense => CalculateStandardStat(Species.BaseSpDefense, IvSpecialDefense, _evSpecialDefense);
 
         /// <summary>
-        /// ¹¹Ôìº¯Êı
+        /// æ„é€ å‡½æ•°
         /// </summary>
         public MonsterRuntime(PokemonSpeciesData species, int level)
         {
@@ -109,25 +109,25 @@ namespace Pokemon.Domain
             Level = Mathf.Clamp(level, 1, 100);
             CurrentStatus = StatusCondition.None;
 
-            // ³õÊ¼»¯¾­Ñé (Á¢·½ÇúÏß)
+            // åˆå§‹åŒ–ç»éªŒ (ç«‹æ–¹æ›²çº¿)
             CurrentExp = Level * Level * Level;
 
-            // 1. Éú³ÉÌì¸³ (IVs)
+            // 1. ç”Ÿæˆå¤©èµ‹ (IVs)
             GenerateIVs();
 
-            // 2. ³õÊ¼»¯Å¬Á¦Öµ (EVs)
+            // 2. åˆå§‹åŒ–åŠªåŠ›å€¼ (EVs)
             ResetEVs();
 
-            // 3. ³õÊ¼»¯ÌØĞÔ (´ÓÌØĞÔ³ØÖĞËæ»úÑ¡Ò»¸ö)
+            // 3. åˆå§‹åŒ–ç‰¹æ€§ (ä»ç‰¹æ€§æ± ä¸­éšæœºé€‰ä¸€ä¸ª)
             if (species.Abilities != null && species.Abilities.Count > 0)
             {
                 ActiveAbility = species.Abilities[Random.Range(0, species.Abilities.Count)];
             }
 
-            // 4. ¼ÆËã²¢Éè¶¨³õÊ¼ÑªÁ¿
+            // 4. è®¡ç®—å¹¶è®¾å®šåˆå§‹è¡€é‡
             _currentHP = MaxHP;
 
-            // 5. ³õÊ¼»¯¼¼ÄÜ
+            // 5. åˆå§‹åŒ–æŠ€èƒ½
             CurrentPP = new Dictionary<SkillData, int>();
             foreach (var skill in species.InitialSkills)
             {
@@ -151,7 +151,7 @@ namespace Pokemon.Domain
         }
 
         /// <summary>
-        /// Ôö¼ÓÅ¬Á¦Öµ¡£ÀûÓÃ¹Û²ìÕßÄ£Ê½£¬Ôö¼Óºó»á×Ô¶¯Í¨ÖªÃæ°åË¢ĞÂ¡£
+        /// å¢åŠ åŠªåŠ›å€¼ã€‚åˆ©ç”¨è§‚å¯Ÿè€…æ¨¡å¼ï¼Œå¢åŠ åä¼šè‡ªåŠ¨é€šçŸ¥é¢æ¿åˆ·æ–°ã€‚
         /// </summary>
         public void AddEVs(int hp, int atk, int def, int spd, int spatk, int spdef)
         {
@@ -163,7 +163,7 @@ namespace Pokemon.Domain
 
             if (remainingTotal <= 0) return;
 
-            // ÄÚ²¿¸¨Öú·½·¨£º´¦Àí×Ö¶ÎµÄÒıÓÃÔö¼Ó
+            // å†…éƒ¨è¾…åŠ©æ–¹æ³•ï¼šå¤„ç†å­—æ®µçš„å¼•ç”¨å¢åŠ 
             void ApplyEv(ref int evField, int amount)
             {
                 int actualAdd = Mathf.Min(amount, MaxSingleEV - evField);
@@ -179,12 +179,12 @@ namespace Pokemon.Domain
             ApplyEv(ref _evSpecialAttack, spatk);
             ApplyEv(ref _evSpecialDefense, spdef);
 
-            // ´¥·¢¹Û²ìÕß£ºÃæ°åÊıÖµÂß¼­ÉÏÒÑ¾­¸Ä±ä
+            // è§¦å‘è§‚å¯Ÿè€…ï¼šé¢æ¿æ•°å€¼é€»è¾‘ä¸Šå·²ç»æ”¹å˜
             OnStatsRecalculated?.Invoke();
         }
 
         // ==========================================
-        // 5. Õ½¶·¼°³É³¤Âß¼­
+        // 5. æˆ˜æ–—åŠæˆé•¿é€»è¾‘
         // ==========================================
 
         public bool AddExp(int amount)
@@ -200,7 +200,7 @@ namespace Pokemon.Domain
                 Level++;
                 levelsGained++;
 
-                // Éı¼¶²¹Ñª (°´Ôö¼ÓµÄHPÉÏÏŞ²¹»Ø)
+                // å‡çº§è¡¥è¡€ (æŒ‰å¢åŠ çš„HPä¸Šé™è¡¥å›)
                 int hpIncrease = MaxHP - oldMaxHp;
                 Heal(hpIncrease);
             }
@@ -239,7 +239,7 @@ namespace Pokemon.Domain
         }
 
         // ==========================================
-        // 6. ºËĞÄ¹«Ê½¼ÆËã
+        // 6. æ ¸å¿ƒå…¬å¼è®¡ç®—
         // ==========================================
         private int CalculateHpStat()
         {
@@ -253,7 +253,7 @@ namespace Pokemon.Domain
             return (baseCalc * Level / 100) + 5;
         }
 
-        // ÔÚ MonsterRuntime.cs ÄÚ²¿
+        // åœ¨ MonsterRuntime.cs å†…éƒ¨
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         public void DebugSetHP(int value)
         {

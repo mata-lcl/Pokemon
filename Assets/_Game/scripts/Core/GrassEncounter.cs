@@ -9,7 +9,7 @@ public class GrassEncounter : MonoBehaviour
     {
         if (other.CompareTag("Player") && Random.value < encounterRate)
         {
-            // ±£´æÎ»ÖÃ²¢½øÈëÕ½¶·
+            // ä¿å­˜ä½ç½®å¹¶è¿›å…¥æˆ˜æ–—
             SceneTransitionManager.Instance.EnterBattle(
                 other.transform.position,
                 UnityEngine.SceneManagement.SceneManager.GetActiveScene().name

@@ -7,7 +7,7 @@ using Random = UnityEngine.Random;
 
 namespace Pokemon.Domain
 {
-    // ¶¨ÒåÉËº¦¼ÆËã½á¹û
+    // å®šä¹‰ä¼¤å®³è®¡ç®—ç»“æœ
     public struct DamageResult
     {
         public int FinalDamage;
@@ -24,27 +24,27 @@ namespace Pokemon.Domain
         }
 
         /// <summary>
-        /// MVP°æ±¾ ÎŞÆäËûÌõ¼şÅĞ¶Ï
-        /// ¿ÉÅäÖÃĞÔ¸ß£¬Í¨¹ı_typeChartĞŞ¸ÄÆ½ºâĞÔ
-        /// Ã»ÓĞÏàÓ¦¿ËÖÆ±íÒÀÈ»¿ÉÒÔÔËĞĞ£¬È·±£¿ÕÖµ°²È«
+        /// MVPç‰ˆæœ¬ æ— å…¶ä»–æ¡ä»¶åˆ¤æ–­
+        /// å¯é…ç½®æ€§é«˜ï¼Œé€šè¿‡_typeChartä¿®æ”¹å¹³è¡¡æ€§
+        /// æ²¡æœ‰ç›¸åº”å…‹åˆ¶è¡¨ä¾ç„¶å¯ä»¥è¿è¡Œï¼Œç¡®ä¿ç©ºå€¼å®‰å…¨
         /// </summary>
-        /// <param ¹¥»÷·½="attacker"></param>
-        /// <param ·ÀÓù·½="defender"></param>
-        /// <param ¼¼ÄÜ="skill"></param>
+        /// <param æ”»å‡»æ–¹="attacker"></param>
+        /// <param é˜²å¾¡æ–¹="defender"></param>
+        /// <param æŠ€èƒ½="skill"></param>
         /// <returns></returns>
         public DamageResult CalculateDamage(MonsterRuntime attacker, MonsterRuntime defender, SkillData skill, List<TurnStep> steps = null)
         {
 
-            // Ñ¡Ôñ¹¥»÷ºÍ·ÀÓùÊôĞÔ
+            // é€‰æ‹©æ”»å‡»å’Œé˜²å¾¡å±æ€§
             int atk = (skill.Category == SkillCategory.Special)? attacker.SpecialAttack : attacker.Attack;
             int def = (skill.Category == SkillCategory.Special)? defender.SpecialDefense : defender.Defense;
 
-            //»ù´¡ÉËº¦¼ÆËã = ¼¼ÄÜÍşÁ¦ + ¹¥»÷·½¹¥»÷Á¦ - ·ÀÓù·½·ÀÓùÁ¦ * 2
-            //Èç¹ûÊÇ¸´¿ÌÕı×÷£¬¹«Ê½»á¸ü¸´ÔÓ£¬ÕâÀï±£Áô¼òÒ×°æµ«ĞŞÕıÁËÊôĞÔÑ¡Ôñ
+            //åŸºç¡€ä¼¤å®³è®¡ç®— = æŠ€èƒ½å¨åŠ› + æ”»å‡»æ–¹æ”»å‡»åŠ› - é˜²å¾¡æ–¹é˜²å¾¡åŠ› * 2
+            //å¦‚æœæ˜¯å¤åˆ»æ­£ä½œï¼Œå…¬å¼ä¼šæ›´å¤æ‚ï¼Œè¿™é‡Œä¿ç•™ç®€æ˜“ç‰ˆä½†ä¿®æ­£äº†å±æ€§é€‰æ‹©
             float baseDamage = skill.Power + atk - def * 2f;
             if (baseDamage < 1f) baseDamage = 1f;
 
-            // 2. ÍêÉÆ STAB (±¾Ïµ¼Ó³É)£ºÅĞ¶ÏµÚÒ»»òµÚ¶şÊôĞÔ
+            // 2. å®Œå–„ STAB (æœ¬ç³»åŠ æˆ)ï¼šåˆ¤æ–­ç¬¬ä¸€æˆ–ç¬¬äºŒå±æ€§
             float stab = 1f;
             if (attacker.Species.PrimaryType == skill.Type ||
                 (attacker.Species.SecondaryType != PokemonType.None && attacker.Species.SecondaryType == skill.Type))
@@ -52,37 +52,37 @@ namespace Pokemon.Domain
                 stab = 1.5f;
             }
 
-            // 3. ÍêÉÆÊôĞÔÏà¿Ë (¼ÆËã·ÀÓù·½ËùÓĞÊôĞÔ)
+            // 3. å®Œå–„å±æ€§ç›¸å…‹ (è®¡ç®—é˜²å¾¡æ–¹æ‰€æœ‰å±æ€§)
             float typeMultiplier = 1f;
             if (_typeChart != null)
             {
-                // ³ËÉÏµÚÒ»ÊôĞÔ±¶ÂÊ
+                // ä¹˜ä¸Šç¬¬ä¸€å±æ€§å€ç‡
                 typeMultiplier *= _typeChart.GetMultiplier(skill.Type, defender.Species.PrimaryType);
-                // Èç¹ûÓĞµÚ¶şÊôĞÔ£¬ÔÙ³ËÉÏÈ¥
+                // å¦‚æœæœ‰ç¬¬äºŒå±æ€§ï¼Œå†ä¹˜ä¸Šå»
                 if (defender.Species.SecondaryType != PokemonType.None)
                 {
                     typeMultiplier *= _typeChart.GetMultiplier(skill.Type, defender.Species.SecondaryType);
                 }
             }
 
-            //4. ¡¾¹Ø¼ü¡¿ÕûºÏÌØĞÔÏµÍ³(Ability System)
+            //4. ã€å…³é”®ã€‘æ•´åˆç‰¹æ€§ç³»ç»Ÿ(Ability System)
             float abilityMod = 1.0f;
             if (attacker.ActiveAbility != null)
             {
-                // µ÷ÓÃÌØĞÔ»ùÀàÖĞµÄĞé·½·¨£¬ÊµÏÖÒ»ÌØĞÔÒ»½Å±¾µÄ½âñî
+                // è°ƒç”¨ç‰¹æ€§åŸºç±»ä¸­çš„è™šæ–¹æ³•ï¼Œå®ç°ä¸€ç‰¹æ€§ä¸€è„šæœ¬çš„è§£è€¦
                 abilityMod = attacker.ActiveAbility.GetDamageMultiplier(attacker, defender, skill, steps);
             }
 
-            // 5. ×îÖÕ¼ÆËã
+            // 5. æœ€ç»ˆè®¡ç®—
             float random = Random.Range(0.85f, 1f);
             float total = baseDamage * stab * typeMultiplier * random * abilityMod;
 
-            // --- µ÷ÊÔÈÕÖ¾£ºÕâĞĞ´úÂë»á½â¾öÄã¡°ÎŞ·¨ÖªµÀÊıÖµ±ä»¯¡±µÄÎÊÌâ ---
-            //Debug.Log($"<color=cyan>[ÉËº¦¼ÆËã]</color>¼¼ÄÜ:{skill.DisplayName} | »ù´¡:{baseDmg} | ÊôĞÔ:{typeMod} | ÌØĞÔ:{abilityMod} | Ëæ»ú:{rand:F2} | ×îÖÕ:{finalDamage}");
+            // --- è°ƒè¯•æ—¥å¿—ï¼šè¿™è¡Œä»£ç ä¼šè§£å†³ä½ â€œæ— æ³•çŸ¥é“æ•°å€¼å˜åŒ–â€çš„é—®é¢˜ ---
+            //Debug.Log($"<color=cyan>[ä¼¤å®³è®¡ç®—]</color>æŠ€èƒ½:{skill.DisplayName} | åŸºç¡€:{baseDmg} | å±æ€§:{typeMod} | ç‰¹æ€§:{abilityMod} | éšæœº:{rand:F2} | æœ€ç»ˆ:{finalDamage}");
 
             return new DamageResult
             {
-                FinalDamage = Mathf.Max(1, Mathf.FloorToInt(total)), //ÏòÏÂÈ¡Õû¡£ÉËº¦È¡Õû£¬·µ»ØintÀàĞÍÕûÊı
+                FinalDamage = Mathf.Max(1, Mathf.FloorToInt(total)), //å‘ä¸‹å–æ•´ã€‚ä¼¤å®³å–æ•´ï¼Œè¿”å›intç±»å‹æ•´æ•°
                 TypeMultiplier = typeMultiplier
             };
         }

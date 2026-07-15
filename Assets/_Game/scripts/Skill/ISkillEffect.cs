@@ -2,27 +2,41 @@ using System.Collections.Generic;
 
 namespace Pokemon.Domain
 {
-    // Õ½¶·ĞÅÏ¢Êı¾İ°ü£¬°üº¬Ö´ĞĞĞ§¹ûËùĞèµÄÈ«²¿ĞÅÏ¢
+    // æˆ˜æ–—ä¿¡æ¯æ•°æ®åŒ…ï¼ŒåŒ…å«æ‰§è¡Œæ•ˆæœæ‰€éœ€çš„å…¨éƒ¨ä¿¡æ¯
     public class EffectContext
     {
-        public MonsterRuntime User;      // Ê¹ÓÃÕß
-        public MonsterRuntime Target;    // Ä¿±ê
-        public SkillData Skill;          // ¼¼ÄÜÊı¾İ
-        public DamageResult? Damage;     // ÍşÁ¦¼ÆËã½á¹û£¨¿ÉÑ¡£©
-        public List<Application.TurnStep> Steps; // ¼ÇÂ¼²½ÖèµÄÒıÓÃ
+        public MonsterRuntime User;      // ä½¿ç”¨è€…
+        public MonsterRuntime Target;    // ç›®æ ‡
+        public SkillData Skill;          // æŠ€èƒ½æ•°æ®
+        public DamageResult? Damage;     // å¨åŠ›è®¡ç®—ç»“æœï¼ˆå¯é€‰ï¼‰
+        public List<Application.TurnStep> Steps; // è®°å½•æ­¥éª¤çš„å¼•ç”¨
         public bool IsPlayerAttacking;
 
-        // ¡¾ĞÂÔö¡¿£º²»ÂÛË­Ê©·¨£¬ÕâÁ½¸ö±äÁ¿ÓÀÔ¶Ö¸ÏòÕıÈ·µÄ UI ÕóÓª
+        // ã€æ–°å¢ã€‘ï¼šä¸è®ºè°æ–½æ³•ï¼Œè¿™ä¸¤ä¸ªå˜é‡æ°¸è¿œæŒ‡å‘æ­£ç¡®çš„ UI é˜µè¥
         public MonsterRuntime PlayerRef;
         public MonsterRuntime EnemyRef;
+
+        /// <summary>
+        /// æ·»åŠ ä¸€ä¸ª TurnStep å¹¶è‡ªåŠ¨å¡«å……åŒæ–¹ HP å¿«ç…§ï¼Œç®€åŒ– Effect å†…éƒ¨ä»£ç 
+        /// </summary>
+        public void AddStep(string message, StepAnimType animType = StepAnimType.None)
+        {
+            Steps.Add(new Application.TurnStep
+            {
+                Message = message,
+                PlayerHpAfter = PlayerRef.CurrentHP,
+                EnemyHpAfter = EnemyRef.CurrentHP,
+                AnimType = animType
+            });
+        }
     }
 
     public interface ISkillEffect
     {
-        // ºËĞÄ¼ì²é£ºÕâ¸öĞ§¹ûÊÇ·ñÓ¦¸Ã´¥·¢£¿£¨±ÈÈçÖ»ÓĞÃüÖĞ²Å´¥·¢£¬»òÕß±Ø¶¨´¥·¢£©
+        // æ ¸å¿ƒæ£€æŸ¥ï¼šè¿™ä¸ªæ•ˆæœæ˜¯å¦åº”è¯¥è§¦å‘ï¼Ÿï¼ˆæ¯”å¦‚åªæœ‰å‘½ä¸­æ‰è§¦å‘ï¼Œæˆ–è€…å¿…å®šè§¦å‘ï¼‰
         bool CanProcess(EffectContext context);
 
-        // Ö´ĞĞÂß¼­
+        // æ‰§è¡Œé€»è¾‘
         void Execute(EffectContext context);
     }
 }

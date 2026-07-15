@@ -11,22 +11,22 @@ namespace Pokemon.Domain
         public string AbilityName;
         [TextArea] public string Description;
 
-        // ÉËº¦±¶ÂÊ¼Ó³É
+        // ä¼¤å®³å€ç‡åŠ æˆ
         public virtual float GetDamageMultiplier(MonsterRuntime owner, MonsterRuntime opponent, SkillData skill, List<TurnStep> steps)
         {
-            // ×ÓÀàÈç¹ûĞèÒªĞ´ÈÕÖ¾£¬¾ÍÍù steps Àï Add
+            // å­ç±»å¦‚æœéœ€è¦å†™æ—¥å¿—ï¼Œå°±å¾€ steps é‡Œ Add
             return 1.0f;
         }
 
-        //Ğéº¯Êı£¬¿ÉÒÔÈÃ×ÓÀàÑ¡ÔñĞÔÖØĞ´À´´¦ÀíÌØ¶¨µÄÍ¨ÖªÊÂ¼ş£¬±ÈÈç»ØºÏ¿ªÊ¼¡¢¼¼ÄÜÊ¹ÓÃºóµÈ¡£
+        //è™šå‡½æ•°ï¼Œå¯ä»¥è®©å­ç±»é€‰æ‹©æ€§é‡å†™æ¥å¤„ç†ç‰¹å®šçš„é€šçŸ¥äº‹ä»¶ï¼Œæ¯”å¦‚å›åˆå¼€å§‹ã€æŠ€èƒ½ä½¿ç”¨åç­‰ã€‚
         public virtual bool CheckAndProcessNotification(MonsterRuntime owner, List<TurnStep> steps, MonsterRuntime playerRef, MonsterRuntime enemyRef)
         {
-            // Ä¬ÈÏ²»´¦ÀíÈÎºÎÍ¨Öª
+            // é»˜è®¤ä¸å¤„ç†ä»»ä½•é€šçŸ¥
             return false;
         }
     }
 
-    // Î´À´¿ÉÒÔÔÚÕâÀïÀ©Õ¹ÌØĞÔµÄÂß¼­¹³×Ó£¬±ÈÈç£º
+    // æœªæ¥å¯ä»¥åœ¨è¿™é‡Œæ‰©å±•ç‰¹æ€§çš„é€»è¾‘é’©å­ï¼Œæ¯”å¦‚ï¼š
     // public virtual void OnBattleStart(MonsterRuntime owner, BattleContext context) { }
     // public virtual void OnDamageCalculated(DamageModifierContext context) { }
 }

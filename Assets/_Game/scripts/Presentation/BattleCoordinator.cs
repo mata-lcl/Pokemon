@@ -14,11 +14,17 @@ namespace Pokemon.Presentation
         [SerializeField] private PokemonSpeciesData enemySpecies;
         [SerializeField] private TypeChartData typeChart;
 
+        [Header("åˆå§‹é“å…·ï¼ˆæ‹–å…¥å¯¹åº”çš„ ScriptableObject èµ„äº§ï¼‰")]
+        [SerializeField] private ItemData defaultPokeball;
+        [SerializeField] private int defaultPokeballCount = 5;
+
         [Header("UI Reference")]
         [SerializeField] private BattleUIController uiController;
 
         [Header("Settings")]
         [SerializeField] private float stepDelaySeconds = 1.5f;
+        [Tooltip("æµ‹è¯•æ¨¡å¼ï¼šå¼€å¯åæˆ˜æ–—ç»“æŸä¼šç»§ç»­åŒ¹é…ä¸‹ä¸€åªï¼Œå…³é—­åˆ™è¿”å›ä¸–ç•Œåœºæ™¯")]
+        [SerializeField] private bool testMode = false;
 
         [Header("Views")]
         [SerializeField] private BattleUnitView playerView;
@@ -40,7 +46,12 @@ namespace Pokemon.Presentation
 
         private void InitBattle()
         {
-            
+            // åˆå§‹åŒ–é»˜è®¤é“å…·ï¼ˆä»…é¦–æ¬¡ï¼‰
+            if (defaultPokeball != null && !PlayerParty.Inventory.ContainsKey(defaultPokeball))
+            {
+                PlayerParty.AddItem(defaultPokeball, defaultPokeballCount);
+            }
+
             if (PlayerParty.ActivePokemon == null)
             {
                 PlayerParty.ActivePokemon = new MonsterRuntime(playerSpecies, 5);
@@ -56,19 +67,19 @@ namespace Pokemon.Presentation
                 if (skill != null) _playerSkills.Add(skill);
             }
 
-            // 1. ¶©ÔÄ UI ÊÂ¼ş
+            // 1. è®¢é˜… UI äº‹ä»¶
             uiController.OnSkillClicked += HandlePlayerAction;
-            uiController.OnItemClicked += HandleUseItem;      // ¶©ÔÄµÀ¾ßµã»÷
-            uiController.OnRunClicked += HandleRunAttempt;    // ¶©ÔÄÌÓÅÜµã»÷
+            uiController.OnItemClicked += HandleUseItem;      // è®¢é˜…é“å…·ç‚¹å‡»
+            uiController.OnRunClicked += HandleRunAttempt;    // è®¢é˜…é€ƒè·‘ç‚¹å‡»
 
-            // 2. ³õÊ¼ UI ÉèÖÃ
+            // 2. åˆå§‹ UI è®¾ç½®
             uiController.SetupNames(_player.Species.DisplayName, _enemy.Species.DisplayName);
             uiController.UpdateHp(_player.CurrentHP, _player.MaxHP, _enemy.CurrentHP, _enemy.MaxHP);
             uiController.RefreshSkills(_playerSkills, _player.CurrentPP);
 
-            // 3. È·±£³õÊ¼ÏÔÊ¾Ö÷²Ëµ¥
+            // 3. ç¡®ä¿åˆå§‹æ˜¾ç¤ºä¸»èœå•
             uiController.ResetToMain();
-            uiController.SetLog($"Ò°ÉúµÄ {_enemy.Species.DisplayName} ³öÏÖÁË£¡");
+            uiController.SetLog($"é‡ç”Ÿçš„ {_enemy.Species.DisplayName} å‡ºç°äº†ï¼");
         }
 
         private void OnDestroy()
@@ -85,7 +96,7 @@ namespace Pokemon.Presentation
         {
             if (_battleEnded) return;
 
-            // Á¢¼´Òş²Ø UI£¬½øÈëÑİËã½×¶Î
+            // ç«‹å³éšè— UIï¼Œè¿›å…¥æ¼”ç®—é˜¶æ®µ
             uiController.HideAllPanels();
 
             SkillData playerSkill = _playerSkills[skillIndex];
@@ -94,14 +105,14 @@ namespace Pokemon.Presentation
             List<TurnStep> steps = _turnUseCase.Execute(_player, playerSkill, _enemy, enemySkill);
             StartCoroutine(PlayTurnRoutine(steps));
         }
-        // ÌÓÅÜ´¦Àí
+        // é€ƒè·‘å¤„ç†
         private void HandleRunAttempt()
         {
             if (_battleEnded) return;
             uiController.HideAllPanels();
 
-            // ¼òµ¥Âß¼­£ºÖ±½Ó³É¹¦¡£¸´ÔÓÂß¼­¿ÉÒÔ¼ÓËæ»úÂÊ»òËÙ¶ÈÅĞ¶¨
-            uiController.SetLog("ÌÓÅÜ³É¹¦£¡");
+            // ç®€å•é€»è¾‘ï¼šç›´æ¥æˆåŠŸã€‚å¤æ‚é€»è¾‘å¯ä»¥åŠ éšæœºç‡æˆ–é€Ÿåº¦åˆ¤å®š
+            uiController.SetLog("é€ƒè·‘æˆåŠŸï¼");
             //Invoke(nameof(ReturnToWorld), 1.5f);
             SceneTransitionManager.Instance.ReturnToWorld();
         }
@@ -114,24 +125,33 @@ namespace Pokemon.Presentation
         public void HandleUseItem(ItemData item)
         {
             if (_battleEnded) return;
+            uiController.HideAllPanels();
 
             if (item is IUsable usable)
             {
-                var context = new EffectContext { User = _player, Target = _enemy, Steps = new List<TurnStep>() };
+                var context = new EffectContext
+                {
+                    User = _player,
+                    Target = _enemy,
+                    Steps = new List<TurnStep>(),
+                    IsPlayerAttacking = true,
+                    PlayerRef = _player,
+                    EnemyRef = _enemy
+                };
 
                 if (usable.CanUse(context))
                 {
-                    //uiController.HideAllActionUI(); // Òş²Ø UI
                     usable.OnUse(context);
 
                     if (usable.IsConsumable) PlayerParty.RemoveItem(item, 1);
 
-                    // Ö´ĞĞµÀ¾ßÁ÷³Ì
+                    // æ‰§è¡Œé“å…·æµç¨‹
                     StartCoroutine(ItemTurnRoutine(context.Steps));
                 }
                 else
                 {
-                    uiController.SetLog("ÏÖÔÚÎŞ·¨Ê¹ÓÃ¸ÃµÀ¾ß£¡");
+                    uiController.SetLog("ç°åœ¨æ— æ³•ä½¿ç”¨è¯¥é“å…·ï¼");
+                    uiController.ResetToMain();
                 }
             }
         }
@@ -140,21 +160,30 @@ namespace Pokemon.Presentation
         {
             uiController.SetInteractable(false);
 
-            // 1. ²¥·ÅµÀ¾ßÊ¹ÓÃµÄ¶¯»­ºÍÎÄ×ÖĞÅÏ¢
+            // 1. æ’­æ”¾é“å…·ä½¿ç”¨çš„åŠ¨ç”»å’Œæ–‡å­—ä¿¡æ¯
             yield return StartCoroutine(PlayTurnRoutine(itemSteps));
 
-            // 2. Èç¹ûÕ½¶·Ã»½áÊøÇÒµĞÈËÃ»µ¹ÏÂ£¬µĞÈË½øĞĞ·´»÷
+            // 2. æ£€æŸ¥æ˜¯å¦æ•æ‰æˆåŠŸ
+            if (itemSteps.Exists(s => s.CaughtSuccess))
+            {
+                // å°†ç²¾çµåŠ å…¥èƒŒåŒ…
+                PlayerParty.AddMonster(new MonsterRuntime(_enemy.Species, _enemy.Level));
+                _battleEnded = true;
+
+                uiController.SetLog($"{_enemy.Species.DisplayName} åŠ å…¥äº†èƒŒåŒ…ï¼");
+                yield return new WaitForSeconds(stepDelaySeconds);
+                SceneTransitionManager.Instance.ReturnToWorld();
+                yield break;
+            }
+
+            // 3. å¦‚æœæˆ˜æ–—æ²¡ç»“æŸä¸”æ•Œäººæ²¡å€’ä¸‹ï¼Œæ•Œäººè¿›è¡Œåå‡»
             if (!_battleEnded && !_enemy.IsFainted)
             {
-                uiController.SetLog($"Ò°ÉúµÄ {_enemy.Species.DisplayName} ³Ã»ú·¢ÆğÁË¹¥»÷£¡");
+                uiController.SetLog($"é‡ç”Ÿçš„ {_enemy.Species.DisplayName} è¶æœºå‘èµ·äº†æ”»å‡»ï¼");
                 yield return new WaitForSeconds(stepDelaySeconds);
 
                 SkillData enemySkill = PickFirstAvailableSkill(_enemy);
-
-                // ×¢Òâ£ºÕâÀïÖ»Ö´ĞĞµĞÈËµÄµ¥·½ÃæĞĞ¶¯
-                // Îª´ËÄã¿ÉÒÔ¸ø ExecuteTurnUseCase Ôö¼ÓÒ»¸ö¼òµ¥µÄµ¥Ä¿±êÖ´ĞĞ·½·¨£¬»òÕßÍ¨¹ı null ´«²Î
                 List<TurnStep> counterAttackSteps = _turnUseCase.Execute(null, null, _enemy, enemySkill);
-
                 yield return StartCoroutine(PlayTurnRoutine(counterAttackSteps));
             }
         }
@@ -165,11 +194,11 @@ namespace Pokemon.Presentation
 
             foreach (var step in steps)
             {
-                // Èç¹ûÕâÒ»²½Ã»ÓĞÈÎºÎÏûÏ¢£¬¾ÍÌø¹ı UI ¸üĞÂ
+                // å¦‚æœè¿™ä¸€æ­¥æ²¡æœ‰ä»»ä½•æ¶ˆæ¯ï¼Œå°±è·³è¿‡ UI æ›´æ–°
                 if (string.IsNullOrEmpty(step.Message)) continue;
 
                 uiController.SetLog(step.Message);
-                uiController.UpdateHp(step.PlayerHpAfter, _player.MaxHP, step.EnemyHpAfter, _enemy.MaxHP);// ¸üĞÂÑªÌõ£¨Ê¹ÓÃµ±Ç°²½ÊıÖµ£©
+                uiController.UpdateHp(step.PlayerHpAfter, _player.MaxHP, step.EnemyHpAfter, _enemy.MaxHP);// æ›´æ–°è¡€æ¡ï¼ˆä½¿ç”¨å½“å‰æ­¥æ•°å€¼ï¼‰
 
                 if (step.AnimType == StepAnimType.PlayerAttack) yield return playerView.PlayAttackAnimation(true);
                 else if (step.AnimType == StepAnimType.EnemyAttack) yield return enemyView.PlayAttackAnimation(false);
@@ -183,9 +212,13 @@ namespace Pokemon.Presentation
                     _battleEnded = true;
                     uiController.SetInteractable(false);
 
+                    // æ•æ‰æˆåŠŸï¼šç›´æ¥è·³å‡ºï¼Œç”± ItemTurnRoutine å¤„ç†åç»­é€»è¾‘
+                    if (step.CaughtSuccess)
+                        yield break;
+
                     if (step.PlayerWon)
                     {
-                        // 1. Å¬Á¦Öµ»ñµÃ
+                        // 1. åŠªåŠ›å€¼è·å¾—
                         _player.AddEVs(
                             _enemy.Species.EvYieldHP,
                             _enemy.Species.EvYieldAttack,
@@ -194,45 +227,55 @@ namespace Pokemon.Presentation
                             _enemy.Species.EvYieldSpAttack,
                             _enemy.Species.EvYieldSpDefense);
 
-                        // 2. ¾­Ñé½áËã
+                        // 2. ç»éªŒç»“ç®—
                         int gainedExp = (_enemy.Species.BaseExpYield * _enemy.Level) / 7;
-                        uiController.SetLog($"»ñµÃÁË {gainedExp} µã¾­ÑéÖµ£¡");
+                        uiController.SetLog($"è·å¾—äº† {gainedExp} ç‚¹ç»éªŒå€¼ï¼");
                         yield return new WaitForSeconds(stepDelaySeconds);
 
-                        // --- ĞŞ¸´µã£ºµ÷ÓÃ²»´ø out ²ÎÊıµÄ AddExp ---
+                        // --- ä¿®å¤ç‚¹ï¼šè°ƒç”¨ä¸å¸¦ out å‚æ•°çš„ AddExp ---
                         bool leveledUp = _player.AddExp(gainedExp);
 
                         if (leveledUp)
                         {
-                            uiController.SetLog($"{_player.Species.DisplayName} Éıµ½ÁË Lv.{_player.Level}£¡");
+                            uiController.SetLog($"{_player.Species.DisplayName} å‡åˆ°äº† Lv.{_player.Level}ï¼");
                             uiController.UpdateHp(_player.CurrentHP, _player.MaxHP, _enemy.CurrentHP, _enemy.MaxHP);
                             yield return new WaitForSeconds(stepDelaySeconds);
 
-                            uiController.SetLog($"ÊıÖµµÃµ½ÁËÌáÉı£¡¹¥»÷: {_player.Attack}, ËÙ¶È: {_player.Speed}");
+                            uiController.SetLog($"æ•°å€¼å¾—åˆ°äº†æå‡ï¼æ”»å‡»: {_player.Attack}, é€Ÿåº¦: {_player.Speed}");
                             yield return new WaitForSeconds(stepDelaySeconds);
                         }
                     }
                     else
                     {
-                        // --- ĞŞÕıÂß¼­£ºÖ»ÓĞ PlayerWon Îª false ²ÅÊÇÕ½°Ü ---
-                        uiController.SetLog("ÄãÑÛÇ°Ò»ºÚ...");
+                        // --- ä¿®æ­£é€»è¾‘ï¼šåªæœ‰ PlayerWon ä¸º false æ‰æ˜¯æˆ˜è´¥ ---
+                        uiController.SetLog("ä½ çœ¼å‰ä¸€é»‘...");
                         yield return new WaitForSeconds(stepDelaySeconds);
                     }
 
-                    uiController.SetLog("ÕıÔÚÑ°ÕÒÏÂÒ»¸ö¶ÔÊÖ...");
+                    uiController.SetLog("æ­£åœ¨è¿”å›...");
                     yield return new WaitForSeconds(2f);
-                    SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+
+                    if (testMode)
+                    {
+                        // æµ‹è¯•æ¨¡å¼ï¼šç»§ç»­åŒ¹é…ä¸‹ä¸€åªé‡ç”Ÿç²¾çµ
+                        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                    }
+                    else
+                    {
+                        // æ­£å¸¸æµç¨‹ï¼šè¿”å›ä¸–ç•Œåœºæ™¯
+                        SceneTransitionManager.Instance.ReturnToWorld();
+                    }
                     yield break;
                 }
             }
 
             if (!_battleEnded)
             {
-                // »ØºÏ½áÊø£¬ÖØÖÃµ½Ö÷²Ëµ¥¹©Íæ¼ÒÖØĞÂÑ¡Ôñ
-                uiController.SetLog("Òª×öÊ²Ã´£¿");
+                // å›åˆç»“æŸï¼Œé‡ç½®åˆ°ä¸»èœå•ä¾›ç©å®¶é‡æ–°é€‰æ‹©
+                uiController.SetLog("è¦åšä»€ä¹ˆï¼Ÿ");
                 uiController.RefreshSkills(_playerSkills, _player.CurrentPP);
-                uiController.ResetToMain(); // ÕâÀïµ÷ÓÃÄã UI ¿ØÖÆÆ÷ÀïµÄÇĞ»»µ½Ö÷Ãæ°åµÄ·½·¨
-                uiController.SetInteractable(true); // »Ö¸´½»»¥
+                uiController.ResetToMain(); // è¿™é‡Œè°ƒç”¨ä½  UI æ§åˆ¶å™¨é‡Œçš„åˆ‡æ¢åˆ°ä¸»é¢æ¿çš„æ–¹æ³•
+                uiController.SetInteractable(true); // æ¢å¤äº¤äº’
             }
         }
 

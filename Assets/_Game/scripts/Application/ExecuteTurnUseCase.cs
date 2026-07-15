@@ -6,8 +6,8 @@ using UnityEngine;
 namespace Pokemon.Application
 {
 
-    // ¶¨ÒåÒ»¸ö»ØºÏÄÚµÄµ¥¸ö"²½Öè/»­Ãæ"
-    //²»¿É±äµÄÊı¾İ¿ìÕÕ
+    // å®šä¹‰ä¸€ä¸ªå›åˆå†…çš„å•ä¸ª"æ­¥éª¤/ç”»é¢"
+    //ä¸å¯å˜çš„æ•°æ®å¿«ç…§
     public struct TurnStep
     {
         public string Message;
@@ -15,7 +15,8 @@ namespace Pokemon.Application
         public int EnemyHpAfter;
         public bool IsBattleEnd;
         public bool PlayerWon;
-        //ĞÂÔö2DSprite
+        public bool CaughtSuccess;  // æ•æ‰æˆåŠŸæ ‡è®°
+        //æ–°å¢2DSprite
         public StepAnimType AnimType;
     }
     public sealed class ExecuteTurnUseCase
@@ -28,7 +29,7 @@ namespace Pokemon.Application
         }
 
         /// <summary>
-        /// Õ½¶·Ö´ĞĞÆ÷£¬¸ºÔğ´¦ÀíÒ»»ØºÏÄÚÍæ¼ÒºÍµĞÈËµÄĞĞ¶¯Âß¼­Éú³É¿ÉÊÓ»¯Õ½¶·¹ı³Ì
+        /// æˆ˜æ–—æ‰§è¡Œå™¨ï¼Œè´Ÿè´£å¤„ç†ä¸€å›åˆå†…ç©å®¶å’Œæ•Œäººçš„è¡ŒåŠ¨é€»è¾‘ç”Ÿæˆå¯è§†åŒ–æˆ˜æ–—è¿‡ç¨‹
         /// </summary>
         /// <param name="player"></param>
         /// <param name="playerSkill"></param>
@@ -39,51 +40,51 @@ namespace Pokemon.Application
             MonsterRuntime player, SkillData playerSkill,
             MonsterRuntime enemy, SkillData enemySkill)
         {
-            var steps = new List<TurnStep>();       //´æ´¢±¾»ØºÏËùÓĞ²½Öè
+            var steps = new List<TurnStep>();       //å­˜å‚¨æœ¬å›åˆæ‰€æœ‰æ­¥éª¤
 
-            // 1. ÅĞ¶ÏÏÈºóÊÖ
+            // 1. åˆ¤æ–­å…ˆåæ‰‹
             bool playerFirst = player.Speed >= enemy.Speed;
 
             if (playerFirst)
             {
-                // Íæ¼ÒĞĞ¶¯
+                // ç©å®¶è¡ŒåŠ¨
                 ResolveAction(player, playerSkill, enemy, true, steps);
-                // Á¢¼´¼ì²éµĞÈËÊÇ·ñµ¹ÏÂ
+                // ç«‹å³æ£€æŸ¥æ•Œäººæ˜¯å¦å€’ä¸‹
                 if (CheckAndRecordFaint(player, enemy, steps)) return steps; 
 
-                // µĞÈËĞĞ¶¯
+                // æ•Œäººè¡ŒåŠ¨
                 ResolveAction(enemy, enemySkill, player, false, steps);
-                // Á¢¼´¼ì²éÍæ¼ÒÊÇ·ñµ¹ÏÂ
+                // ç«‹å³æ£€æŸ¥ç©å®¶æ˜¯å¦å€’ä¸‹
                 if (CheckAndRecordFaint(player, enemy, steps)) return steps;
             }
             else
             {
-                // µĞÈËĞĞ¶¯
+                // æ•Œäººè¡ŒåŠ¨
                 ResolveAction(enemy, enemySkill, player, false, steps);
                 if (CheckAndRecordFaint(player, enemy, steps)) return steps;
 
-                // Íæ¼ÒĞĞ¶¯
+                // ç©å®¶è¡ŒåŠ¨
                 ResolveAction(player, playerSkill, enemy, true, steps);
                 if (CheckAndRecordFaint(player, enemy, steps)) return steps;
             }
 
-            // 2. »ØºÏÄ©Î²½áËã½×¶Î£¨ÀıÈçÖĞ¶¾¿ÛÑª£©
+            // 2. å›åˆæœ«å°¾ç»“ç®—é˜¶æ®µï¼ˆä¾‹å¦‚ä¸­æ¯’æ‰£è¡€ï¼‰
             ResolveEndOfTurn(player, enemy, steps);
             
-            // ÔÙ´Î¼ì²éÄ©Î²½×¶ÎÊÇ·ñÓĞÈË±»¶¾ËÀ
+            // å†æ¬¡æ£€æŸ¥æœ«å°¾é˜¶æ®µæ˜¯å¦æœ‰äººè¢«æ¯’æ­»
             CheckAndRecordFaint(player, enemy, steps);
 
             return steps;
         }
 
-        // ³éÈ¡³öÀ´µÄ¸¨Öú·½·¨£º¼ì²éÊÇ·ñÓĞ±¦¿ÉÃÎµ¹ÏÂ²¢¼ÇÂ¼
+        // æŠ½å–å‡ºæ¥çš„è¾…åŠ©æ–¹æ³•ï¼šæ£€æŸ¥æ˜¯å¦æœ‰å®å¯æ¢¦å€’ä¸‹å¹¶è®°å½•
         private bool CheckAndRecordFaint(MonsterRuntime player, MonsterRuntime enemy, List<TurnStep> steps)
         {
             if (player.IsFainted || enemy.IsFainted)
             {
                 steps.Add(new TurnStep
                 {
-                    Message = player.IsFainted ? $"{player.Species.DisplayName} µ¹ÏÂÁË..." : $"{enemy.Species.DisplayName} µ¹ÏÂÁË£¡",
+                    Message = player.IsFainted ? $"{player.Species.DisplayName} å€’ä¸‹äº†..." : $"{enemy.Species.DisplayName} å€’ä¸‹äº†ï¼",
                     PlayerHpAfter = player.CurrentHP,
                     EnemyHpAfter = enemy.CurrentHP,
                     IsBattleEnd = true,
@@ -102,21 +103,31 @@ namespace Pokemon.Application
         {
             if (skill == null) return;
 
-            // ¡¾ĞŞ¸´ 1¡¿£ºÔÚÊ¹ÓÃ¼¼ÄÜÇ°£¬ÏÈÉú³ÉÒ»¸öÔ¤¸æ²½Öè£¬´¥·¢¹¥»÷£¨³å×²£©¶¯»­£¡
-            steps.Add(CreateStep(
-                $"{attacker.Species.DisplayName} Ê¹ÓÃÁË {skill.DisplayName}£¡",
-                attacker, defender, isPlayerAttacking,
-                isPlayerAttacking ? StepAnimType.PlayerAttack : StepAnimType.EnemyAttack // Éè¶¨¹¥»÷¶¯»­
-            ));
-
-            // 1. ÃüÖĞÅĞ¶¨
-            if (!_damageCalculator.CheckHit(skill))
+            // PP æ¶ˆè€—ï¼šPP ä¸è¶³æ—¶æ— æ³•ä½¿ç”¨è¯¥æŠ€èƒ½
+            if (!attacker.TryConsumePP(skill))
             {
-                steps.Add(new TurnStep { Message = $"{skill.DisplayName} Î´ÃüÖĞ£¡" });
+                steps.Add(CreateStep(
+                    $"{attacker.Species.DisplayName} çš„ {skill.DisplayName} PPå·²è€—å°½ï¼",
+                    attacker, defender, isPlayerAttacking
+                ));
                 return;
             }
 
-            // 2. Ô¤¼ÆËãÉËº¦ (Èç¹ûÊÇÎïÀí/ÌØÊâ¹¥»÷)
+            // ã€ä¿®å¤ 1ã€‘ï¼šåœ¨ä½¿ç”¨æŠ€èƒ½å‰ï¼Œå…ˆç”Ÿæˆä¸€ä¸ªé¢„å‘Šæ­¥éª¤ï¼Œè§¦å‘æ”»å‡»ï¼ˆå†²æ’ï¼‰åŠ¨ç”»ï¼
+            steps.Add(CreateStep(
+                $"{attacker.Species.DisplayName} ä½¿ç”¨äº† {skill.DisplayName}ï¼",
+                attacker, defender, isPlayerAttacking,
+                isPlayerAttacking ? StepAnimType.PlayerAttack : StepAnimType.EnemyAttack // è®¾å®šæ”»å‡»åŠ¨ç”»
+            ));
+
+            // 1. å‘½ä¸­åˆ¤å®š
+            if (!_damageCalculator.CheckHit(skill))
+            {
+                steps.Add(new TurnStep { Message = $"{skill.DisplayName} æœªå‘½ä¸­ï¼" });
+                return;
+            }
+
+            // 2. é¢„è®¡ç®—ä¼¤å®³ (å¦‚æœæ˜¯ç‰©ç†/ç‰¹æ®Šæ”»å‡»)
             DamageResult? dmg = null;
             if (skill.Category != SkillCategory.Status)
             {
@@ -124,7 +135,7 @@ namespace Pokemon.Application
                 dmg = _damageCalculator.CalculateDamage(attacker, defender, skill, steps);
             }
 
-            // 3. ¹¹½¨ÉÏÏÂÎÄ
+            // 3. æ„å»ºä¸Šä¸‹æ–‡
             var context = new EffectContext
             {
                 User = attacker,
@@ -132,13 +143,13 @@ namespace Pokemon.Application
                 Skill = skill,
                 Damage = dmg,
                 Steps = steps,
-                IsPlayerAttacking = isPlayerAttacking,// ¡¾ĞÂÔö¡¿´«¸øÌØĞ§Ä£¿é
+                IsPlayerAttacking = isPlayerAttacking,// ã€æ–°å¢ã€‘ä¼ ç»™ç‰¹æ•ˆæ¨¡å—
 
                 PlayerRef = isPlayerAttacking ? attacker : defender,
                 EnemyRef = isPlayerAttacking ? defender : attacker
             };
 
-            // 4. Ö´ĞĞËùÓĞĞ§¹û (×Ô¶¯±éÀú£¬²»ÔÙĞèÒª if-else)
+            // 4. æ‰§è¡Œæ‰€æœ‰æ•ˆæœ (è‡ªåŠ¨éå†ï¼Œä¸å†éœ€è¦ if-else)
             foreach (var effect in skill.GetEffects())
             {
                 if (effect.CanProcess(context))
@@ -147,8 +158,8 @@ namespace Pokemon.Application
                 }
             }
 
-            // --- ĞÂÔö£º¼¼ÄÜ¼°ÆäĞ§¹ûÖ´ĞĞÍêºó£¬¼ì²é·ÀÓù·½ÊÇ·ñ´¥·¢ÁËÌØĞÔ ---
-            // 5. ¡¾ĞÂÔö¼ì²éµã¡¿ÉËº¦´òÍêÁË£¬¿´¿´±»´òµÄÄ¿±ê(defender)ÊÇ·ñĞèÒª·¢¶¯ÃÍ»ğ
+            // --- æ–°å¢ï¼šæŠ€èƒ½åŠå…¶æ•ˆæœæ‰§è¡Œå®Œåï¼Œæ£€æŸ¥é˜²å¾¡æ–¹æ˜¯å¦è§¦å‘äº†ç‰¹æ€§ ---
+            // 5. ã€æ–°å¢æ£€æŸ¥ç‚¹ã€‘ä¼¤å®³æ‰“å®Œäº†ï¼Œçœ‹çœ‹è¢«æ‰“çš„ç›®æ ‡(defender)æ˜¯å¦éœ€è¦å‘åŠ¨çŒ›ç«
             CheckAbilityCrisisTrigger(defender, !isPlayerAttacking, steps, context.PlayerRef, context.EnemyRef);
         }
 
@@ -156,42 +167,42 @@ namespace Pokemon.Application
         private void ResolveEndOfTurn(MonsterRuntime player, MonsterRuntime enemy, List<TurnStep> steps)
         {
             ProcessStatusDamage(player, true, steps, player, enemy);
-            if (!enemy.IsFainted) // Èç¹ûÍæ¼Ò±»¶¾ËÀÁË¾Í²»ÓÃÅĞµĞÈËÁË
+            if (!enemy.IsFainted) // å¦‚æœç©å®¶è¢«æ¯’æ­»äº†å°±ä¸ç”¨åˆ¤æ•Œäººäº†
                 ProcessStatusDamage(enemy, false, steps, player, enemy);
         }
 
         private void ProcessStatusDamage(MonsterRuntime target, bool isPlayer, List<TurnStep> steps, MonsterRuntime playerRef, MonsterRuntime enemyRef)
         {
-            // 1. »ù´¡À¹½Ø£ºÈç¹ûÒÑ¾­µ¹ÏÂ£¬Ö±½Ó·µ»Ø
+            // 1. åŸºç¡€æ‹¦æˆªï¼šå¦‚æœå·²ç»å€’ä¸‹ï¼Œç›´æ¥è¿”å›
             if (target.IsFainted) return;
 
-            // 2. ½«×´Ì¬ºÍ×î´óÑªÁ¿¶ª¸ø¹æÔòÀà£¬ÈÃËü¸æËßÎÒ¿Û¶àÉÙÑª¡¢½ĞÊ²Ã´Ãû×Ö
+            // 2. å°†çŠ¶æ€å’Œæœ€å¤§è¡€é‡ä¸¢ç»™è§„åˆ™ç±»ï¼Œè®©å®ƒå‘Šè¯‰æˆ‘æ‰£å¤šå°‘è¡€ã€å«ä»€ä¹ˆåå­—
             if (StatusMechanics.TryGetEndOfTurnDamage(target.CurrentStatus, target.MaxHP, out int damage, out string statusName))
             {
-                // 3. Ö»ÓĞµ±·µ»Ø true Ê±£¨È·ÊµĞèÒª¿ÛÑª£©£¬²ÅÖ´ĞĞ¿ÛÑªºÍ¶¯»­Âß¼­
+                // 3. åªæœ‰å½“è¿”å› true æ—¶ï¼ˆç¡®å®éœ€è¦æ‰£è¡€ï¼‰ï¼Œæ‰æ‰§è¡Œæ‰£è¡€å’ŒåŠ¨ç”»é€»è¾‘
                 target.ApplyDamage(damage);
 
                 steps.Add(new TurnStep
                 {
-                    Message = $"{target.Species.DisplayName} ÒòÎª{statusName}ÊÜµ½ÁË {damage} µãÉËº¦£¡",
+                    Message = $"{target.Species.DisplayName} å› ä¸º{statusName}å—åˆ°äº† {damage} ç‚¹ä¼¤å®³ï¼",
                     PlayerHpAfter = playerRef.CurrentHP,
                     EnemyHpAfter = enemyRef.CurrentHP,
                     IsBattleEnd = false,
                     AnimType = isPlayer ? StepAnimType.PlayerHit : StepAnimType.EnemyHit
                 });
 
-                // --- ĞÂÔö£º¿ÛÑªºóÁ¢¼´¼ì²éÌØĞÔ ---
+                // --- æ–°å¢ï¼šæ‰£è¡€åç«‹å³æ£€æŸ¥ç‰¹æ€§ ---
                 CheckAbilityCrisisTrigger(target, isPlayer, steps, playerRef, enemyRef);
             }
         }
         private void CheckAbilityCrisisTrigger(MonsterRuntime target, bool isTargetPlayer, List<TurnStep> steps, MonsterRuntime playerRef, MonsterRuntime enemyRef)
         {
-            // Ö»ÒªÓĞÌØĞÔ£¬¾Íµ÷ÓÃÍ¨ÓÃµÄ½Ó¿Ú·½·¨
-            // ÒÔºóÔö¼Ó¡°Òı»ğ¡±¡¢¡°ÍşÏÅ¡±»òÈÎºÎĞÂÌØĞÔ£¬ÕâÀïÒ»ĞĞ´úÂë¶¼²»ÓÃ¸Ä
+            // åªè¦æœ‰ç‰¹æ€§ï¼Œå°±è°ƒç”¨é€šç”¨çš„æ¥å£æ–¹æ³•
+            // ä»¥åå¢åŠ â€œå¼•ç«â€ã€â€œå¨å“â€æˆ–ä»»ä½•æ–°ç‰¹æ€§ï¼Œè¿™é‡Œä¸€è¡Œä»£ç éƒ½ä¸ç”¨æ”¹
             target.ActiveAbility?.CheckAndProcessNotification(target, steps, playerRef, enemyRef);
         }
 
-        // ¡¾ĞŞ¸´ 2¡¿£ºĞŞ¸ÄÄãÔ­ÓĞµÄ CreateStep£¬ÈÃËüÖ§³Ö´«Èë AnimType£¬¼õÉÙÖØ¸´´úÂë
+        // ã€ä¿®å¤ 2ã€‘ï¼šä¿®æ”¹ä½ åŸæœ‰çš„ CreateStepï¼Œè®©å®ƒæ”¯æŒä¼ å…¥ AnimTypeï¼Œå‡å°‘é‡å¤ä»£ç 
         private TurnStep CreateStep(string msg, MonsterRuntime attacker, MonsterRuntime defender, bool isPlayerAttacking, StepAnimType animType = StepAnimType.None)
         {
             return new TurnStep
@@ -200,7 +211,7 @@ namespace Pokemon.Application
                 PlayerHpAfter = isPlayerAttacking ? attacker.CurrentHP : defender.CurrentHP,
                 EnemyHpAfter = isPlayerAttacking ? defender.CurrentHP : attacker.CurrentHP,
                 IsBattleEnd = false,
-                AnimType = animType // ¸³Óè¶¯»­ÀàĞÍ
+                AnimType = animType // èµ‹äºˆåŠ¨ç”»ç±»å‹
             };
         }
     }
