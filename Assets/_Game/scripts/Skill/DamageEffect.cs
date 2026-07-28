@@ -11,7 +11,15 @@ namespace Pokemon.Domain.Effects
 
         public override void Execute(EffectContext context)
         {
-            context.Target.ApplyDamage(context.Damage.Value.FinalDamage);
+            int damage = context.Damage.Value.FinalDamage;
+            if (context.IncomingReaction != null &&
+                context.IncomingReaction.TryInterceptDamage(
+                    context.ReactionContext, context, damage))
+            {
+                return;
+            }
+
+            context.Target.ApplyDamage(damage);
 
             // 判断是谁在挨打，分配对应的受击动画
             StepAnimType hitAnim = context.IsPlayerAttacking
@@ -19,7 +27,7 @@ namespace Pokemon.Domain.Effects
                 : StepAnimType.PlayerHit;
 
             context.AddStep(
-                $"{context.User.Species.DisplayName} 造成了 {context.Damage.Value.FinalDamage} 点伤害",
+                $"{context.User.Species.DisplayName} 造成了 {damage} 点伤害",
                 hitAnim);
         }
     }

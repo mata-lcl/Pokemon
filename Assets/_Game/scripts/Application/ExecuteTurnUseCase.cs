@@ -1,13 +1,12 @@
 using Pokemon.Domain;
-using Pokemon.Presentation;
+using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace Pokemon.Application
 {
-
-    // 定义一个回合内的单个"步骤/画面"
-    //不可变的数据快照
+    /// <summary>
+    /// 表示战斗过程中的一个可播放步骤，并保存该时刻双方 HP 快照。
+    /// </summary>
     public struct TurnStep
     {
         public string Message;
@@ -15,204 +14,136 @@ namespace Pokemon.Application
         public int EnemyHpAfter;
         public bool IsBattleEnd;
         public bool PlayerWon;
-        public bool CaughtSuccess;  // 捕捉成功标记
-        //新增2DSprite
+        public bool CaughtSuccess;
         public StepAnimType AnimType;
     }
+
+    /// <summary>
+    /// 战斗回合用例的对外入口，负责创建上下文并启动固定回合管线。
+    /// </summary>
     public sealed class ExecuteTurnUseCase
     {
-        private readonly DamageCalculator _damageCalculator;
+        private readonly TurnPipeline _turnPipeline;
+        private readonly SkillActionExecutor _skillActionExecutor;
+        private readonly EndOfTurnResolver _endOfTurnResolver;
+        private readonly BattleEndResolver _battleEndResolver;
 
+        /// <summary>
+        /// 创建回合用例并组装当前玩法需要的排序、行动和回合末阶段。
+        /// </summary>
+        /// <param name="damageCalculator">负责命中判定和伤害数值计算的领域服务。</param>
         public ExecuteTurnUseCase(DamageCalculator damageCalculator)
         {
-            _damageCalculator = damageCalculator;
+            _battleEndResolver = new BattleEndResolver();
+            _skillActionExecutor = new SkillActionExecutor(damageCalculator);
+            _endOfTurnResolver = new EndOfTurnResolver();
+            var actionDispatcher = new TurnActionDispatcher(new ITurnActionHandler[]
+            {
+                new SkillTurnActionHandler(_skillActionExecutor)
+            });
+
+            var reactionTurnResolver = new ReactionTurnResolver(
+                _skillActionExecutor,
+                _battleEndResolver);
+
+            _turnPipeline = new TurnPipeline(new ITurnPhase[]
+            {
+                new ActionOrderPhase(),
+                new ActionExecutionPhase(
+                    actionDispatcher,
+                    reactionTurnResolver,
+                    _battleEndResolver),
+                new EndOfTurnPhase(
+                    _endOfTurnResolver,
+                    _battleEndResolver)
+            });
         }
 
         /// <summary>
-        /// 战斗执行器，负责处理一回合内玩家和敌人的行动逻辑生成可视化战斗过程
+        /// 执行玩家和敌人的完整技能回合，并返回 UI 可以依次播放的步骤。
         /// </summary>
-        /// <param name="player"></param>
-        /// <param name="playerSkill"></param>
-        /// <param name="enemy"></param>
-        /// <param name="enemySkill"></param>
-        /// <returns></returns>
+        /// <param name="player">当前玩家出战宝可梦。</param>
+        /// <param name="playerSkill">玩家本回合选择的技能。</param>
+        /// <param name="enemy">当前敌方出战宝可梦。</param>
+        /// <param name="enemySkill">敌方本回合选择的技能。</param>
+        /// <returns>按实际发生顺序排列的回合播放步骤。</returns>
         public List<TurnStep> Execute(
-            MonsterRuntime player, SkillData playerSkill,
-            MonsterRuntime enemy, SkillData enemySkill)
+            MonsterRuntime player,
+            SkillData playerSkill,
+            MonsterRuntime enemy,
+            SkillData enemySkill)
         {
-            var steps = new List<TurnStep>();       //存储本回合所有步骤
+            ValidateCombatants(player, enemy);
 
-            // 1. 判断先后手
-            bool playerFirst = player.Speed >= enemy.Speed;
+            var playerAction = new SkillTurnAction(
+                player, enemy, playerSkill, isPlayerAction: true);
+            var enemyAction = new SkillTurnAction(
+                enemy, player, enemySkill, isPlayerAction: false);
+            var context = new TurnContext(
+                player, enemy, playerAction, enemyAction);
 
-            if (playerFirst)
-            {
-                // 玩家行动
-                ResolveAction(player, playerSkill, enemy, true, steps);
-                // 立即检查敌人是否倒下
-                if (CheckAndRecordFaint(player, enemy, steps)) return steps; 
-
-                // 敌人行动
-                ResolveAction(enemy, enemySkill, player, false, steps);
-                // 立即检查玩家是否倒下
-                if (CheckAndRecordFaint(player, enemy, steps)) return steps;
-            }
-            else
-            {
-                // 敌人行动
-                ResolveAction(enemy, enemySkill, player, false, steps);
-                if (CheckAndRecordFaint(player, enemy, steps)) return steps;
-
-                // 玩家行动
-                ResolveAction(player, playerSkill, enemy, true, steps);
-                if (CheckAndRecordFaint(player, enemy, steps)) return steps;
-            }
-
-            // 2. 回合末尾结算阶段（例如中毒扣血）
-            ResolveEndOfTurn(player, enemy, steps);
-            
-            // 再次检查末尾阶段是否有人被毒死
-            CheckAndRecordFaint(player, enemy, steps);
-
-            return steps;
+            _turnPipeline.Execute(context);
+            return context.Steps;
         }
 
-        // 抽取出来的辅助方法：检查是否有宝可梦倒下并记录
-        private bool CheckAndRecordFaint(MonsterRuntime player, MonsterRuntime enemy, List<TurnStep> steps)
+        /// <summary>
+        /// 只执行玩家或敌方的一次技能行动，不自动处理回合末状态。
+        /// </summary>
+        /// <param name="player">当前玩家出战宝可梦。</param>
+        /// <param name="enemy">当前敌方出战宝可梦。</param>
+        /// <param name="skill">本次单独执行的技能。</param>
+        /// <param name="isPlayerAction">为 true 时由玩家行动，否则由敌方行动。</param>
+        /// <returns>该次行动产生的播放步骤。</returns>
+        public List<TurnStep> ExecuteSingleAction(
+            MonsterRuntime player,
+            MonsterRuntime enemy,
+            SkillData skill,
+            bool isPlayerAction)
         {
-            if (player.IsFainted || enemy.IsFainted)
-            {
-                steps.Add(new TurnStep
-                {
-                    Message = player.IsFainted ? $"{player.Species.DisplayName} 倒下了..." : $"{enemy.Species.DisplayName} 倒下了！",
-                    PlayerHpAfter = player.CurrentHP,
-                    EnemyHpAfter = enemy.CurrentHP,
-                    IsBattleEnd = true,
-                    PlayerWon = enemy.IsFainted,
-                    AnimType = StepAnimType.None
-                });
-                return true;
-            }
-            return false;
+            ValidateCombatants(player, enemy);
+
+            var action = new SkillTurnAction(
+                isPlayerAction ? player : enemy,
+                isPlayerAction ? enemy : player,
+                skill,
+                isPlayerAction);
+            var context = new TurnContext(player, enemy);
+
+            _skillActionExecutor.Execute(context, action);
+            _battleEndResolver.TryResolve(context);
+            return context.Steps;
         }
 
-        private void ResolveAction(
-       MonsterRuntime attacker, SkillData skill,
-       MonsterRuntime defender, bool isPlayerAttacking,
-       List<TurnStep> steps)
+        /// <summary>
+        /// 单独执行一次回合末状态结算，供道具等非完整技能回合复用。
+        /// </summary>
+        /// <param name="player">当前玩家出战宝可梦。</param>
+        /// <param name="enemy">当前敌方出战宝可梦。</param>
+        /// <returns>中毒、灼伤及可能倒下产生的播放步骤。</returns>
+        public List<TurnStep> ExecuteEndOfTurn(
+            MonsterRuntime player,
+            MonsterRuntime enemy)
         {
-            if (skill == null) return;
+            ValidateCombatants(player, enemy);
 
-            // PP 消耗：PP 不足时无法使用该技能
-            if (!attacker.TryConsumePP(skill))
-            {
-                steps.Add(CreateStep(
-                    $"{attacker.Species.DisplayName} 的 {skill.DisplayName} PP已耗尽！",
-                    attacker, defender, isPlayerAttacking
-                ));
-                return;
-            }
-
-            // 【修复 1】：在使用技能前，先生成一个预告步骤，触发攻击（冲撞）动画！
-            steps.Add(CreateStep(
-                $"{attacker.Species.DisplayName} 使用了 {skill.DisplayName}！",
-                attacker, defender, isPlayerAttacking,
-                isPlayerAttacking ? StepAnimType.PlayerAttack : StepAnimType.EnemyAttack // 设定攻击动画
-            ));
-
-            // 1. 命中判定
-            if (!_damageCalculator.CheckHit(skill))
-            {
-                steps.Add(new TurnStep { Message = $"{skill.DisplayName} 未命中！" });
-                return;
-            }
-
-            // 2. 预计算伤害 (如果是物理/特殊攻击)
-            DamageResult? dmg = null;
-            if (skill.Category != SkillCategory.Status)
-            {
-                //dmg = _damageCalculator.CalculateDamage(attacker, defender, skill, steps);
-                dmg = _damageCalculator.CalculateDamage(attacker, defender, skill, steps);
-            }
-
-            // 3. 构建上下文
-            var context = new EffectContext
-            {
-                User = attacker,
-                Target = defender,
-                Skill = skill,
-                Damage = dmg,
-                Steps = steps,
-                IsPlayerAttacking = isPlayerAttacking,// 【新增】传给特效模块
-
-                PlayerRef = isPlayerAttacking ? attacker : defender,
-                EnemyRef = isPlayerAttacking ? defender : attacker
-            };
-
-            // 4. 执行所有效果 (自动遍历，不再需要 if-else)
-            foreach (var effect in skill.GetEffects())
-            {
-                if (effect.CanProcess(context))
-                {
-                    effect.Execute(context);
-                }
-            }
-
-            // --- 新增：技能及其效果执行完后，检查防御方是否触发了特性 ---
-            // 5. 【新增检查点】伤害打完了，看看被打的目标(defender)是否需要发动猛火
-            CheckAbilityCrisisTrigger(defender, !isPlayerAttacking, steps, context.PlayerRef, context.EnemyRef);
+            var context = new TurnContext(player, enemy);
+            _endOfTurnResolver.Resolve(context);
+            _battleEndResolver.TryResolve(context);
+            return context.Steps;
         }
 
-
-        private void ResolveEndOfTurn(MonsterRuntime player, MonsterRuntime enemy, List<TurnStep> steps)
+        /// <summary>
+        /// 确保所有回合入口都收到有效的双方运行时对象。
+        /// </summary>
+        /// <param name="player">需要验证的玩家宝可梦。</param>
+        /// <param name="enemy">需要验证的敌方宝可梦。</param>
+        /// <exception cref="ArgumentNullException">任意一方为空时抛出。</exception>
+        private static void ValidateCombatants(
+            MonsterRuntime player,
+            MonsterRuntime enemy)
         {
-            ProcessStatusDamage(player, true, steps, player, enemy);
-            if (!enemy.IsFainted) // 如果玩家被毒死了就不用判敌人了
-                ProcessStatusDamage(enemy, false, steps, player, enemy);
-        }
-
-        private void ProcessStatusDamage(MonsterRuntime target, bool isPlayer, List<TurnStep> steps, MonsterRuntime playerRef, MonsterRuntime enemyRef)
-        {
-            // 1. 基础拦截：如果已经倒下，直接返回
-            if (target.IsFainted) return;
-
-            // 2. 将状态和最大血量丢给规则类，让它告诉我扣多少血、叫什么名字
-            if (StatusMechanics.TryGetEndOfTurnDamage(target.CurrentStatus, target.MaxHP, out int damage, out string statusName))
-            {
-                // 3. 只有当返回 true 时（确实需要扣血），才执行扣血和动画逻辑
-                target.ApplyDamage(damage);
-
-                steps.Add(new TurnStep
-                {
-                    Message = $"{target.Species.DisplayName} 因为{statusName}受到了 {damage} 点伤害！",
-                    PlayerHpAfter = playerRef.CurrentHP,
-                    EnemyHpAfter = enemyRef.CurrentHP,
-                    IsBattleEnd = false,
-                    AnimType = isPlayer ? StepAnimType.PlayerHit : StepAnimType.EnemyHit
-                });
-
-                // --- 新增：扣血后立即检查特性 ---
-                CheckAbilityCrisisTrigger(target, isPlayer, steps, playerRef, enemyRef);
-            }
-        }
-        private void CheckAbilityCrisisTrigger(MonsterRuntime target, bool isTargetPlayer, List<TurnStep> steps, MonsterRuntime playerRef, MonsterRuntime enemyRef)
-        {
-            // 只要有特性，就调用通用的接口方法
-            // 以后增加“引火”、“威吓”或任何新特性，这里一行代码都不用改
-            target.ActiveAbility?.CheckAndProcessNotification(target, steps, playerRef, enemyRef);
-        }
-
-        // 【修复 2】：修改你原有的 CreateStep，让它支持传入 AnimType，减少重复代码
-        private TurnStep CreateStep(string msg, MonsterRuntime attacker, MonsterRuntime defender, bool isPlayerAttacking, StepAnimType animType = StepAnimType.None)
-        {
-            return new TurnStep
-            {
-                Message = msg,
-                PlayerHpAfter = isPlayerAttacking ? attacker.CurrentHP : defender.CurrentHP,
-                EnemyHpAfter = isPlayerAttacking ? defender.CurrentHP : attacker.CurrentHP,
-                IsBattleEnd = false,
-                AnimType = animType // 赋予动画类型
-            };
+            if (player == null) throw new ArgumentNullException(nameof(player));
+            if (enemy == null) throw new ArgumentNullException(nameof(enemy));
         }
     }
 }

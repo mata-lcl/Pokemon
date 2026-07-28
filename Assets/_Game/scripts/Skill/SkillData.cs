@@ -38,6 +38,11 @@ namespace Pokemon.Domain
         [Range(1, 100)]
         public int MaxPP;
 
+        [Header("行动规则")]
+        [Tooltip("优先级越高越先行动；相同优先级再比较速度")]
+        [Range(-7, 7)]
+        public int Priority;
+
         // ---------- 效果配置（统一入口） ----------
 
         [Header("效果配置列表（可设触发几率,默认1.0=必定触发）")]

@@ -183,7 +183,15 @@ namespace Pokemon.Presentation
                 yield return new WaitForSeconds(stepDelaySeconds);
 
                 SkillData enemySkill = PickFirstAvailableSkill(_enemy);
-                List<TurnStep> counterAttackSteps = _turnUseCase.Execute(null, null, _enemy, enemySkill);
+                List<TurnStep> counterAttackSteps = _turnUseCase.ExecuteSingleAction(
+                    _player, _enemy, enemySkill, isPlayerAction: false);
+
+                // 敌方行动没有结束战斗时，继续结算中毒、灼伤等回合末效果。
+                if (!counterAttackSteps.Exists(step => step.IsBattleEnd))
+                {
+                    counterAttackSteps.AddRange(_turnUseCase.ExecuteEndOfTurn(_player, _enemy));
+                }
+
                 yield return StartCoroutine(PlayTurnRoutine(counterAttackSteps));
             }
         }

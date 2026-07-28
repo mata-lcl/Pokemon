@@ -6,6 +6,24 @@
 
 ---
 
+## [0.4.2] - 2026-07-28
+
+### 新增功能
+- 新增 `TurnContext`、`SkillTurnAction` 回合数据模型，并完善 `TurnStep` 的回合结果记录。
+- 新增回合管线阶段：行动排序、行动执行和回合末结算。
+- 新增 `听桥` 应对技能，支持拦截伤害、反弹伤害，以及面对变化技能时的特殊处理。
+- 新增 `IReactionSkillEffect` 与 `SkillReactionContext`，支持技能效果参与特殊行动时序。
+
+### 重构与优化
+- 重构 `ExecuteTurnUseCase`，将完整回合流程拆分为 `TurnPipeline`、`TurnPhase`、行动分发器和多个 Resolver。
+- 新增 `ExecuteSingleAction` 和 `ExecuteEndOfTurn` 入口，支持道具回合复用敌方单次行动和回合末结算。
+- 扩展 `EffectContext`，统一向技能效果传递双方宝可梦、伤害结果和反应技能上下文。
+- 更新 `DamageEffect`，支持在造成伤害前交由应对技能拦截处理。
+
+### Bug 修复
+- 修复道具使用后的敌方反击仍调用完整回合入口的问题，避免重复创建玩家行动。
+- 修复道具回合未正确追加中毒、灼伤等回合末结算步骤的问题。
+
 ## [0.2.0] - 2026-07-15
 
 ### ✨ 新功能
