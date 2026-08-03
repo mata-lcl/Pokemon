@@ -9,192 +9,300 @@ namespace Pokemon.Presentation
 {
     public class BattleUIController : MonoBehaviour
     {
-        // --- 面板引用 ---
-        [Header("菜单控制")]
-        [SerializeField] private GameObject mainActionPanel; // 包含主按钮的父物体
-        [SerializeField] private GameObject skillPanel;      // 包含技能按钮的父物体
-        [SerializeField] private GameObject itemPanel;       // 包含道具列表的父物体
+        [Header("Action panels")]
+        [SerializeField] private GameObject mainActionPanel;
+        [SerializeField] private GameObject skillPanel;
+        [SerializeField] private GameObject itemPanel;
 
-        [Header("主菜单按钮")]
-        [SerializeField] private Button fightBtn;    // 战斗按钮
-        [SerializeField] private Button bagBtn;      // 道具按钮
-        [SerializeField] private Button runBtn;      // 逃走按钮
-        [SerializeField] private Button skillBackBtn; // 技能页面的"返回"按钮
-        [SerializeField] private Button BagBackBtn;  // 道具页面的"返回"按钮
+        [Header("Action buttons")]
+        [SerializeField] private Button fightBtn;
+        [SerializeField] private Button bagBtn;
+        [SerializeField] private Button runBtn;
+        [SerializeField] private Button skillBackBtn;
+        [SerializeField] private Button BagBackBtn;
 
-        // --- UI文本 ---
-        [Header("UI文本")]
+        [Header("Pokemon switch")]
+        [SerializeField] private Button pokemonBtn;
+        [SerializeField] private GameObject pokemonPanel;
+        [SerializeField] private Button pokemonBackBtn;
+        [SerializeField] private Button[] pokemonButtons;
+        [SerializeField] private TMP_Text[] pokemonBtnTexts;
+
+        [Header("Battle text")]
         [SerializeField] private TMP_Text playerNameText;
         [SerializeField] private TMP_Text enemyNameText;
         [SerializeField] private TMP_Text playerHpText;
         [SerializeField] private TMP_Text enemyHpText;
         [SerializeField] private TMP_Text logText;
 
-        [Header("UI技能按钮")]
+        [Header("Skill buttons")]
         [SerializeField] private Button[] skillButtons;
         [SerializeField] private TMP_Text[] skillBtnTexts;
 
-        [Header("UI道具按钮")]
+        [Header("Item buttons")]
         [SerializeField] private Button[] itemButtons;
         [SerializeField] private TMP_Text[] itemBtnTexts;
 
-        // --- 事件 ---
+        [Header("Playback control")]
+        [SerializeField] private Button playbackModeButton;
+        [SerializeField] private TMP_Text playbackModeText;
+
         public event Action<int> OnSkillClicked;
         public event Action<ItemData> OnItemClicked;
         public event Action OnRunClicked;
+        public event Action OnPlaybackModeClicked;
+        public event Action OnPokemonClicked;
+        public event Action OnPokemonSwitchCancelled;
+        public event Action<MonsterRuntime> OnPokemonSelected;
 
-        private List<ItemData> _cachedItems;
+        private List<ItemData> _cachedItems = new List<ItemData>();
+        private List<MonsterRuntime> _cachedPokemon = new List<MonsterRuntime>();
 
         private void Awake()
         {
-            // 主菜单：切换到技能面板
-            fightBtn.onClick.AddListener(() => ShowSubPanel(skillPanel));
+            if (fightBtn != null) fightBtn.onClick.AddListener(() => ShowSubPanel(skillPanel));
+            if (bagBtn != null)
+            {
+                bagBtn.onClick.AddListener(RefreshItemList);
+                bagBtn.onClick.AddListener(() => ShowSubPanel(itemPanel));
+            }
+            if (skillBackBtn != null) skillBackBtn.onClick.AddListener(() => ShowSubPanel(mainActionPanel));
+            if (BagBackBtn != null) BagBackBtn.onClick.AddListener(() => ShowSubPanel(mainActionPanel));
+            if (runBtn != null) runBtn.onClick.AddListener(() => OnRunClicked?.Invoke());
 
-            // 主菜单：进入道具面板
-            bagBtn.onClick.AddListener(() => {
-                RefreshItemList();
-                ShowSubPanel(itemPanel);
-            });
+            EnsurePokemonPanel();
+            if (pokemonBtn != null) pokemonBtn.onClick.AddListener(() => OnPokemonClicked?.Invoke());
+            if (pokemonBackBtn != null) pokemonBackBtn.onClick.AddListener(() => OnPokemonSwitchCancelled?.Invoke());
+            BindPokemonButtons();
 
-            // 返回按钮
-            skillBackBtn.onClick.AddListener(() => ShowSubPanel(mainActionPanel));
-            BagBackBtn.onClick.AddListener(() => ShowSubPanel(mainActionPanel));
+            if (playbackModeButton != null)
+                playbackModeButton.onClick.AddListener(() => OnPlaybackModeClicked?.Invoke());
 
-            // 逃跑
-            runBtn.onClick.AddListener(() => OnRunClicked?.Invoke());
-
-            // 技能按钮绑定
             for (int i = 0; i < skillButtons.Length; i++)
             {
                 int index = i;
-                skillButtons[i].onClick.AddListener(() => OnSkillClicked?.Invoke(index));
+                if (skillButtons[i] != null)
+                    skillButtons[i].onClick.AddListener(() => OnSkillClicked?.Invoke(index));
             }
 
-            // 道具按钮绑定
             for (int i = 0; i < itemButtons.Length; i++)
             {
                 int index = i;
-                itemButtons[i].onClick.AddListener(() => {
-                    if (index < _cachedItems.Count)
-                        ItemButtonCallback(_cachedItems[index]);
-                });
+                if (itemButtons[i] != null)
+                    itemButtons[i].onClick.AddListener(() =>
+                    {
+                        if (index < _cachedItems.Count) OnItemClicked?.Invoke(_cachedItems[index]);
+                    });
             }
         }
 
-        /// <summary>
-        /// 切换面板的通用方法
-        /// </summary>
+        private void BindPokemonButtons()
+        {
+            if (pokemonButtons == null) return;
+            for (int i = 0; i < pokemonButtons.Length; i++)
+            {
+                int index = i;
+                if (pokemonButtons[i] != null)
+                    pokemonButtons[i].onClick.AddListener(() =>
+                    {
+                        if (index < _cachedPokemon.Count) OnPokemonSelected?.Invoke(_cachedPokemon[index]);
+                    });
+            }
+        }
+
         private void ShowSubPanel(GameObject targetPanel)
         {
-            mainActionPanel.SetActive(targetPanel == mainActionPanel);
-            skillPanel.SetActive(targetPanel == skillPanel);
+            if (mainActionPanel != null) mainActionPanel.SetActive(targetPanel == mainActionPanel);
+            if (skillPanel != null) skillPanel.SetActive(targetPanel == skillPanel);
             if (itemPanel != null) itemPanel.SetActive(targetPanel == itemPanel);
+            if (pokemonPanel != null) pokemonPanel.SetActive(targetPanel == pokemonPanel);
         }
 
-        /// <summary>
-        /// 战斗开始时，强制关闭所有面板
-        /// </summary>
         public void HideAllPanels()
         {
-            mainActionPanel.SetActive(false);
-            skillPanel.SetActive(false);
+            if (mainActionPanel != null) mainActionPanel.SetActive(false);
+            if (skillPanel != null) skillPanel.SetActive(false);
             if (itemPanel != null) itemPanel.SetActive(false);
+            if (pokemonPanel != null) pokemonPanel.SetActive(false);
         }
 
-        /// <summary>
-        /// 重置到主菜单面板
-        /// </summary>
         public void ResetToMain()
         {
-            mainActionPanel.SetActive(true);
-            skillPanel.SetActive(false);
-            itemPanel?.SetActive(false);
+            ShowSubPanel(mainActionPanel);
         }
 
-        /// <summary>
-        /// 道具按钮点击回调
-        /// </summary>
-        public void ItemButtonCallback(ItemData item)
+        public void ShowPokemonSelection(IReadOnlyList<MonsterRuntime> pokemon)
         {
-            OnItemClicked?.Invoke(item);
+            _cachedPokemon = pokemon == null
+                ? new List<MonsterRuntime>()
+                : new List<MonsterRuntime>(pokemon);
+
+            ShowSubPanel(pokemonPanel);
+            for (int i = 0; i < pokemonButtons.Length; i++)
+            {
+                Button button = pokemonButtons[i];
+                if (button == null) continue;
+
+                bool available = i < _cachedPokemon.Count;
+                button.gameObject.SetActive(available);
+                button.interactable = available;
+                if (available && i < pokemonBtnTexts.Length && pokemonBtnTexts[i] != null)
+                {
+                    MonsterRuntime monster = _cachedPokemon[i];
+                    pokemonBtnTexts[i].text = $"{monster.Species.DisplayName} Lv.{monster.Level} HP {monster.CurrentHP}/{monster.MaxHP}";
+                }
+            }
+
+            if (pokemonBackBtn != null) pokemonBackBtn.interactable = true;
         }
 
-        /// <summary>
-        /// 刷新道具列表（从 PlayerParty.Inventory 读取）
-        /// </summary>
+        private void EnsurePokemonPanel()
+        {
+            if (pokemonPanel != null && pokemonButtons != null && pokemonButtons.Length > 0) return;
+
+            Transform parent = mainActionPanel != null ? mainActionPanel.transform.parent : transform;
+            GameObject panelObject = new GameObject("PokemonSwitchPanel", typeof(RectTransform), typeof(Image));
+            panelObject.transform.SetParent(parent, false);
+            RectTransform panelRect = panelObject.GetComponent<RectTransform>();
+            panelRect.anchorMin = new Vector2(0.5f, 0.5f);
+            panelRect.anchorMax = new Vector2(0.5f, 0.5f);
+            panelRect.anchoredPosition = Vector2.zero;
+            panelRect.sizeDelta = new Vector2(500f, 360f);
+            panelObject.GetComponent<Image>().color = new Color(0.06f, 0.09f, 0.14f, 0.96f);
+
+            CreateLabel(panelObject.transform, "选择出战精灵", new Vector2(0.05f, 0.82f), new Vector2(0.95f, 0.98f), 24f);
+
+            const int maxButtons = 6;
+            pokemonButtons = new Button[maxButtons];
+            pokemonBtnTexts = new TMP_Text[maxButtons];
+            for (int i = 0; i < maxButtons; i++)
+            {
+                GameObject buttonObject = new GameObject($"PokemonButton{i + 1}", typeof(RectTransform), typeof(Image), typeof(Button));
+                buttonObject.transform.SetParent(panelObject.transform, false);
+                RectTransform buttonRect = buttonObject.GetComponent<RectTransform>();
+                buttonRect.anchorMin = new Vector2(0.08f, 0.68f - i * 0.095f);
+                buttonRect.anchorMax = new Vector2(0.92f, 0.76f - i * 0.095f);
+                buttonRect.offsetMin = Vector2.zero;
+                buttonRect.offsetMax = Vector2.zero;
+                pokemonButtons[i] = buttonObject.GetComponent<Button>();
+                pokemonBtnTexts[i] = CreateLabel(buttonObject.transform, string.Empty, Vector2.zero, Vector2.one, 18f);
+            }
+
+            GameObject backObject = new GameObject("BackButton", typeof(RectTransform), typeof(Image), typeof(Button));
+            backObject.transform.SetParent(panelObject.transform, false);
+            RectTransform backRect = backObject.GetComponent<RectTransform>();
+            backRect.anchorMin = new Vector2(0.3f, 0.03f);
+            backRect.anchorMax = new Vector2(0.7f, 0.13f);
+            backRect.offsetMin = Vector2.zero;
+            backRect.offsetMax = Vector2.zero;
+            CreateLabel(backObject.transform, "返回", Vector2.zero, Vector2.one, 18f);
+
+            pokemonPanel = panelObject;
+            pokemonBackBtn = backObject.GetComponent<Button>();
+            pokemonPanel.SetActive(false);
+        }
+
+        private static TMP_Text CreateLabel(Transform parent, string value, Vector2 anchorMin, Vector2 anchorMax, float fontSize)
+        {
+            GameObject labelObject = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+            labelObject.transform.SetParent(parent, false);
+            RectTransform rect = labelObject.GetComponent<RectTransform>();
+            rect.anchorMin = anchorMin;
+            rect.anchorMax = anchorMax;
+            rect.offsetMin = new Vector2(8f, 0f);
+            rect.offsetMax = new Vector2(-8f, 0f);
+            TextMeshProUGUI label = labelObject.GetComponent<TextMeshProUGUI>();
+            label.text = value;
+            label.alignment = TextAlignmentOptions.Center;
+            label.fontSize = fontSize;
+            return label;
+        }
+
+        public void ItemButtonCallback(ItemData item) => OnItemClicked?.Invoke(item);
+
         public void RefreshItemList()
         {
             _cachedItems = PlayerParty.GetUsableItems();
-
             for (int i = 0; i < itemButtons.Length; i++)
             {
-                if (i < _cachedItems.Count)
-                {
-                    ItemData item = _cachedItems[i];
-                    int count = PlayerParty.Inventory[item];
-                    itemButtons[i].gameObject.SetActive(true);
-                    itemButtons[i].interactable = count > 0;
+                if (itemButtons[i] == null) continue;
+                bool available = i < _cachedItems.Count;
+                itemButtons[i].gameObject.SetActive(available);
+                if (!available) continue;
+                ItemData item = _cachedItems[i];
+                int count = PlayerParty.Inventory[item];
+                itemButtons[i].interactable = count > 0;
+                if (i < itemBtnTexts.Length && itemBtnTexts[i] != null)
                     itemBtnTexts[i].text = $"{item.DisplayName} x{count}";
-                }
-                else
-                {
-                    itemButtons[i].gameObject.SetActive(false);
-                }
             }
         }
 
         public void SetupNames(string playerName, string enemyName)
         {
-            playerNameText.text = playerName;
-            enemyNameText.text = enemyName;
+            if (playerNameText != null) playerNameText.text = playerName;
+            if (enemyNameText != null) enemyNameText.text = enemyName;
         }
 
         public void UpdateHp(int playerHp, int playerMax, int enemyHp, int enemyMax)
         {
-            playerHpText.text = $"HP: {playerHp}/{playerMax}";
-            enemyHpText.text = $"HP: {enemyHp}/{enemyMax}";
+            if (playerHpText != null) playerHpText.text = $"HP: {playerHp}/{playerMax}";
+            if (enemyHpText != null) enemyHpText.text = $"HP: {enemyHp}/{enemyMax}";
         }
 
         public void SetLog(string message)
         {
-            Debug.Log($"[UI LOG] 正在尝试显示: {message}");
-            logText.text = message;
+            Debug.Log($"[UI LOG] {message}");
+            if (logText != null) logText.text = message;
+        }
+
+        public void SetPlaybackModeLabel(string label)
+        {
+            if (playbackModeText != null) playbackModeText.text = label;
+        }
+
+        public void SetPlaybackControlInteractable(bool interactable)
+        {
+            if (playbackModeButton != null) playbackModeButton.interactable = interactable;
         }
 
         public void SetInteractable(bool interactable)
         {
-            foreach (var btn in skillButtons)
-            {
-                if (btn.gameObject.activeSelf)
-                    btn.interactable = interactable;
-            }
-            foreach (var btn in itemButtons)
-            {
-                if (btn.gameObject.activeSelf)
-                    btn.interactable = interactable;
-            }
+            SetInteractable(fightBtn, interactable);
+            SetInteractable(bagBtn, interactable);
+            SetInteractable(runBtn, interactable);
+            SetInteractable(skillBackBtn, interactable);
+            SetInteractable(BagBackBtn, interactable);
+            SetInteractable(pokemonBtn, interactable);
+            SetInteractable(pokemonBackBtn, interactable);
+            SetInteractable(skillButtons, interactable);
+            SetInteractable(itemButtons, interactable);
+            SetInteractable(pokemonButtons, interactable);
         }
 
-        /// <summary>
-        /// 技能UI刷新
-        /// </summary>
+        private static void SetInteractable(Button button, bool interactable)
+        {
+            if (button != null) button.interactable = interactable;
+        }
+
+        private static void SetInteractable(Button[] buttons, bool interactable)
+        {
+            if (buttons == null) return;
+            foreach (Button button in buttons) SetInteractable(button, interactable);
+        }
+
         public void RefreshSkills(List<SkillData> skills, IReadOnlyDictionary<SkillData, int> ppMap)
         {
             for (int i = 0; i < skillButtons.Length; i++)
             {
-                if (i < skills.Count)
-                {
-                    SkillData skill = skills[i];
-                    int currentPP = ppMap[skill];
-
-                    skillButtons[i].gameObject.SetActive(true);
-                    skillButtons[i].interactable = currentPP > 0;
+                if (skillButtons[i] == null) continue;
+                bool available = skills != null && i < skills.Count;
+                skillButtons[i].gameObject.SetActive(available);
+                if (!available) continue;
+                SkillData skill = skills[i];
+                int currentPP = ppMap.ContainsKey(skill) ? ppMap[skill] : 0;
+                skillButtons[i].interactable = currentPP > 0;
+                if (i < skillBtnTexts.Length && skillBtnTexts[i] != null)
                     skillBtnTexts[i].text = $"{skill.DisplayName} ({currentPP})";
-                }
-                else
-                {
-                    skillButtons[i].gameObject.SetActive(false);
-                }
             }
         }
     }

@@ -10,6 +10,28 @@ namespace Pokemon.Domain
         public static Dictionary<ItemData, int> Inventory = new Dictionary<ItemData, int>();
 
         /// <summary>
+        /// Returns party members that can replace the current active Pokemon.
+        /// </summary>
+        public static List<MonsterRuntime> GetSwitchablePokemon()
+        {
+            return Party
+                .Where(monster => monster != null && monster != ActivePokemon && !monster.IsFainted)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Changes the active Pokemon when the requested member belongs to this party.
+        /// </summary>
+        public static bool TrySetActivePokemon(MonsterRuntime monster)
+        {
+            if (monster == null || !Party.Contains(monster) || monster.IsFainted)
+                return false;
+
+            ActivePokemon = monster;
+            return true;
+        }
+
+        /// <summary>
         /// 将捕捉到的精灵加入背包
         /// </summary>
         public static void AddMonster(MonsterRuntime monster)

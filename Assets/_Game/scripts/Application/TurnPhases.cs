@@ -7,6 +7,13 @@ namespace Pokemon.Application
     /// </summary>
     public sealed class ActionOrderPhase : ITurnPhase
     {
+        private readonly ITurnActionOrderComparer _orderComparer;
+
+        public ActionOrderPhase(ITurnActionOrderComparer orderComparer = null)
+        {
+            _orderComparer = orderComparer ?? new PrioritySpeedActionOrderComparer();
+        }
+
         /// <summary>
         /// 将玩家和敌方行动按“优先级、速度、玩家平速优先”排列。
         /// </summary>
@@ -17,9 +24,10 @@ namespace Pokemon.Application
 
             ITurnAction playerAction = context.PlayerAction;
             ITurnAction enemyAction = context.EnemyAction;
-            bool playerFirst = playerAction.Priority != enemyAction.Priority
-                ? playerAction.Priority > enemyAction.Priority
-                : playerAction.Speed >= enemyAction.Speed;
+            // Keep ordering policy injectable so future action types can provide
+            // their own priority rules without changing this phase.
+            int comparison = _orderComparer.Compare(playerAction, enemyAction);
+            bool playerFirst = comparison >= 0;
 
             context.OrderedActions.Add(playerFirst ? playerAction : enemyAction);
             context.OrderedActions.Add(playerFirst ? enemyAction : playerAction);

@@ -15,6 +15,33 @@ namespace Pokemon.Application
     }
 
     /// <summary>
+    /// Compares two actions without coupling the turn phase to a concrete
+    /// priority rule. A positive result means the first action goes first.
+    /// </summary>
+    public interface ITurnActionOrderComparer
+    {
+        int Compare(ITurnAction first, ITurnAction second);
+    }
+
+    /// <summary>
+    /// Default Pokemon-style ordering: priority, then speed.
+    /// A custom comparer can be supplied later for abilities, items, or modes.
+    /// </summary>
+    public sealed class PrioritySpeedActionOrderComparer : ITurnActionOrderComparer
+    {
+        public int Compare(ITurnAction first, ITurnAction second)
+        {
+            if (first == null) return second == null ? 0 : -1;
+            if (second == null) return 1;
+
+            int priorityComparison = first.Priority.CompareTo(second.Priority);
+            if (priorityComparison != 0) return priorityComparison;
+
+            return first.Speed.CompareTo(second.Speed);
+        }
+    }
+
+    /// <summary>
     /// 描述本回合中一方已经选择的技能行动。
     /// 后续加入换人、道具等行动时，可以在同一层增加新的行动类型。
     /// </summary>

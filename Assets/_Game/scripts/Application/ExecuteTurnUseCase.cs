@@ -32,7 +32,9 @@ namespace Pokemon.Application
         /// 创建回合用例并组装当前玩法需要的排序、行动和回合末阶段。
         /// </summary>
         /// <param name="damageCalculator">负责命中判定和伤害数值计算的领域服务。</param>
-        public ExecuteTurnUseCase(DamageCalculator damageCalculator)
+        public ExecuteTurnUseCase(
+            DamageCalculator damageCalculator,
+            ITurnActionOrderComparer actionOrderComparer = null)
         {
             _battleEndResolver = new BattleEndResolver();
             _skillActionExecutor = new SkillActionExecutor(damageCalculator);
@@ -48,7 +50,7 @@ namespace Pokemon.Application
 
             _turnPipeline = new TurnPipeline(new ITurnPhase[]
             {
-                new ActionOrderPhase(),
+                new ActionOrderPhase(actionOrderComparer),
                 new ActionExecutionPhase(
                     actionDispatcher,
                     reactionTurnResolver,
