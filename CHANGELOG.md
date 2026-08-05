@@ -6,6 +6,14 @@
 
 ---
 
+## [0.4.4] - 2026-08-05
+
+### UI / UX Improvements
+- Added the reusable `PokemonCollectionPanel` for party-based Pokemon switching.
+- Added Pokemon slot details, active/fainted states, confirmation, and cancel actions.
+- Replaced the legacy runtime-generated switch panel in battle UI flow.
+- Updated the battle UI layout for the `1920x1080` CanvasScaler reference resolution.
+
 ## [0.4.2] - 2026-07-28
 
 ### 新增功能

@@ -239,8 +239,8 @@ namespace Pokemon.Presentation
         {
             if (_battleEnded || _inputLocked) return;
 
-            List<MonsterRuntime> options = PlayerParty.GetSwitchablePokemon();
-            if (options.Count == 0)
+            List<MonsterRuntime> switchable = PlayerParty.GetSwitchablePokemon();
+            if (switchable.Count == 0)
             {
                 uiController.SetLog("没有可替换的精灵！");
                 return;
@@ -248,7 +248,7 @@ namespace Pokemon.Presentation
 
             _inputLocked = true;
             uiController.SetInteractable(false);
-            uiController.ShowPokemonSelection(options);
+            uiController.ShowPokemonSelection(PlayerParty.Party, PlayerParty.ActivePokemon ?? _player);
         }
 
         private void HandlePokemonSwitchCancelled()

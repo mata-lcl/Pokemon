@@ -26,18 +26,28 @@ namespace Pokemon.Presentation.UI
         private List<MonsterRuntime> _pokemon = new List<MonsterRuntime>();
         private MonsterRuntime _activePokemon;
         private MonsterRuntime _selectedPokemon;
+        private bool _initialized;
 
         public event Action<MonsterRuntime> OnConfirmed;
         public event Action OnCancelled;
 
         private void Awake()
         {
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            if (_initialized)
+                return;
+
             if (confirmButton != null)
                 confirmButton.onClick.AddListener(ConfirmSelection);
             if (cancelButton != null)
                 cancelButton.onClick.AddListener(CancelSelection);
 
             CreateSlots();
+            _initialized = true;
         }
 
         private void CreateSlots()
@@ -59,6 +69,8 @@ namespace Pokemon.Presentation.UI
 
         public void Show(IReadOnlyList<MonsterRuntime> pokemon, MonsterRuntime activePokemon)
         {
+            Initialize();
+
             _pokemon = pokemon == null
                 ? new List<MonsterRuntime>()
                 : new List<MonsterRuntime>(pokemon);
@@ -89,6 +101,8 @@ namespace Pokemon.Presentation.UI
             }
 
             SetConfirmInteractable(false);
+            if (cancelButton != null)
+                cancelButton.interactable = true;
             gameObject.SetActive(true);
         }
 
@@ -101,6 +115,21 @@ namespace Pokemon.Presentation.UI
         {
             if (confirmButtonText != null)
                 confirmButtonText.text = text;
+        }
+
+        public void SetInteractable(bool interactable)
+        {
+            if (cancelButton != null)
+                cancelButton.interactable = interactable;
+
+            for (int i = 0; i < _slots.Count; i++)
+                _slots[i].SetInteractable(interactable);
+
+            bool canConfirm = interactable
+                && _selectedPokemon != null
+                && _selectedPokemon != _activePokemon
+                && !_selectedPokemon.IsFainted;
+            SetConfirmInteractable(canConfirm);
         }
 
         private void PreviewPokemon(MonsterRuntime pokemon)

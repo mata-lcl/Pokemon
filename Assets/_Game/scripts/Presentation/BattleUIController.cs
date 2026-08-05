@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Pokemon.Presentation.UI;
 
 namespace Pokemon.Presentation
 {
@@ -23,10 +24,12 @@ namespace Pokemon.Presentation
 
         [Header("Pokemon switch")]
         [SerializeField] private Button pokemonBtn;
-        [SerializeField] private GameObject pokemonPanel;
-        [SerializeField] private Button pokemonBackBtn;
-        [SerializeField] private Button[] pokemonButtons;
-        [SerializeField] private TMP_Text[] pokemonBtnTexts;
+        [SerializeField] private PokemonCollectionPanel pokemonCollectionPanel;
+        // Legacy fields are kept only so existing scene data can migrate safely.
+        [HideInInspector, SerializeField] private GameObject pokemonPanel;
+        [HideInInspector, SerializeField] private Button pokemonBackBtn;
+        [HideInInspector, SerializeField] private Button[] pokemonButtons;
+        [HideInInspector, SerializeField] private TMP_Text[] pokemonBtnTexts;
 
         [Header("Battle text")]
         [SerializeField] private TMP_Text playerNameText;
@@ -70,10 +73,20 @@ namespace Pokemon.Presentation
             if (BagBackBtn != null) BagBackBtn.onClick.AddListener(() => ShowSubPanel(mainActionPanel));
             if (runBtn != null) runBtn.onClick.AddListener(() => OnRunClicked?.Invoke());
 
-            EnsurePokemonPanel();
+            if (pokemonCollectionPanel == null)
+                pokemonCollectionPanel = FindObjectOfType<PokemonCollectionPanel>(true);
+
+            if (pokemonCollectionPanel != null)
+            {
+                pokemonCollectionPanel.OnConfirmed += HandleCollectionConfirmed;
+                pokemonCollectionPanel.OnCancelled += HandleCollectionCancelled;
+            }
+            else
+            {
+                Debug.LogError("BattleUIController requires a PokemonCollectionPanel reference.");
+            }
+
             if (pokemonBtn != null) pokemonBtn.onClick.AddListener(() => OnPokemonClicked?.Invoke());
-            if (pokemonBackBtn != null) pokemonBackBtn.onClick.AddListener(() => OnPokemonSwitchCancelled?.Invoke());
-            BindPokemonButtons();
 
             if (playbackModeButton != null)
                 playbackModeButton.onClick.AddListener(() => OnPlaybackModeClicked?.Invoke());
@@ -96,18 +109,23 @@ namespace Pokemon.Presentation
             }
         }
 
-        private void BindPokemonButtons()
+        private void OnDestroy()
         {
-            if (pokemonButtons == null) return;
-            for (int i = 0; i < pokemonButtons.Length; i++)
+            if (pokemonCollectionPanel != null)
             {
-                int index = i;
-                if (pokemonButtons[i] != null)
-                    pokemonButtons[i].onClick.AddListener(() =>
-                    {
-                        if (index < _cachedPokemon.Count) OnPokemonSelected?.Invoke(_cachedPokemon[index]);
-                    });
+                pokemonCollectionPanel.OnConfirmed -= HandleCollectionConfirmed;
+                pokemonCollectionPanel.OnCancelled -= HandleCollectionCancelled;
             }
+        }
+
+        private void HandleCollectionConfirmed(MonsterRuntime pokemon)
+        {
+            OnPokemonSelected?.Invoke(pokemon);
+        }
+
+        private void HandleCollectionCancelled()
+        {
+            OnPokemonSwitchCancelled?.Invoke();
         }
 
         private void ShowSubPanel(GameObject targetPanel)
@@ -115,7 +133,8 @@ namespace Pokemon.Presentation
             if (mainActionPanel != null) mainActionPanel.SetActive(targetPanel == mainActionPanel);
             if (skillPanel != null) skillPanel.SetActive(targetPanel == skillPanel);
             if (itemPanel != null) itemPanel.SetActive(targetPanel == itemPanel);
-            if (pokemonPanel != null) pokemonPanel.SetActive(targetPanel == pokemonPanel);
+            if (pokemonCollectionPanel != null)
+                pokemonCollectionPanel.Hide();
         }
 
         public void HideAllPanels()
@@ -123,7 +142,8 @@ namespace Pokemon.Presentation
             if (mainActionPanel != null) mainActionPanel.SetActive(false);
             if (skillPanel != null) skillPanel.SetActive(false);
             if (itemPanel != null) itemPanel.SetActive(false);
-            if (pokemonPanel != null) pokemonPanel.SetActive(false);
+            if (pokemonCollectionPanel != null)
+                pokemonCollectionPanel.Hide();
         }
 
         public void ResetToMain()
@@ -133,27 +153,23 @@ namespace Pokemon.Presentation
 
         public void ShowPokemonSelection(IReadOnlyList<MonsterRuntime> pokemon)
         {
+            ShowPokemonSelection(pokemon, PlayerParty.ActivePokemon);
+        }
+
+        public void ShowPokemonSelection(
+            IReadOnlyList<MonsterRuntime> pokemon,
+            MonsterRuntime activePokemon)
+        {
             _cachedPokemon = pokemon == null
                 ? new List<MonsterRuntime>()
                 : new List<MonsterRuntime>(pokemon);
 
-            ShowSubPanel(pokemonPanel);
-            for (int i = 0; i < pokemonButtons.Length; i++)
+            if (pokemonCollectionPanel != null)
             {
-                Button button = pokemonButtons[i];
-                if (button == null) continue;
-
-                bool available = i < _cachedPokemon.Count;
-                button.gameObject.SetActive(available);
-                button.interactable = available;
-                if (available && i < pokemonBtnTexts.Length && pokemonBtnTexts[i] != null)
-                {
-                    MonsterRuntime monster = _cachedPokemon[i];
-                    pokemonBtnTexts[i].text = $"{monster.Species.DisplayName} Lv.{monster.Level} HP {monster.CurrentHP}/{monster.MaxHP}";
-                }
+                ShowSubPanel(null);
+                pokemonCollectionPanel.Show(_cachedPokemon, activePokemon);
+                return;
             }
-
-            if (pokemonBackBtn != null) pokemonBackBtn.interactable = true;
         }
 
         private void EnsurePokemonPanel()
@@ -274,6 +290,8 @@ namespace Pokemon.Presentation
             SetInteractable(BagBackBtn, interactable);
             SetInteractable(pokemonBtn, interactable);
             SetInteractable(pokemonBackBtn, interactable);
+            if (pokemonCollectionPanel != null)
+                pokemonCollectionPanel.SetInteractable(interactable);
             SetInteractable(skillButtons, interactable);
             SetInteractable(itemButtons, interactable);
             SetInteractable(pokemonButtons, interactable);
