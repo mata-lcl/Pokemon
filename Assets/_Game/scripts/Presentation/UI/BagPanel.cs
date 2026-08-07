@@ -20,6 +20,7 @@ namespace Pokemon.Presentation.UI
 
         private readonly List<ItemSlotView> _slots = new List<ItemSlotView>();
         private ItemData _selectedItem;
+        private IReadOnlyDictionary<ItemData, int> _counts;
 
         public event Action<ItemData> OnUseConfirmed;
         public event Action OnCancelled;
@@ -38,6 +39,8 @@ namespace Pokemon.Presentation.UI
             IReadOnlyList<ItemData> items,
             IReadOnlyDictionary<ItemData, int> counts)
         {
+            _counts = counts;
+
             if (itemContent == null || itemSlotPrefab == null)
                 return;
 
@@ -75,7 +78,12 @@ namespace Pokemon.Presentation.UI
             if (itemDescriptionText != null)
                 itemDescriptionText.text = item.Description;
             if (itemCountText != null)
-                itemCountText.text = string.Empty;
+            {
+                int count = _counts != null && _counts.TryGetValue(item, out int value)
+                    ? value
+                    : 0;
+                itemCountText.text = $"x{count}";
+            }
             if (useButton != null)
                 useButton.interactable = item is IUsable;
 

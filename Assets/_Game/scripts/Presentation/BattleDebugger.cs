@@ -8,6 +8,7 @@ namespace Pokemon.Presentation
     /// </summary>
     public class BattleDebugger : MonoBehaviour
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         [Header("绑定引用")]
         [SerializeField] private BattleCoordinator coordinator;
 
@@ -20,9 +21,11 @@ namespace Pokemon.Presentation
 
         [Tooltip("按下此键恢复满血")]
         [SerializeField] private KeyCode healKey = KeyCode.R;
+#endif
 
         private void Update()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (coordinator == null) return;
 
             // 获取当前战斗中的实例（利用反射或修改 BattleCoordinator 将其公开）
@@ -42,8 +45,10 @@ namespace Pokemon.Presentation
             {
                 FullHealPlayer();
             }
+#endif
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void SetPlayerLowHP()
         {
             var player = GetPlayer();
@@ -99,5 +104,6 @@ namespace Pokemon.Presentation
                 ui.UpdateHp(p.CurrentHP, p.MaxHP, e.CurrentHP, e.MaxHP);
             }
         }
+#endif
     }
 }

@@ -13,7 +13,9 @@ namespace Pokemon.Presentation
         [Header("Action panels")]
         [SerializeField] private GameObject mainActionPanel;
         [SerializeField] private GameObject skillPanel;
+        // Kept as a fallback until the new BagPanel is assigned in the scene.
         [SerializeField] private GameObject itemPanel;
+        [SerializeField] private BagPanel bagPanel;
 
         [Header("Action buttons")]
         [SerializeField] private Button fightBtn;
@@ -65,16 +67,16 @@ namespace Pokemon.Presentation
         {
             if (fightBtn != null) fightBtn.onClick.AddListener(() => ShowSubPanel(skillPanel));
             if (bagBtn != null)
-            {
-                bagBtn.onClick.AddListener(RefreshItemList);
-                bagBtn.onClick.AddListener(() => ShowSubPanel(itemPanel));
-            }
+                bagBtn.onClick.AddListener(ShowBagPanel);
             if (skillBackBtn != null) skillBackBtn.onClick.AddListener(() => ShowSubPanel(mainActionPanel));
             if (BagBackBtn != null) BagBackBtn.onClick.AddListener(() => ShowSubPanel(mainActionPanel));
             if (runBtn != null) runBtn.onClick.AddListener(() => OnRunClicked?.Invoke());
 
             if (pokemonCollectionPanel == null)
                 pokemonCollectionPanel = FindObjectOfType<PokemonCollectionPanel>(true);
+
+            if (bagPanel == null)
+                bagPanel = FindObjectOfType<BagPanel>(true);
 
             if (pokemonCollectionPanel != null)
             {
@@ -84,6 +86,12 @@ namespace Pokemon.Presentation
             else
             {
                 Debug.LogError("BattleUIController requires a PokemonCollectionPanel reference.");
+            }
+
+            if (bagPanel != null)
+            {
+                bagPanel.OnUseConfirmed += HandleBagUseConfirmed;
+                bagPanel.OnCancelled += HandleBagCancelled;
             }
 
             if (pokemonBtn != null) pokemonBtn.onClick.AddListener(() => OnPokemonClicked?.Invoke());
@@ -116,6 +124,12 @@ namespace Pokemon.Presentation
                 pokemonCollectionPanel.OnConfirmed -= HandleCollectionConfirmed;
                 pokemonCollectionPanel.OnCancelled -= HandleCollectionCancelled;
             }
+
+            if (bagPanel != null)
+            {
+                bagPanel.OnUseConfirmed -= HandleBagUseConfirmed;
+                bagPanel.OnCancelled -= HandleBagCancelled;
+            }
         }
 
         private void HandleCollectionConfirmed(MonsterRuntime pokemon)
@@ -133,8 +147,41 @@ namespace Pokemon.Presentation
             if (mainActionPanel != null) mainActionPanel.SetActive(targetPanel == mainActionPanel);
             if (skillPanel != null) skillPanel.SetActive(targetPanel == skillPanel);
             if (itemPanel != null) itemPanel.SetActive(targetPanel == itemPanel);
+            if (bagPanel != null) bagPanel.gameObject.SetActive(false);
             if (pokemonCollectionPanel != null)
                 pokemonCollectionPanel.Hide();
+        }
+
+        private void ShowBagPanel()
+        {
+            if (bagPanel == null)
+            {
+                // Fall back to the legacy list until the new prefab is assigned.
+                RefreshItemList();
+                ShowSubPanel(itemPanel);
+                return;
+            }
+
+            if (mainActionPanel != null) mainActionPanel.SetActive(false);
+            if (skillPanel != null) skillPanel.SetActive(false);
+            if (itemPanel != null) itemPanel.SetActive(false);
+            if (pokemonCollectionPanel != null)
+                pokemonCollectionPanel.Hide();
+
+            bagPanel.gameObject.SetActive(true);
+            bagPanel.Refresh(PlayerParty.GetUsableItems(), PlayerParty.Inventory);
+        }
+
+        private void HandleBagUseConfirmed(ItemData item)
+        {
+            OnItemClicked?.Invoke(item);
+        }
+
+        private void HandleBagCancelled()
+        {
+            if (bagPanel != null)
+                bagPanel.gameObject.SetActive(false);
+            ResetToMain();
         }
 
         public void HideAllPanels()
@@ -142,6 +189,7 @@ namespace Pokemon.Presentation
             if (mainActionPanel != null) mainActionPanel.SetActive(false);
             if (skillPanel != null) skillPanel.SetActive(false);
             if (itemPanel != null) itemPanel.SetActive(false);
+            if (bagPanel != null) bagPanel.gameObject.SetActive(false);
             if (pokemonCollectionPanel != null)
                 pokemonCollectionPanel.Hide();
         }

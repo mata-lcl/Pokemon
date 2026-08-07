@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Id: 01
   DisplayName: "\u7CBE\u7075\u7403"
-  Description: 
+  Description: "\u53EF\u4EE5\u6355\u6349\u7CBE\u7075\u7684\u9053\u5177"
   Icon: {fileID: 21300000, guid: b950796536c984543a043582e135c70a, type: 3}
   CatchRateModifier: 10

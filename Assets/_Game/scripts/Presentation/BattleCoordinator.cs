@@ -56,13 +56,13 @@ namespace Pokemon.Presentation
                 PlayerParty.AddItem(defaultPokeball, defaultPokeballCount);
             }
 
-            if (PlayerParty.ActivePokemon == null)
-            {
-                PlayerParty.ActivePokemon = new MonsterRuntime(playerSpecies, 5);
-            }
+            // Normalize legacy data first, then use the first party member as the
+            // default active Pokemon when no valid active selection exists.
+            PlayerParty.NormalizeParty();
+            if (PlayerParty.Party.Count == 0)
+                PlayerParty.AddMonster(new MonsterRuntime(playerSpecies, 5));
+            PlayerParty.EnsureActivePokemon();
             _player = PlayerParty.ActivePokemon;
-            if (!PlayerParty.Party.Contains(_player))
-                PlayerParty.Party.Add(_player);
             _enemy = new MonsterRuntime(enemySpecies, Random.Range(3, 7));
 
             _turnUseCase = new ExecuteTurnUseCase(new DamageCalculator(typeChart));
