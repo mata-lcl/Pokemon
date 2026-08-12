@@ -44,14 +44,14 @@ namespace Pokemon.Presentation
         {
             if (uiController == null) return;
             InitBattle();
-            if (playerView != null) playerView.Setup(playerSpecies.BattleSprite);
-            if (enemyView != null) enemyView.Setup(enemySpecies.BattleSprite);
+            if (playerView != null) playerView.Setup(_player.Species.BattleSprite);
+            if (enemyView != null) enemyView.Setup(_enemy.Species.BattleSprite);
         }
 
         private void InitBattle()
         {
             // 初始化默认道具（仅首次）
-            if (defaultPokeball != null && !PlayerParty.Inventory.ContainsKey(defaultPokeball))
+            if (defaultPokeball != null && !PlayerParty.HasItem(defaultPokeball))
             {
                 PlayerParty.AddItem(defaultPokeball, defaultPokeballCount);
             }
@@ -59,11 +59,23 @@ namespace Pokemon.Presentation
             // Normalize legacy data first, then use the first party member as the
             // default active Pokemon when no valid active selection exists.
             PlayerParty.NormalizeParty();
-            if (PlayerParty.Party.Count == 0)
+            if (PlayerParty.GetPartySnapshot().Count == 0)
                 PlayerParty.AddMonster(new MonsterRuntime(playerSpecies, 5));
             PlayerParty.EnsureActivePokemon();
             _player = PlayerParty.ActivePokemon;
-            _enemy = new MonsterRuntime(enemySpecies, Random.Range(3, 7));
+
+            PokemonSpeciesData selectedEnemySpecies = enemySpecies;
+            int selectedEnemyLevel = Random.Range(3, 7);
+            if (SceneTransitionManager.Instance != null &&
+                SceneTransitionManager.Instance.TryGetPendingEncounter(
+                    out PokemonSpeciesData encounterSpecies,
+                    out int encounterLevel))
+            {
+                selectedEnemySpecies = encounterSpecies;
+                selectedEnemyLevel = encounterLevel;
+            }
+
+            _enemy = new MonsterRuntime(selectedEnemySpecies, selectedEnemyLevel);
 
             _turnUseCase = new ExecuteTurnUseCase(new DamageCalculator(typeChart));
             _playerSkills = new List<SkillData>();
@@ -248,7 +260,9 @@ namespace Pokemon.Presentation
 
             _inputLocked = true;
             uiController.SetInteractable(false);
-            uiController.ShowPokemonSelection(PlayerParty.Party, PlayerParty.ActivePokemon ?? _player);
+            uiController.ShowPokemonSelection(
+                PlayerParty.GetPartySnapshot(),
+                PlayerParty.ActivePokemon ?? _player);
         }
 
         private void HandlePokemonSwitchCancelled()

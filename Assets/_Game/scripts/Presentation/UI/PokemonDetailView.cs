@@ -24,6 +24,11 @@ namespace Pokemon.Presentation.UI
         [SerializeField] private TMP_Text specialAttackText;
         [SerializeField] private TMP_Text specialDefenseText;
 
+        [Header("附加信息")]
+        [SerializeField] private TMP_Text natureText;
+        [SerializeField] private TMP_Text abilityText;
+        [SerializeField] private TMP_Text heldItemText;
+
         public MonsterRuntime CurrentPokemon { get; private set; }
 
         public void Show(MonsterRuntime pokemon)
@@ -76,6 +81,25 @@ namespace Pokemon.Presentation.UI
 
             if (specialDefenseText != null)
                 specialDefenseText.text = $"特防：{pokemon.SpecialDefense}";
+
+            if (natureText != null)
+                natureText.text = "性格：暂未设置";
+
+            if (abilityText != null)
+            {
+                string abilityName = pokemon.ActiveAbility != null
+                    ? pokemon.ActiveAbility.AbilityName
+                    : "无";
+                abilityText.text = $"特性：{abilityName}";
+            }
+
+            if (heldItemText != null)
+            {
+                string heldItemName = pokemon.HeldItem != null
+                    ? pokemon.HeldItem.DisplayName
+                    : "无";
+                heldItemText.text = $"携带道具：{heldItemName}";
+            }
         }
 
         public void Clear()
@@ -114,6 +138,15 @@ namespace Pokemon.Presentation.UI
 
             if (specialDefenseText != null)
                 specialDefenseText.text = string.Empty;
+
+            if (natureText != null)
+                natureText.text = string.Empty;
+
+            if (abilityText != null)
+                abilityText.text = string.Empty;
+
+            if (heldItemText != null)
+                heldItemText.text = string.Empty;
         }
     }
 }

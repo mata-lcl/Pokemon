@@ -24,8 +24,7 @@ namespace Pokemon.Application
 
             ITurnAction playerAction = context.PlayerAction;
             ITurnAction enemyAction = context.EnemyAction;
-            // Keep ordering policy injectable so future action types can provide
-            // their own priority rules without changing this phase.
+            // 保持排序策略可注入，这样将来的操作类型可以在不更改此阶段的情况下提供它们自己的优先规则。？
             int comparison = _orderComparer.Compare(playerAction, enemyAction);
             bool playerFirst = comparison >= 0;
 

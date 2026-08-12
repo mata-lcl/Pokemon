@@ -15,6 +15,8 @@ public class PlayerMovement : MonoBehaviour
     private Collider2D playerCollider;
     private Vector3 lastPosition;
     private bool colliderDisabledByBattle = false; // 新增标志
+    private GrassEncounter currentGrassEncounter;
+    private float distanceSinceEncounterCheck;
 
     public void Awake()
     {
@@ -52,10 +54,11 @@ public class PlayerMovement : MonoBehaviour
                 }
             }
 
-            if (Vector3.Distance(transform.position, lastPosition) > 0)
+            float movementDelta = Vector3.Distance(transform.position, lastPosition);
+            if (movementDelta > 0f)
             {
                 lastPosition = transform.position;
-                CheckForGrass();
+                CheckForGrass(movementDelta);
             }
         }
     }
@@ -92,7 +95,9 @@ public class PlayerMovement : MonoBehaviour
         transform.position = targetPosition;
         isMoving = false;
 
-        CheckForGrass();
+        float distanceMoved = Vector3.Distance(transform.position, lastPosition);
+        lastPosition = transform.position;
+        CheckForGrass(distanceMoved);
     }
 
     private void OnPlayerMoved()
@@ -102,26 +107,53 @@ public class PlayerMovement : MonoBehaviour
             playerCollider.enabled = true;
     }
     /// <summary>
-    /// 负责检测Tilemap上的草丛图层，如果玩家在草丛上并且触发率满足条件，则进入战斗场景
+    /// Finds the configured grass area and asks it to perform an encounter check.
     /// </summary>
-    private void CheckForGrass()
+    private void CheckForGrass(float distanceMoved)
     {
-        Collider2D hit = Physics2D.OverlapCircle(transform.position, 0.2f, grassLayer);
-        if (hit != null && Random.value < 0.5f) // 20%触发率
+        if (colliderDisabledByBattle)
         {
-            TriggerBattle();
+            return;
         }
+
+        GrassEncounter encounter = GrassEncounter.FindAtPosition(transform.position, grassLayer);
+        if (encounter != currentGrassEncounter)
+        {
+            currentGrassEncounter = encounter;
+            distanceSinceEncounterCheck = 0f;
+
+            if (currentGrassEncounter != null)
+            {
+                currentGrassEncounter.TryStartEncounter(transform);
+            }
+
+            return;
+        }
+
+        if (currentGrassEncounter == null)
+        {
+            return;
+        }
+
+        distanceSinceEncounterCheck += distanceMoved;
+        if (distanceSinceEncounterCheck < currentGrassEncounter.DistancePerCheck)
+        {
+            return;
+        }
+
+        distanceSinceEncounterCheck %= currentGrassEncounter.DistancePerCheck;
+        currentGrassEncounter.TryStartEncounter(transform);
     }
     public void DisableCollider()
     {
         if (playerCollider != null)
+        {
             playerCollider.enabled = false;
-            colliderDisabledByBattle = true;
-            positionWhenDisabled = transform.position; // 记录禁用时的位置
-    }
+        }
 
-    private void TriggerBattle()
-    {
-        UnityEngine.SceneManagement.SceneManager.LoadScene("Fight");
+        colliderDisabledByBattle = true;
+        positionWhenDisabled = transform.position; // 记录禁用时的位置
+        currentGrassEncounter = null;
+        distanceSinceEncounterCheck = 0f;
     }
 }

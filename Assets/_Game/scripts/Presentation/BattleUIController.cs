@@ -92,6 +92,7 @@ namespace Pokemon.Presentation
             {
                 bagPanel.OnUseConfirmed += HandleBagUseConfirmed;
                 bagPanel.OnCancelled += HandleBagCancelled;
+                bagPanel.ItemReorderRequested += HandleItemReorderRequested;
             }
 
             if (pokemonBtn != null) pokemonBtn.onClick.AddListener(() => OnPokemonClicked?.Invoke());
@@ -129,6 +130,7 @@ namespace Pokemon.Presentation
             {
                 bagPanel.OnUseConfirmed -= HandleBagUseConfirmed;
                 bagPanel.OnCancelled -= HandleBagCancelled;
+                bagPanel.ItemReorderRequested -= HandleItemReorderRequested;
             }
         }
 
@@ -169,12 +171,23 @@ namespace Pokemon.Presentation
                 pokemonCollectionPanel.Hide();
 
             bagPanel.gameObject.SetActive(true);
-            bagPanel.Refresh(PlayerParty.GetUsableItems(), PlayerParty.Inventory);
+            bagPanel.Refresh(PlayerParty.GetUsableItemSnapshot());
         }
 
         private void HandleBagUseConfirmed(ItemData item)
         {
             OnItemClicked?.Invoke(item);
+        }
+
+        /// <summary>
+        /// 调用数据层方法调整战斗背包中的道具顺序并刷新显示。
+        /// </summary>
+        /// <param name="item">需要移动的道具。</param>
+        /// <param name="targetItem">作为目标位置的道具。</param>
+        private void HandleItemReorderRequested(ItemData item, ItemData targetItem)
+        {
+            if (PlayerParty.TryReorderItem(item, targetItem) && bagPanel != null)
+                bagPanel.Refresh(PlayerParty.GetUsableItemSnapshot());
         }
 
         private void HandleBagCancelled()
@@ -294,7 +307,7 @@ namespace Pokemon.Presentation
                 itemButtons[i].gameObject.SetActive(available);
                 if (!available) continue;
                 ItemData item = _cachedItems[i];
-                int count = PlayerParty.Inventory[item];
+                int count = PlayerParty.GetItemCount(item);
                 itemButtons[i].interactable = count > 0;
                 if (i < itemBtnTexts.Length && itemBtnTexts[i] != null)
                     itemBtnTexts[i].text = $"{item.DisplayName} x{count}";

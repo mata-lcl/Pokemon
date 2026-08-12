@@ -19,11 +19,12 @@ namespace Pokemon.Presentation.UI
         [SerializeField] private Button cancelButton;
 
         private readonly List<ItemSlotView> _slots = new List<ItemSlotView>();
+        private IReadOnlyList<InventoryItemStack> _items;
         private ItemData _selectedItem;
-        private IReadOnlyDictionary<ItemData, int> _counts;
 
         public event Action<ItemData> OnUseConfirmed;
         public event Action OnCancelled;
+        public event Action<ItemData, ItemData> ItemReorderRequested;
 
         private void Awake()
         {
@@ -35,11 +36,9 @@ namespace Pokemon.Presentation.UI
             ClearDetails();
         }
 
-        public void Refresh(
-            IReadOnlyList<ItemData> items,
-            IReadOnlyDictionary<ItemData, int> counts)
+        public void Refresh(IReadOnlyList<InventoryItemStack> items)
         {
-            _counts = counts;
+            _items = items;
 
             if (itemContent == null || itemSlotPrefab == null)
                 return;
@@ -50,15 +49,13 @@ namespace Pokemon.Presentation.UI
 
             if (items != null)
             {
-                foreach (ItemData item in items)
+                for (int i = 0; i < items.Count; i++)
                 {
+                    ItemData item = items[i].Item;
                     if (item == null) continue;
-                    int count = counts != null && counts.TryGetValue(item, out int value)
-                        ? value
-                        : 0;
 
                     ItemSlotView slot = Instantiate(itemSlotPrefab, itemContent);
-                    slot.Bind(item, count, PreviewItem);
+                    slot.Bind(item, items[i].Count, PreviewItem, RequestItemReorder);
                     _slots.Add(slot);
                 }
             }
@@ -78,17 +75,40 @@ namespace Pokemon.Presentation.UI
             if (itemDescriptionText != null)
                 itemDescriptionText.text = item.Description;
             if (itemCountText != null)
-            {
-                int count = _counts != null && _counts.TryGetValue(item, out int value)
-                    ? value
-                    : 0;
-                itemCountText.text = $"x{count}";
-            }
+                itemCountText.text = $"x{GetItemCount(item)}";
             if (useButton != null)
                 useButton.interactable = item is IUsable;
 
             for (int i = 0; i < _slots.Count; i++)
                 _slots[i].SetSelected(_slots[i].Item == item);
+        }
+
+        /// <summary>
+        /// 将槽位发出的道具重排请求转交给外层控制器。
+        /// </summary>
+        /// <param name="item">需要移动的道具。</param>
+        /// <param name="targetItem">作为目标位置的道具。</param>
+        private void RequestItemReorder(ItemData item, ItemData targetItem)
+        {
+            ItemReorderRequested?.Invoke(item, targetItem);
+        }
+
+        /// <summary>
+        /// 从当前只读快照中取得指定道具数量。
+        /// </summary>
+        /// <param name="item">需要查询数量的道具。</param>
+        private int GetItemCount(ItemData item)
+        {
+            if (_items == null)
+                return 0;
+
+            for (int i = 0; i < _items.Count; i++)
+            {
+                if (_items[i].Item == item)
+                    return _items[i].Count;
+            }
+
+            return 0;
         }
 
         private void ConfirmUse()
