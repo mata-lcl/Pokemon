@@ -9,6 +9,9 @@ namespace Pokemon.Presentation.UI
 {
     public class PokemonStoragePanel : MonoBehaviour
     {
+        private const int StorageColumns = 6;
+        private const int StorageRows = 5;
+
         [Header("页面")]
         [SerializeField] private GameObject overviewPage;
         [SerializeField] private GameObject detailPage;
@@ -16,10 +19,13 @@ namespace Pokemon.Presentation.UI
 
         [Header("精灵槽位")]
         [SerializeField] private PokemonSlotView slotPrefab;
+        [SerializeField] private PokemonSlotView storageSlotPrefab;
         [SerializeField] private Transform overviewPartyContent;
         [SerializeField] private Transform storagePartyContent;
         [SerializeField] private Transform storageContent;
         [SerializeField] private int partySlotCount = 6;
+        [Min(1)]
+        [SerializeField] private int storagePageCount = 10;
 
         [Header("队伍预览")]
         [SerializeField] private Image previewAvatar;
@@ -35,6 +41,10 @@ namespace Pokemon.Presentation.UI
         [SerializeField] private Button detailBackButton;
 
         [Header("仓库操作")]
+        [SerializeField] private PokemonDetailView storageDetailView;
+        [SerializeField] private TMP_Text storagePageText;
+        [SerializeField] private Button previousStoragePageButton;
+        [SerializeField] private Button nextStoragePageButton;
         [SerializeField] private TMP_Text selectionHintText;
         [SerializeField] private Button swapButton;
         [SerializeField] private Button moveToPartyButton;
@@ -49,12 +59,23 @@ namespace Pokemon.Presentation.UI
         private int _overviewSelection = -1;
         private int _partySelection = -1;
         private int _storageSelection = -1;
+        private int _currentStoragePage;
         private bool _initialized;
+
+        private int StorageSlotsPerPage => StorageColumns * StorageRows;
 
         public event Action<int, int> SwapRequested;
         public event Action<int> MoveToPartyRequested;
         public event Action<int> MoveToStorageRequested;
         public event Action<PokemonCollectionType, MonsterRuntime, MonsterRuntime> PokemonReorderRequested;
+
+        /// <summary>
+        /// 根据面板设置的仓库页数配置玩家仓库总容量。
+        /// </summary>
+        public void ConfigureStorageCapacity()
+        {
+            PlayerParty.ConfigureStorageCapacity(storagePageCount, StorageSlotsPerPage);
+        }
 
         private void Awake()
         {
@@ -71,6 +92,7 @@ namespace Pokemon.Presentation.UI
             _overviewSelection = _party.Count > 0 ? 0 : -1;
             _partySelection = -1;
             _storageSelection = -1;
+            _currentStoragePage = 0;
 
             SetPage(overviewPage);
             RefreshAll();
@@ -87,6 +109,8 @@ namespace Pokemon.Presentation.UI
             _overviewSelection = ClampSelection(_overviewSelection, _party.Count);
             _partySelection = -1;
             _storageSelection = -1;
+            if (storageDetailView != null)
+                storageDetailView.Clear();
             RefreshAll();
         }
 
@@ -103,6 +127,10 @@ namespace Pokemon.Presentation.UI
                 detailBackButton.onClick.AddListener(ReturnToOverview);
             if (storageBackButton != null)
                 storageBackButton.onClick.AddListener(ReturnToOverview);
+            if (previousStoragePageButton != null)
+                previousStoragePageButton.onClick.AddListener(ShowPreviousStoragePage);
+            if (nextStoragePageButton != null)
+                nextStoragePageButton.onClick.AddListener(ShowNextStoragePage);
             if (swapButton != null)
                 swapButton.onClick.AddListener(RequestSwap);
             if (moveToPartyButton != null)
@@ -112,6 +140,8 @@ namespace Pokemon.Presentation.UI
 
             CreatePartySlots(overviewPartyContent, _overviewPartySlots);
             CreatePartySlots(storagePartyContent, _storagePartySlots);
+            CreateStorageSlots();
+            ConfigureStorageCapacity();
             _initialized = true;
         }
 
@@ -142,13 +172,20 @@ namespace Pokemon.Presentation.UI
                 destination.Add(Instantiate(slotPrefab, content));
         }
 
-        private void EnsureStorageSlots()
+        /// <summary>
+        /// 创建当前仓库页面固定需要的三十个头像槽位。
+        /// </summary>
+        private void CreateStorageSlots()
         {
-            if (storageContent == null || slotPrefab == null)
+            if (storageContent == null)
                 return;
 
-            while (_storageSlots.Count < _storage.Count)
-                _storageSlots.Add(Instantiate(slotPrefab, storageContent));
+            _storageSlots.AddRange(storageContent.GetComponentsInChildren<PokemonSlotView>(true));
+            if (storageSlotPrefab == null)
+                return;
+
+            while (_storageSlots.Count < StorageSlotsPerPage)
+                _storageSlots.Add(Instantiate(storageSlotPrefab, storageContent));
         }
 
         private void RefreshAll()
@@ -157,6 +194,7 @@ namespace Pokemon.Presentation.UI
             RefreshPreview();
             RefreshStorageSlots();
             RefreshCapacity();
+            RefreshStoragePageState();
             RefreshActionState();
         }
 
@@ -244,26 +282,30 @@ namespace Pokemon.Presentation.UI
                 },
                 _partySelection);
 
-            EnsureStorageSlots();
             for (int i = 0; i < _storageSlots.Count; i++)
             {
                 PokemonSlotView slot = _storageSlots[i];
-                if (i >= _storage.Count || _storage[i] == null)
+                slot.gameObject.SetActive(i < StorageSlotsPerPage);
+                if (i >= StorageSlotsPerPage)
+                    continue;
+
+                int storageIndex = _currentStoragePage * StorageSlotsPerPage + i;
+                MonsterRuntime pokemon = GetAt(_storage, storageIndex);
+                if (pokemon == null)
                 {
-                    slot.gameObject.SetActive(false);
+                    slot.Clear();
                     continue;
                 }
 
-                slot.gameObject.SetActive(true);
-                int slotIndex = i;
-                MonsterRuntime pokemon = _storage[i];
                 slot.Bind(
                     pokemon,
                     false,
                     pokemon.IsFainted,
                     _ =>
                     {
-                        _storageSelection = slotIndex;
+                        _storageSelection = storageIndex;
+                        if (storageDetailView != null)
+                            storageDetailView.Show(pokemon);
                         RefreshStorageSlots();
                         RefreshActionState();
                     },
@@ -273,8 +315,57 @@ namespace Pokemon.Presentation.UI
                             PokemonCollectionType.Storage,
                             draggedPokemon,
                             targetPokemon));
-                slot.SetSelected(i == _storageSelection);
+                slot.SetSelected(storageIndex == _storageSelection);
             }
+        }
+
+        /// <summary>
+        /// 刷新仓库页码文字和前后翻页按钮状态。
+        /// </summary>
+        private void RefreshStoragePageState()
+        {
+            _currentStoragePage = Mathf.Clamp(_currentStoragePage, 0, storagePageCount - 1);
+            if (storagePageText != null)
+                storagePageText.text = $"第 {_currentStoragePage + 1}/{storagePageCount} 页";
+            if (previousStoragePageButton != null)
+                previousStoragePageButton.interactable = _currentStoragePage > 0;
+            if (nextStoragePageButton != null)
+                nextStoragePageButton.interactable = _currentStoragePage < storagePageCount - 1;
+        }
+
+        /// <summary>
+        /// 显示仓库上一页并清除仓库精灵选择。
+        /// </summary>
+        private void ShowPreviousStoragePage()
+        {
+            ChangeStoragePage(_currentStoragePage - 1);
+        }
+
+        /// <summary>
+        /// 显示仓库下一页并清除仓库精灵选择。
+        /// </summary>
+        private void ShowNextStoragePage()
+        {
+            ChangeStoragePage(_currentStoragePage + 1);
+        }
+
+        /// <summary>
+        /// 切换到指定仓库页，并清除当前仓库选择和详情。
+        /// </summary>
+        /// <param name="pageIndex">从零开始的目标仓库页索引。</param>
+        private void ChangeStoragePage(int pageIndex)
+        {
+            int clampedPage = Mathf.Clamp(pageIndex, 0, storagePageCount - 1);
+            if (clampedPage == _currentStoragePage)
+                return;
+
+            _currentStoragePage = clampedPage;
+            _storageSelection = -1;
+            if (storageDetailView != null)
+                storageDetailView.Clear();
+            RefreshStorageSlots();
+            RefreshStoragePageState();
+            RefreshActionState();
         }
 
         /// <summary>
@@ -288,13 +379,35 @@ namespace Pokemon.Presentation.UI
             MonsterRuntime pokemon,
             MonsterRuntime targetPokemon)
         {
+            if (collectionType == PokemonCollectionType.Party)
+            {
+                int partyIndex = _party.IndexOf(pokemon);
+                int storageIndex = _storage.IndexOf(targetPokemon);
+                if (partyIndex >= 0 && storageIndex >= 0)
+                {
+                    SwapRequested?.Invoke(partyIndex, storageIndex);
+                    return;
+                }
+            }
+            else
+            {
+                int partyIndex = _party.IndexOf(targetPokemon);
+                int storageIndex = _storage.IndexOf(pokemon);
+                if (partyIndex >= 0 && storageIndex >= 0)
+                {
+                    SwapRequested?.Invoke(partyIndex, storageIndex);
+                    return;
+                }
+            }
+
             PokemonReorderRequested?.Invoke(collectionType, pokemon, targetPokemon);
         }
 
         private void RefreshCapacity()
         {
             if (capacityText != null)
-                capacityText.text = $"队伍 {_party.Count}/{partySlotCount}    仓库 {_storage.Count}";
+                capacityText.text =
+                    $"队伍 {_party.Count}/{partySlotCount}    仓库 {_storage.Count}/{PlayerParty.StorageCapacity}";
         }
 
         private void RefreshActionState()
@@ -307,7 +420,8 @@ namespace Pokemon.Presentation.UI
             if (moveToPartyButton != null)
                 moveToPartyButton.interactable = hasStorageSelection && _party.Count < partySlotCount;
             if (moveToStorageButton != null)
-                moveToStorageButton.interactable = hasPartySelection && _party.Count > 1;
+                moveToStorageButton.interactable =
+                    hasPartySelection && _party.Count > 1 && !PlayerParty.IsStorageFull;
 
             if (selectionHintText == null)
                 return;
@@ -333,7 +447,11 @@ namespace Pokemon.Presentation.UI
         {
             _partySelection = -1;
             _storageSelection = -1;
+            _currentStoragePage = 0;
+            if (storageDetailView != null)
+                storageDetailView.Clear();
             RefreshStorageSlots();
+            RefreshStoragePageState();
             RefreshActionState();
             SetPage(storagePage);
         }

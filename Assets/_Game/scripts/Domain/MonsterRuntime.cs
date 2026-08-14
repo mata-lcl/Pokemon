@@ -135,6 +135,70 @@ namespace Pokemon.Domain
             }
         }
 
+        /// <summary>
+        /// 使用存档中的完整状态恢复当前精灵。
+        /// </summary>
+        /// <param name="level">存档中的等级。</param>
+        /// <param name="currentExp">存档中的当前经验值。</param>
+        /// <param name="currentHP">存档中的当前生命值。</param>
+        /// <param name="status">存档中的异常状态。</param>
+        /// <param name="ivHP">生命个体值。</param>
+        /// <param name="ivAttack">攻击个体值。</param>
+        /// <param name="ivDefense">防御个体值。</param>
+        /// <param name="ivSpeed">速度个体值。</param>
+        /// <param name="ivSpecialAttack">特攻个体值。</param>
+        /// <param name="ivSpecialDefense">特防个体值。</param>
+        /// <param name="evHP">生命努力值。</param>
+        /// <param name="evAttack">攻击努力值。</param>
+        /// <param name="evDefense">防御努力值。</param>
+        /// <param name="evSpeed">速度努力值。</param>
+        /// <param name="evSpecialAttack">特攻努力值。</param>
+        /// <param name="evSpecialDefense">特防努力值。</param>
+        /// <param name="ability">存档中的当前特性。</param>
+        /// <param name="heldItem">存档中的携带道具。</param>
+        /// <param name="skillPP">存档中的技能及剩余 PP。</param>
+        public void RestoreState(
+            int level,
+            int currentExp,
+            int currentHP,
+            StatusCondition status,
+            int ivHP,
+            int ivAttack,
+            int ivDefense,
+            int ivSpeed,
+            int ivSpecialAttack,
+            int ivSpecialDefense,
+            int evHP,
+            int evAttack,
+            int evDefense,
+            int evSpeed,
+            int evSpecialAttack,
+            int evSpecialDefense,
+            AbilityData ability,
+            ItemData heldItem,
+            IReadOnlyDictionary<SkillData, int> skillPP)
+        {
+            Level = level;
+            CurrentExp = currentExp;
+            CurrentStatus = status;
+            IvHP = ivHP;
+            IvAttack = ivAttack;
+            IvDefense = ivDefense;
+            IvSpeed = ivSpeed;
+            IvSpecialAttack = ivSpecialAttack;
+            IvSpecialDefense = ivSpecialDefense;
+            _evHP = evHP;
+            _evAttack = evAttack;
+            _evDefense = evDefense;
+            _evSpeed = evSpeed;
+            _evSpecialAttack = evSpecialAttack;
+            _evSpecialDefense = evSpecialDefense;
+            ActiveAbility = ability;
+            HeldItem = heldItem;
+            CurrentPP = new Dictionary<SkillData, int>(skillPP);
+            CurrentHP = currentHP;
+        }
+
         private void GenerateIVs()
         {
             IvHP = Random.Range(0, 32);

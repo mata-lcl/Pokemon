@@ -396,7 +396,7 @@ namespace Pokemon.Presentation
             if (itemSteps.Exists(s => s.CaughtSuccess))
             {
                 // 将精灵加入背包
-                PlayerParty.AddMonster(new MonsterRuntime(_enemy.Species, _enemy.Level));
+                PlayerParty.TryAddMonster(new MonsterRuntime(_enemy.Species, _enemy.Level));
                 _battleEnded = true;
 
                 uiController.SetLog($"{_enemy.Species.DisplayName} 加入了背包！");

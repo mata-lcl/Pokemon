@@ -13,7 +13,17 @@ namespace Pokemon.Presentation
         private void OnEnable()
         {
             Initialize();
+            ConfigureStorageCapacity();
             PlayerParty.PartyChanged += Refresh;
+        }
+
+        /// <summary>
+        /// 根据仓库面板设置的页数配置玩家仓库总容量。
+        /// </summary>
+        public void ConfigureStorageCapacity()
+        {
+            if (panel != null)
+                panel.ConfigureStorageCapacity();
         }
 
         private void OnDisable()

@@ -1,5 +1,9 @@
 using System;
+using Pokemon.Application;
+using Pokemon.Presentation.UI;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace Pokemon.Presentation
 {
@@ -16,12 +20,21 @@ namespace Pokemon.Presentation
         [SerializeField] private GameObject storagePanel;
         [SerializeField] private WorldBagController bagController;
         [SerializeField] private WorldPokemonStorageController storageController;
+        [SerializeField] private WorldGmController gmPanel;
+        [SerializeField] private SettingsPanelController settingsPanel;
+        [SerializeField] private ConfirmationDialogController exitDialog;
 
         [Header("菜单按钮")]
         [SerializeField] private GameObject saveButton;
         [SerializeField] private GameObject bagButton;
         [SerializeField] private GameObject storageButton;
+        [SerializeField] private Button gmButton;
+        [SerializeField] private Button settingsButton;
+        [SerializeField] private Button exitButton;
         [SerializeField] private GameObject closeButton;
+
+        [Header("Scene")]
+        [SerializeField] private string loadSceneName = "Load";
 
         [Header("Input")]
         [SerializeField] private KeyCode bagKey = KeyCode.B;
@@ -38,6 +51,13 @@ namespace Pokemon.Presentation
         private void Awake()
         {
             transform.localScale = Vector3.one;
+            settingsButton.onClick.AddListener(ShowSettings);
+            gmButton.onClick.AddListener(ShowGm);
+            exitButton.onClick.AddListener(ShowExitConfirmation);
+            gmPanel.CloseRequested += ShowMenu;
+            settingsPanel.CloseRequested += ShowMenu;
+            if (storageController != null)
+                storageController.ConfigureStorageCapacity();
             HideContentPanels();
             SetMenuVisible(false);
             SetMainMenuButtonsVisible(true);
@@ -73,6 +93,18 @@ namespace Pokemon.Presentation
         {
             // 控制器被禁用或重新构建时，确保玩家不会一直处于锁定状态。
             SetPlayerMovementEnabled(true);
+        }
+
+        /// <summary>
+        /// 解除设置、退出按钮和设置面板事件绑定。
+        /// </summary>
+        private void OnDestroy()
+        {
+            settingsButton.onClick.RemoveListener(ShowSettings);
+            gmButton.onClick.RemoveListener(ShowGm);
+            exitButton.onClick.RemoveListener(ShowExitConfirmation);
+            gmPanel.CloseRequested -= ShowMenu;
+            settingsPanel.CloseRequested -= ShowMenu;
         }
 
         public void ToggleBag()
@@ -158,6 +190,40 @@ namespace Pokemon.Presentation
             SetPlayerMovementEnabled(true);
         }
 
+        /// <summary>
+        /// 显示声音设置面板。
+        /// </summary>
+        public void ShowSettings()
+        {
+            ShowPanel(settingsPanel.gameObject, "settings");
+        }
+
+        /// <summary>
+        /// 显示场外 GM 测试面板。
+        /// </summary>
+        public void ShowGm()
+        {
+            ShowPanel(gmPanel.gameObject, "gm");
+        }
+
+        /// <summary>
+        /// 显示返回主菜单或退出游戏的确认弹窗。
+        /// </summary>
+        public void ShowExitConfirmation()
+        {
+            HideContentPanels();
+            SetMenuVisible(false);
+            exitDialog.Show(
+                "是否退出到主菜单",
+                "是",
+                ReturnToLoadScene,
+                "退出游戏",
+                GameApplicationService.QuitGame);
+            _currentPanel = exitDialog.gameObject;
+            SetCloseButtonVisible(true);
+            SetPlayerMovementEnabled(false);
+        }
+
         private void ShowPanel(GameObject target, string panelName)
         {
             if (target == null)
@@ -183,6 +249,9 @@ namespace Pokemon.Presentation
                 storagePanel.SetActive(false);
             if (savePanel != null)
                 savePanel.SetActive(false);
+            gmPanel.Hide();
+            settingsPanel.Hide();
+            exitDialog.Hide();
 
             _currentPanel = null;
         }
@@ -201,6 +270,17 @@ namespace Pokemon.Presentation
                 bagButton.SetActive(visible);
             if (storageButton != null)
                 storageButton.SetActive(visible);
+            gmButton.gameObject.SetActive(visible);
+            settingsButton.gameObject.SetActive(visible);
+            exitButton.gameObject.SetActive(visible);
+        }
+
+        /// <summary>
+        /// 返回 Load 主菜单场景。
+        /// </summary>
+        private void ReturnToLoadScene()
+        {
+            SceneManager.LoadScene(loadSceneName);
         }
 
         private void SetCloseButtonVisible(bool visible)

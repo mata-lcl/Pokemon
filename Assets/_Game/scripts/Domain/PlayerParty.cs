@@ -30,6 +30,7 @@ namespace Pokemon.Domain
     public static class PlayerParty
     {
         public const int MaxPartySize = 6;
+        private const int DefaultStorageCapacity = 300;
 
         public static MonsterRuntime ActivePokemon { get; set; }
 
@@ -40,8 +41,84 @@ namespace Pokemon.Domain
 
         private static readonly List<ItemData> ItemOrder = new List<ItemData>();
 
+        public static int StorageCapacity { get; private set; } = DefaultStorageCapacity;
+        public static bool IsStorageFull => Storage.Count >= StorageCapacity;
+        public static bool CanReceiveMonster => Party.Count < MaxPartySize || !IsStorageFull;
+
         public static event Action PartyChanged;
         public static event Action InventoryChanged;
+
+        /// <summary>
+        /// 根据仓库页数和每页槽位数设置仓库总容量。
+        /// </summary>
+        /// <param name="pageCount">仓库总页数。</param>
+        /// <param name="slotsPerPage">每页包含的槽位数。</param>
+        public static void ConfigureStorageCapacity(int pageCount, int slotsPerPage)
+        {
+            if (pageCount <= 0)
+                throw new ArgumentOutOfRangeException(nameof(pageCount));
+            if (slotsPerPage <= 0)
+                throw new ArgumentOutOfRangeException(nameof(slotsPerPage));
+
+            int capacity = checked(pageCount * slotsPerPage);
+            if (Storage.Count > capacity)
+            {
+                throw new InvalidOperationException(
+                    $"当前仓库已有 {Storage.Count} 只精灵，不能将仓库容量设置为 {capacity}。");
+            }
+
+            StorageCapacity = capacity;
+        }
+
+        /// <summary>
+        /// 清空当前队伍、仓库、出战精灵和背包数据，用于开始新游戏。
+        /// </summary>
+        public static void ResetState()
+        {
+            Party.Clear();
+            Storage.Clear();
+            Inventory.Clear();
+            ItemOrder.Clear();
+            ActivePokemon = null;
+            PartyChanged?.Invoke();
+            InventoryChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// 使用读档结果整体替换当前队伍、仓库、出战精灵和背包数据。
+        /// </summary>
+        /// <param name="party">按存档顺序恢复的队伍成员。</param>
+        /// <param name="storage">按存档顺序恢复的仓库成员。</param>
+        /// <param name="activePartyIndex">当前出战精灵在队伍中的索引。</param>
+        /// <param name="inventory">按存档顺序恢复的背包道具。</param>
+        public static void RestoreState(
+            IReadOnlyList<MonsterRuntime> party,
+            IReadOnlyList<MonsterRuntime> storage,
+            int activePartyIndex,
+            IReadOnlyList<InventoryItemStack> inventory)
+        {
+            Party.Clear();
+            Storage.Clear();
+            Inventory.Clear();
+            ItemOrder.Clear();
+
+            for (int i = 0; i < party.Count; i++)
+                Party.Add(party[i]);
+            for (int i = 0; i < storage.Count; i++)
+                Storage.Add(storage[i]);
+            for (int i = 0; i < inventory.Count; i++)
+            {
+                Inventory[inventory[i].Item] = inventory[i].Count;
+                ItemOrder.Add(inventory[i].Item);
+            }
+
+            ActivePokemon = activePartyIndex >= 0 && activePartyIndex < Party.Count
+                ? Party[activePartyIndex]
+                : null;
+            EnsureActivePokemon();
+            PartyChanged?.Invoke();
+            InventoryChanged?.Invoke();
+        }
 
         /// <summary>
         /// 移除无效的队伍成员，将超出队伍上限的成员移入仓库，并在当前出战宝可梦为空
@@ -53,6 +130,9 @@ namespace Pokemon.Domain
 
             while (Party.Count > MaxPartySize)
             {
+                if (IsStorageFull)
+                    break;
+
                 int lastIndex = Party.Count - 1;
                 MonsterRuntime overflow = Party[lastIndex];
                 Party.RemoveAt(lastIndex);
@@ -109,17 +189,29 @@ namespace Pokemon.Domain
         /// </summary>
         public static void AddMonster(MonsterRuntime monster)
         {
+            TryAddMonster(monster);
+        }
+
+        /// <summary>
+        /// 队伍有空位时将精灵加入队伍，否则在仓库未满时将其存入仓库。
+        /// </summary>
+        /// <param name="monster">需要加入玩家队伍或仓库的精灵。</param>
+        public static bool TryAddMonster(MonsterRuntime monster)
+        {
             if (monster == null || Party.Contains(monster) || Storage.Contains(monster))
-                return;
+                return false;
 
             NormalizeParty();
             if (Party.Count < MaxPartySize)
                 Party.Add(monster);
-            else
+            else if (!IsStorageFull)
                 Storage.Add(monster);
+            else
+                return false;
 
             EnsureActivePokemon();
             PartyChanged?.Invoke();
+            return true;
         }
 
         /// <summary>
@@ -173,7 +265,7 @@ namespace Pokemon.Domain
         public static bool TryMoveToStorage(int partyIndex)
         {
             NormalizeParty();
-            if (partyIndex < 0 || partyIndex >= Party.Count || Party.Count <= 1)
+            if (partyIndex < 0 || partyIndex >= Party.Count || Party.Count <= 1 || IsStorageFull)
                 return false;
 
             MonsterRuntime pokemon = Party[partyIndex];

@@ -100,6 +100,10 @@ namespace Pokemon.Application
     {
         public const int SlotCount = 3;
 
+        private static bool _hasPendingPlayerPosition;
+        private static string _pendingSceneName;
+        private static Vector3 _pendingPlayerPosition;
+
         /// <summary>
         /// 将当前玩家位置、队伍、仓库和背包信息写入指定本地存档栏。
         /// </summary>
@@ -132,6 +136,63 @@ namespace Pokemon.Application
         {
             ValidateSlotIndex(slotIndex);
             return File.Exists(GetSlotPath(slotIndex));
+        }
+
+        /// <summary>
+        /// 读取指定存档栏并恢复队伍、仓库、出战精灵和背包数据。
+        /// </summary>
+        /// <param name="slotIndex">从零开始的存档栏索引。</param>
+        /// <param name="assetCatalog">用于解析存档资源标识的资源目录。</param>
+        public static SaveGameData Load(int slotIndex, SaveAssetCatalog assetCatalog)
+        {
+            ValidateSlotIndex(slotIndex);
+            SaveGameData data = JsonUtility.FromJson<SaveGameData>(
+                File.ReadAllText(GetSlotPath(slotIndex)));
+
+            List<MonsterRuntime> party = RestoreMonsters(data.party, assetCatalog);
+            List<MonsterRuntime> storage = RestoreMonsters(data.storage, assetCatalog);
+            List<InventoryItemStack> inventory = new List<InventoryItemStack>();
+            for (int i = 0; i < data.inventory.Count; i++)
+            {
+                InventorySaveData itemData = data.inventory[i];
+                inventory.Add(new InventoryItemStack(
+                    assetCatalog.ResolveItem(itemData.itemId, itemData.itemAssetName),
+                    itemData.count));
+            }
+
+            PlayerParty.RestoreState(party, storage, data.activePartyIndex, inventory);
+            _hasPendingPlayerPosition = true;
+            _pendingSceneName = data.sceneName;
+            _pendingPlayerPosition = data.playerPosition;
+            return data;
+        }
+
+        /// <summary>
+        /// 返回并清除当前场景等待应用的读档玩家位置。
+        /// </summary>
+        /// <param name="sceneName">当前加载完成的场景名称。</param>
+        /// <param name="playerPosition">返回存档中的玩家世界坐标。</param>
+        public static bool TryConsumePlayerPosition(string sceneName, out Vector3 playerPosition)
+        {
+            if (_hasPendingPlayerPosition && _pendingSceneName == sceneName)
+            {
+                playerPosition = _pendingPlayerPosition;
+                _hasPendingPlayerPosition = false;
+                _pendingSceneName = string.Empty;
+                return true;
+            }
+
+            playerPosition = default;
+            return false;
+        }
+
+        /// <summary>
+        /// 清除尚未应用的读档玩家位置，用于开始新游戏。
+        /// </summary>
+        public static void ClearPendingPlayerPosition()
+        {
+            _hasPendingPlayerPosition = false;
+            _pendingSceneName = string.Empty;
         }
 
         /// <summary>
@@ -232,6 +293,68 @@ namespace Pokemon.Application
             }
 
             return data;
+        }
+
+        /// <summary>
+        /// 将精灵存档集合恢复为运行时精灵集合并保持原有顺序。
+        /// </summary>
+        /// <param name="savedMonsters">需要恢复的精灵存档集合。</param>
+        /// <param name="assetCatalog">用于解析精灵相关资源的资源目录。</param>
+        private static List<MonsterRuntime> RestoreMonsters(
+            IReadOnlyList<MonsterSaveData> savedMonsters,
+            SaveAssetCatalog assetCatalog)
+        {
+            List<MonsterRuntime> monsters = new List<MonsterRuntime>(savedMonsters.Count);
+            for (int i = 0; i < savedMonsters.Count; i++)
+            {
+                MonsterSaveData savedMonster = savedMonsters[i];
+                PokemonSpeciesData species = assetCatalog.ResolveSpecies(
+                    savedMonster.speciesId,
+                    savedMonster.speciesAssetName);
+                AbilityData ability = string.IsNullOrEmpty(savedMonster.abilityAssetName)
+                    ? null
+                    : assetCatalog.ResolveAbility(
+                        savedMonster.abilityId,
+                        savedMonster.abilityAssetName);
+                ItemData heldItem = string.IsNullOrEmpty(savedMonster.heldItemAssetName)
+                    ? null
+                    : assetCatalog.ResolveItem(
+                        savedMonster.heldItemId,
+                        savedMonster.heldItemAssetName);
+                Dictionary<SkillData, int> skillPP = new Dictionary<SkillData, int>();
+                for (int skillIndex = 0; skillIndex < savedMonster.skillPP.Count; skillIndex++)
+                {
+                    SkillPPSaveData savedSkill = savedMonster.skillPP[skillIndex];
+                    skillPP.Add(
+                        assetCatalog.ResolveSkill(savedSkill.skillId, savedSkill.skillAssetName),
+                        savedSkill.currentPP);
+                }
+
+                MonsterRuntime monster = new MonsterRuntime(species, savedMonster.level);
+                monster.RestoreState(
+                    savedMonster.level,
+                    savedMonster.currentExp,
+                    savedMonster.currentHP,
+                    (StatusCondition)savedMonster.currentStatus,
+                    savedMonster.ivHP,
+                    savedMonster.ivAttack,
+                    savedMonster.ivDefense,
+                    savedMonster.ivSpeed,
+                    savedMonster.ivSpecialAttack,
+                    savedMonster.ivSpecialDefense,
+                    savedMonster.evHP,
+                    savedMonster.evAttack,
+                    savedMonster.evDefense,
+                    savedMonster.evSpeed,
+                    savedMonster.evSpecialAttack,
+                    savedMonster.evSpecialDefense,
+                    ability,
+                    heldItem,
+                    skillPP);
+                monsters.Add(monster);
+            }
+
+            return monsters;
         }
 
         /// <summary>

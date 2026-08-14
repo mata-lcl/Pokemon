@@ -14,6 +14,8 @@ namespace Pokemon.Domain
 
         public bool CanUse(EffectContext context)
         {
+            if (!PlayerParty.CanReceiveMonster)
+                return false;
             return true;// 只要是野外战斗就能用
         }
 
