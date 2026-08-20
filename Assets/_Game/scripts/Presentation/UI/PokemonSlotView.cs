@@ -31,6 +31,10 @@ namespace Pokemon.Presentation.UI
         private bool _isDragging;
         private bool _suppressClick;
         private bool _selected;
+        private Image _dragAvatar;
+        private RectTransform _dragCanvasRect;
+        private Camera _dragEventCamera;
+        private Vector2 _pointerPosition;
 
         public MonsterRuntime Pokemon => _pokemon;
 
@@ -137,6 +141,8 @@ namespace Pokemon.Presentation.UI
 
             _pointerHeld = true;
             _pointerDownTime = Time.unscaledTime;
+            _pointerPosition = eventData.position;
+            _dragEventCamera = eventData.pressEventCamera;
         }
 
         /// <summary>
@@ -161,7 +167,10 @@ namespace Pokemon.Presentation.UI
         /// <param name="eventData">当前指针事件数据。</param>
         public void OnDrag(PointerEventData eventData)
         {
+            _pointerPosition = eventData.position;
+            _dragEventCamera = eventData.pressEventCamera;
             TryBeginDrag();
+            UpdateDragAvatarPosition(_pointerPosition);
         }
 
         /// <summary>
@@ -193,6 +202,35 @@ namespace Pokemon.Presentation.UI
             _suppressClick = true;
             if (selectedFrame != null)
                 selectedFrame.SetActive(true);
+
+            if (avatar != null && avatar.canvas != null)
+            {
+                _dragCanvasRect = avatar.canvas.rootCanvas.transform as RectTransform;
+                _dragAvatar = Instantiate(avatar, _dragCanvasRect, true);
+                _dragAvatar.name = "PokemonDragAvatar";
+                _dragAvatar.raycastTarget = false;
+                _dragAvatar.rectTransform.SetAsLastSibling();
+                UpdateDragAvatarPosition(_pointerPosition);
+            }
+        }
+
+        /// <summary>
+        /// 将临时精灵头像移动到当前指针所在位置。
+        /// </summary>
+        /// <param name="pointerPosition">指针的屏幕坐标。</param>
+        private void UpdateDragAvatarPosition(Vector2 pointerPosition)
+        {
+            if (_dragAvatar == null || _dragCanvasRect == null)
+                return;
+
+            if (RectTransformUtility.ScreenPointToWorldPointInRectangle(
+                    _dragCanvasRect,
+                    pointerPosition,
+                    _dragEventCamera,
+                    out Vector3 worldPosition))
+            {
+                _dragAvatar.rectTransform.position = worldPosition;
+            }
         }
 
         /// <summary>
@@ -213,8 +251,22 @@ namespace Pokemon.Presentation.UI
         private void EndDragVisual()
         {
             _isDragging = false;
+            DestroyDragAvatar();
             if (selectedFrame != null)
                 selectedFrame.SetActive(_selected);
+        }
+
+        /// <summary>
+        /// 销毁跟随指针的临时精灵头像。
+        /// </summary>
+        private void DestroyDragAvatar()
+        {
+            if (_dragAvatar != null)
+                Destroy(_dragAvatar.gameObject);
+
+            _dragAvatar = null;
+            _dragCanvasRect = null;
+            _dragEventCamera = null;
         }
 
         /// <summary>
@@ -225,6 +277,7 @@ namespace Pokemon.Presentation.UI
             _pointerHeld = false;
             _isDragging = false;
             _suppressClick = false;
+            DestroyDragAvatar();
         }
 
         private void SetContentVisible(bool visible)
