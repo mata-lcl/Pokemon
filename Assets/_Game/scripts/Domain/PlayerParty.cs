@@ -33,6 +33,7 @@ namespace Pokemon.Domain
         private const int DefaultStorageCapacity = 300;
 
         public static MonsterRuntime ActivePokemon { get; set; }
+        public static int Money { get; private set; }
 
         // 保留队伍列表的公开访问，以兼容现有代码；后续写入操作逐步迁移到下方方法中。
         public static List<MonsterRuntime> Party = new List<MonsterRuntime>();
@@ -47,6 +48,7 @@ namespace Pokemon.Domain
 
         public static event Action PartyChanged;
         public static event Action InventoryChanged;
+        public static event Action MoneyChanged;
 
         /// <summary>
         /// 根据仓库页数和每页槽位数设置仓库总容量。
@@ -80,8 +82,33 @@ namespace Pokemon.Domain
             Inventory.Clear();
             ItemOrder.Clear();
             ActivePokemon = null;
+            Money = 0;
             PartyChanged?.Invoke();
             InventoryChanged?.Invoke();
+            MoneyChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// 使用读档中的金币数量替换当前金币。
+        /// </summary>
+        /// <param name="money">存档记录的金币数量。</param>
+        public static void RestoreMoney(int money)
+        {
+            Money = money;
+            MoneyChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// 向玩家增加指定数量的金币。
+        /// </summary>
+        /// <param name="amount">需要增加的金币数量。</param>
+        public static void AddMoney(int amount)
+        {
+            if (amount <= 0)
+                return;
+
+            Money += amount;
+            MoneyChanged?.Invoke();
         }
 
         /// <summary>
@@ -454,6 +481,7 @@ namespace Pokemon.Domain
             }
 
             InventoryChanged?.Invoke();
+            QuestService.ReportItemCollected(item, count);
         }
 
         // 只有对应操作成功后才移除道具。

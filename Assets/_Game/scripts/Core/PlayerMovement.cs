@@ -107,6 +107,17 @@ public class PlayerMovement : MonoBehaviour
             playerCollider.enabled = true;
     }
     /// <summary>
+    /// 设置玩家是否可以移动，并在禁用移动时清除当前方向输入。
+    /// </summary>
+    /// <param name="movementEnabled">玩家是否可以读取输入并移动。</param>
+    public void SetMovementEnabled(bool movementEnabled)
+    {
+        if (!movementEnabled)
+            input = Vector2.zero;
+        enabled = movementEnabled;
+    }
+
+    /// <summary>
     /// Finds the configured grass area and asks it to perform an encounter check.
     /// </summary>
     private void CheckForGrass(float distanceMoved)

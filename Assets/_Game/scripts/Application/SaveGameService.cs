@@ -10,15 +10,17 @@ namespace Pokemon.Application
     [Serializable]
     public class SaveGameData
     {
-        public int version = 1;
+        public int version = 2;
         public int slotIndex;
         public string savedAt;
         public string sceneName;
         public Vector3 playerPosition;
         public int activePartyIndex;
+        public int money;
         public List<MonsterSaveData> party = new List<MonsterSaveData>();
         public List<MonsterSaveData> storage = new List<MonsterSaveData>();
         public List<InventorySaveData> inventory = new List<InventorySaveData>();
+        public List<QuestRuntimeData> quests = new List<QuestRuntimeData>();
     }
 
     [Serializable]
@@ -161,6 +163,8 @@ namespace Pokemon.Application
             }
 
             PlayerParty.RestoreState(party, storage, data.activePartyIndex, inventory);
+            PlayerParty.RestoreMoney(data.money);
+            QuestService.RestoreState(data.quests);
             _hasPendingPlayerPosition = true;
             _pendingSceneName = data.sceneName;
             _pendingPlayerPosition = data.playerPosition;
@@ -210,7 +214,9 @@ namespace Pokemon.Application
                 savedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                 sceneName = SceneManager.GetActiveScene().name,
                 playerPosition = playerPosition,
-                activePartyIndex = IndexOf(party, PlayerParty.ActivePokemon)
+                activePartyIndex = IndexOf(party, PlayerParty.ActivePokemon),
+                money = PlayerParty.Money,
+                quests = QuestService.CreateSaveData()
             };
 
             AddMonsters(data.party, party);

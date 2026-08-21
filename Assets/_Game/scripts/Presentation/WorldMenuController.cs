@@ -292,7 +292,7 @@ namespace Pokemon.Presentation
         private void SetPlayerMovementEnabled(bool enabled)
         {
             if (playerMovement != null)
-                playerMovement.enabled = enabled;
+                playerMovement.SetMovementEnabled(enabled);
         }
     }
 }

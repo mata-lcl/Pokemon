@@ -74,6 +74,7 @@ namespace Pokemon.Presentation
         {
             SaveGameService.ClearPendingPlayerPosition();
             PlayerParty.ResetState();
+            QuestService.ResetState();
             PlayerParty.AddMonster(new MonsterRuntime(starterSpecies, 5));
             PlayerParty.AddItem(starterItem, starterItemCount);
             SceneManager.LoadScene(newGameSceneName);

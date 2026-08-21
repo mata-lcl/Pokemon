@@ -471,6 +471,8 @@ namespace Pokemon.Presentation
 
                     if (step.PlayerWon)
                     {
+                        QuestService.ReportPokemonDefeated(_enemy.Species);
+
                         // 1. 努力值获得
                         _player.AddEVs(
                             _enemy.Species.EvYieldHP,
