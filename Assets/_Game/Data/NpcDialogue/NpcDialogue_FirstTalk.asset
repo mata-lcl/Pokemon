@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7f6d3e0cd738ef48a70e7f65cc2806a, type: 3}
+  m_Name: NpcDialogue_FirstTalk
+  m_EditorClassIdentifier: 
+  npcId: npc_xiaoming
+  displayName: "\u5C0F\u660E"
+  defaultPortrait: {fileID: 21300000, guid: 6f3b5e751748fb940a7e08db2af86cff, type: 3}
+  branches:
+  - condition: 2
+    quest: {fileID: 11400000, guid: fc43a3f8dfcd97c4186cb4e7ba806818, type: 2}
+    requiredQuestState: 0
+    lines:
+    - speakerName: "\u5C0F\u660E"
+      portrait: {fileID: 0}
+      portraitSide: 0
+      text: "\u7ED9\u4F60\u4E94\u4E2A\u7CBE\u7075\u7403\u3002"
+      voiceClip: {fileID: 0}
+      animationTrigger: 
+    completionAction: 4
+  - condition: 1
+    quest: {fileID: 11400000, guid: fc43a3f8dfcd97c4186cb4e7ba806818, type: 2}
+    requiredQuestState: 4
+    lines:
+    - speakerName: "\u5C0F\u660E"
+      portrait: {fileID: 0}
+      portraitSide: 0
+      text: "\u6CA1\u7403\u4E86\u3002"
+      voiceClip: {fileID: 0}
+      animationTrigger: 
+    completionAction: 0

@@ -6,31 +6,45 @@ namespace Pokemon.Domain
 {
     public enum QuestCategory
     {
+        [InspectorName("主线任务")]
         Main,
+        [InspectorName("支线任务")]
         Side,
+        [InspectorName("日常任务")]
         Daily
     }
 
     public enum QuestState
     {
+        [InspectorName("未解锁")]
         Locked,
+        [InspectorName("可接取")]
         Available,
+        [InspectorName("进行中")]
         Active,
+        [InspectorName("可提交")]
         ReadyToSubmit,
+        [InspectorName("已完成")]
         Completed,
+        [InspectorName("已失败（预留）")]
         Failed
     }
 
     public enum QuestObjectiveType
     {
+        [InspectorName("击败宝可梦")]
         DefeatPokemon,
+        [InspectorName("收集道具")]
         CollectItem,
+        [InspectorName("与 NPC 对话")]
         TalkToNpc
     }
 
     public enum QuestRewardType
     {
+        [InspectorName("金币")]
         Money,
+        [InspectorName("道具")]
         Item
     }
 
@@ -82,7 +96,7 @@ namespace Pokemon.Domain
         public int Amount => amount;
     }
 
-    [CreateAssetMenu(fileName = "Quest_", menuName = "Pokemon/Quest Definition")]
+    [CreateAssetMenu(fileName = "Quest_", menuName = "Pokemon/任务配置")]
     public class QuestDefinition : ScriptableObject
     {
         [Header("基本信息")]

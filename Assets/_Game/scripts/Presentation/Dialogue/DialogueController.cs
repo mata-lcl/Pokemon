@@ -219,6 +219,11 @@ namespace Pokemon.Presentation
                 case DialogueCompletionAction.SubmitQuest:
                     QuestService.SubmitQuest(_currentBranch.Quest);
                     break;
+                case DialogueCompletionAction.CompleteNpcQuest:
+                    QuestService.AcceptQuest(_currentBranch.Quest);
+                    QuestService.ReportNpcTalked(_currentNpc.DialogueDefinition.NpcId);
+                    QuestService.SubmitQuest(_currentBranch.Quest);
+                    break;
             }
 
             CloseDialogue();

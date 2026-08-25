@@ -48,6 +48,7 @@ namespace Pokemon.Domain
 
         public static event Action PartyChanged;
         public static event Action InventoryChanged;
+        public static event Action<ItemData, int> ItemAdded;
         public static event Action MoneyChanged;
 
         /// <summary>
@@ -481,6 +482,7 @@ namespace Pokemon.Domain
             }
 
             InventoryChanged?.Invoke();
+            ItemAdded?.Invoke(item, count);
             QuestService.ReportItemCollected(item, count);
         }
 

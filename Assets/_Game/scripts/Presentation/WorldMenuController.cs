@@ -18,6 +18,7 @@ namespace Pokemon.Presentation
         [SerializeField] private GameObject savePanel;
         [SerializeField] private GameObject bagPanel;
         [SerializeField] private GameObject storagePanel;
+        [SerializeField] private GameObject questPanel;
         [SerializeField] private WorldBagController bagController;
         [SerializeField] private WorldPokemonStorageController storageController;
         [SerializeField] private WorldGmController gmPanel;
@@ -28,6 +29,7 @@ namespace Pokemon.Presentation
         [SerializeField] private GameObject saveButton;
         [SerializeField] private GameObject bagButton;
         [SerializeField] private GameObject storageButton;
+        [SerializeField] private Button questButton;
         [SerializeField] private Button gmButton;
         [SerializeField] private Button settingsButton;
         [SerializeField] private Button exitButton;
@@ -39,6 +41,7 @@ namespace Pokemon.Presentation
         [Header("Input")]
         [SerializeField] private KeyCode bagKey = KeyCode.B;
         [SerializeField] private KeyCode storageKey = KeyCode.P;
+        [SerializeField] private KeyCode questKey = KeyCode.J;
         [SerializeField] private KeyCode closeKey = KeyCode.Escape;
 
         [Header("World Input")]
@@ -54,6 +57,8 @@ namespace Pokemon.Presentation
             settingsButton.onClick.AddListener(ShowSettings);
             gmButton.onClick.AddListener(ShowGm);
             exitButton.onClick.AddListener(ShowExitConfirmation);
+            if (questButton != null)
+                questButton.onClick.AddListener(ToggleQuest);
             gmPanel.CloseRequested += ShowMenu;
             settingsPanel.CloseRequested += ShowMenu;
             if (storageController != null)
@@ -78,6 +83,8 @@ namespace Pokemon.Presentation
                 ToggleBag();
             else if (Input.GetKeyDown(storageKey))
                 ToggleStorage();
+            else if (Input.GetKeyDown(questKey))
+                ToggleQuest();
         }
 
         /// <summary>
@@ -103,6 +110,8 @@ namespace Pokemon.Presentation
             settingsButton.onClick.RemoveListener(ShowSettings);
             gmButton.onClick.RemoveListener(ShowGm);
             exitButton.onClick.RemoveListener(ShowExitConfirmation);
+            if (questButton != null)
+                questButton.onClick.RemoveListener(ToggleQuest);
             gmPanel.CloseRequested -= ShowMenu;
             settingsPanel.CloseRequested -= ShowMenu;
         }
@@ -121,6 +130,17 @@ namespace Pokemon.Presentation
                 CloseCurrentPanel();
             else
                 ShowStorage();
+        }
+
+        /// <summary>
+        /// 在任务面板和世界场景之间切换显示状态。
+        /// </summary>
+        public void ToggleQuest()
+        {
+            if (_currentPanel == questPanel)
+                CloseCurrentPanel();
+            else
+                ShowQuest();
         }
 
         /// <summary>
@@ -178,6 +198,14 @@ namespace Pokemon.Presentation
                 storageController.Show();
             else
                 Debug.LogWarning("WorldMenuController 无法刷新仓库：控制器引用未绑定。", this);
+        }
+
+        /// <summary>
+        /// 显示任务面板并暂停玩家移动。
+        /// </summary>
+        public void ShowQuest()
+        {
+            ShowPanel(questPanel, "quest");
         }
 
         // 将此方法绑定到面板关闭按钮。
@@ -247,6 +275,8 @@ namespace Pokemon.Presentation
                 bagPanel.SetActive(false);
             if (storagePanel != null)
                 storagePanel.SetActive(false);
+            if (questPanel != null)
+                questPanel.SetActive(false);
             if (savePanel != null)
                 savePanel.SetActive(false);
             gmPanel.Hide();
@@ -270,6 +300,8 @@ namespace Pokemon.Presentation
                 bagButton.SetActive(visible);
             if (storageButton != null)
                 storageButton.SetActive(visible);
+            if (questButton != null)
+                questButton.gameObject.SetActive(visible);
             gmButton.gameObject.SetActive(visible);
             settingsButton.gameObject.SetActive(visible);
             exitButton.gameObject.SetActive(visible);
