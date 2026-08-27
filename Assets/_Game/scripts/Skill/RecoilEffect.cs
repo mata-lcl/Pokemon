@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Pokemon.Domain.Effects
 {
-    [CreateAssetMenu(fileName = "RecoilEffect", menuName = "Pokemon/Effects/Recoil")]
+    [CreateAssetMenu(fileName = "反作用伤害效果", menuName = "宝可梦/技能效果/反作用伤害")]
     public class RecoilEffect : SkillEffectSO
     {
         [Range(0f, 3f)]

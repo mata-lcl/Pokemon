@@ -94,7 +94,7 @@ namespace Pokemon.Domain
         }
     }
 
-    [CreateAssetMenu(fileName = "NpcDialogue_", menuName = "Pokemon/NPC 对话配置")]
+    [CreateAssetMenu(fileName = "NPC对话_", menuName = "宝可梦/配置/NPC 对话配置")]
     public class NpcDialogueDefinition : ScriptableObject
     {
         [Header("NPC 信息")]

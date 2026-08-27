@@ -2,7 +2,7 @@ using UnityEngine;
 using Pokemon.Domain;
 using Pokemon.Application;
 
-[CreateAssetMenu(fileName = "Potion", menuName = "Pokemon/Item/Potion")]
+[CreateAssetMenu(fileName = "恢复药_", menuName = "宝可梦/配置/道具/恢复药")]
 public class PotionData : ItemData, IUsable
 {
     public int HealAmount = 20;

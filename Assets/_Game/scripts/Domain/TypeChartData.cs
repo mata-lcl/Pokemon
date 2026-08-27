@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Pokemon.Domain
 {
-    [CreateAssetMenu(fileName = "TypeChart_", menuName = "Pokemon/Type Chart Data")]
+    [CreateAssetMenu(fileName = "属性克制表_", menuName = "宝可梦/配置/属性克制表")]
     public class TypeChartData : ScriptableObject
     {
         [System.Serializable]

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Pokemon.Domain
 {
-    [CreateAssetMenu(fileName = "Pokeball_", menuName = "Pokemon/Item/Pokeball")]
+    [CreateAssetMenu(fileName = "精灵球_", menuName = "宝可梦/配置/道具/精灵球")]
     public class PokeballData : ItemData, IUsable
     {
         [Tooltip("捕获率修正倍率，默认1.0不修改")]

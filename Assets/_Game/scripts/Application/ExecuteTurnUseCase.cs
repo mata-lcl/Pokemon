@@ -16,6 +16,8 @@ namespace Pokemon.Application
         public bool PlayerWon;
         public bool CaughtSuccess;
         public StepAnimType AnimType;
+        public SkillCategory? SkillCategory;
+        public bool PresentAtAttackImpact;
     }
 
     /// <summary>

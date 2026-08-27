@@ -16,6 +16,8 @@ MonoBehaviour:
   DisplayName: "\u53F2\u83B1\u59C6"
   PrimaryType: 2
   SecondaryType: 0
+  primaryTypeIcon: {fileID: 21300000, guid: f0ef81fd375cf2243ae9264d62930acd, type: 3}
+  secondaryTypeIcon: {fileID: 0}
   BaseHP: 160
   BaseAttack: 1
   BaseDefense: 10

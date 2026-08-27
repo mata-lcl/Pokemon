@@ -72,9 +72,10 @@ namespace Pokemon.Application
                 return;
             }
 
-            context.AddStep(
+            context.AddSkillStep(
                 $"{action.Actor.Species.DisplayName} 使用了 {action.Skill.DisplayName}！",
-                action.IsPlayerAction ? StepAnimType.PlayerAttack : StepAnimType.EnemyAttack);
+                action.IsPlayerAction ? StepAnimType.PlayerAttack : StepAnimType.EnemyAttack,
+                action.Skill.Category);
 
             if (!_damageCalculator.CheckHit(action.Skill))
             {

@@ -33,6 +33,23 @@ namespace Pokemon.Domain
                 AnimType = animType
             });
         }
+
+        /// <summary>
+        /// 添加一个需要在攻击动画打击帧展示的效果步骤。
+        /// </summary>
+        /// <param name="message">打击帧触发时显示的战斗日志。</param>
+        /// <param name="animType">打击帧触发时播放的受击动画。</param>
+        public void AddImpactStep(string message, StepAnimType animType)
+        {
+            Steps.Add(new Application.TurnStep
+            {
+                Message = message,
+                PlayerHpAfter = PlayerRef.CurrentHP,
+                EnemyHpAfter = EnemyRef.CurrentHP,
+                AnimType = animType,
+                PresentAtAttackImpact = true
+            });
+        }
     }
 
     /// <summary>

@@ -11,7 +11,7 @@ namespace Pokemon.EditorTools
 {
     public static class QuestItemUiHierarchyBuilder
     {
-        private const string MenuPath = "Tools/Pokemon/场景/创建任务栏与道具提示层级";
+        private const string MenuPath = "工具/宝可梦/场景/创建任务栏与道具提示层级";
 
         /// <summary>
         /// 在当前选中的 WorldCanvas 下创建任务按钮、任务面板和道具提示层级。

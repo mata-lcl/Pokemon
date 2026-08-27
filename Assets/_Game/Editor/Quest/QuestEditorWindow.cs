@@ -21,7 +21,7 @@ namespace Pokemon.EditorTools
         /// <summary>
         /// 打开宝可梦任务编辑器窗口。
         /// </summary>
-        [MenuItem("Tools/Pokemon/任务编辑器")]
+        [MenuItem("工具/宝可梦/配置编辑器/任务编辑器")]
         public static void OpenWindow()
         {
             GetWindow<QuestEditorWindow>("任务编辑器");
@@ -142,7 +142,7 @@ namespace Pokemon.EditorTools
             serializedQuest.FindProperty("title").stringValue = "新任务";
             serializedQuest.ApplyModifiedPropertiesWithoutUndo();
 
-            string path = AssetDatabase.GenerateUniqueAssetPath($"{QuestFolder}/Quest_New.asset");
+            string path = AssetDatabase.GenerateUniqueAssetPath($"{QuestFolder}/任务_新建.asset");
             AssetDatabase.CreateAsset(quest, path);
             AssetDatabase.SaveAssets();
             RefreshQuestList();

@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Pokemon.Domain.Effects
 {
-    [CreateAssetMenu(fileName = "HealEffect", menuName = "Pokemon/Effects/Heal")]
+    [CreateAssetMenu(fileName = "治疗效果", menuName = "宝可梦/技能效果/回复生命")]
     public class HealEffect : SkillEffectSO // 改为继承 SkillEffectSO
     {
         [Tooltip("固定回复生命值的数值")]

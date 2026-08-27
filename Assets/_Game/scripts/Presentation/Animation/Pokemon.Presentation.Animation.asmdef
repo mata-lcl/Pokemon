@@ -1,0 +1,14 @@
+{
+    "name": "Pokemon.Presentation.Animation",
+    "rootNamespace": "Pokemon.Presentation.Animation",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

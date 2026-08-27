@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Pokemon.Domain.Effects
 {
-    [CreateAssetMenu(fileName = "ListeningBridgeEffect", menuName = "Pokemon/Effects/Listening Bridge")]
+    [CreateAssetMenu(fileName = "聆听桥接效果", menuName = "宝可梦/技能效果/聆听桥接")]
     public class ListeningBridgeEffect : SkillEffectSO, IReactionSkillEffect
     {
         [SerializeField, Range(0f, 1f)]

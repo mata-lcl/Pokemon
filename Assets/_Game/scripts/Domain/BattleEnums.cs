@@ -2,10 +2,15 @@ namespace Pokemon.Domain
 {
     public enum PokemonType
     {
+        [UnityEngine.InspectorName("无")]
         None = 0,
+        [UnityEngine.InspectorName("一般")]
         Normal = 1,
+        [UnityEngine.InspectorName("水")]
         Water = 2,
+        [UnityEngine.InspectorName("火")]
         Fire = 3,
+        [UnityEngine.InspectorName("草")]
         Grass = 4
     }
 

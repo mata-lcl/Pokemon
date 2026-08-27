@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Pokemon.Domain
 {
-    [CreateAssetMenu(fileName = "Species_",menuName = "Pokemon/Species Data")]
+    [CreateAssetMenu(fileName = "精灵_", menuName = "宝可梦/配置/精灵配置")]
 
     public class PokemonSpeciesData : ScriptableObject
     {
@@ -16,6 +16,11 @@ namespace Pokemon.Domain
         [Header("类型")]
         public PokemonType PrimaryType = PokemonType.Normal;        //主属性
         public PokemonType SecondaryType = PokemonType.None;        //副属性
+        [SerializeField] private Sprite primaryTypeIcon;
+        [SerializeField] private Sprite secondaryTypeIcon;
+
+        public Sprite PrimaryTypeIcon => primaryTypeIcon;
+        public Sprite SecondaryTypeIcon => secondaryTypeIcon;
 
         [Header("种族值 (不可更改)")]
         [Tooltip("血量")] public int BaseHP = 50;

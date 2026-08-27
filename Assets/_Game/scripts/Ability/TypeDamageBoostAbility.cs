@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Pokemon.Domain
 {
     // 增加一个菜单项，可以创建出不同的实例
-    [CreateAssetMenu(fileName = "NewTypeBoostAbility", menuName = "Pokemon/Abilities/Type Boost")]
+    [CreateAssetMenu(fileName = "属性伤害强化特性", menuName = "宝可梦/配置/特性/属性伤害强化")]
     public class TypeDamageBoostAbility : AbilityData
     {
         [Header("触发设置")]

@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Pokemon.Domain.Effects
 {
     // 添加 CreateAssetMenu，使其可以在 Project 窗口中右键创建
-    [CreateAssetMenu(fileName = "DamageEffect", menuName = "Pokemon/Effects/Damage")]
+    [CreateAssetMenu(fileName = "伤害效果", menuName = "宝可梦/技能效果/造成伤害")]
     public class DamageEffect : SkillEffectSO // 改为继承 SkillEffectSO
     {
         // 使用 override 重写基类的抽象方法
@@ -26,7 +26,7 @@ namespace Pokemon.Domain.Effects
                 ? StepAnimType.EnemyHit
                 : StepAnimType.PlayerHit;
 
-            context.AddStep(
+            context.AddImpactStep(
                 $"{context.User.Species.DisplayName} 造成了 {damage} 点伤害",
                 hitAnim);
         }

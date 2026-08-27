@@ -10,7 +10,7 @@ namespace Pokemon.EditorTools
 {
     public static class DialogueSceneHierarchyBuilder
     {
-        private const string MenuPath = "Tools/Pokemon/场景/创建对话系统层级";
+        private const string MenuPath = "工具/宝可梦/场景/创建对话系统层级";
 
         /// <summary>
         /// 在当前选中的 Canvas 下创建对话面板、交互提示和对话控制对象。

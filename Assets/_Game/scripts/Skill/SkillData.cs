@@ -12,7 +12,7 @@ namespace Pokemon.Domain
         [Range(0f, 1f)] public float Chance = 1f; // 触发几率
     }
 
-    [CreateAssetMenu(fileName = "Skill_", menuName = "Pokemon/Skill Data")]
+    [CreateAssetMenu(fileName = "技能_", menuName = "宝可梦/配置/技能配置")]
     public class SkillData : ScriptableObject
     {
         [Tooltip("技能唯一标识代码")]

@@ -121,6 +121,27 @@ namespace Pokemon.Application
                 AnimType = animType
             });
         }
+
+        /// <summary>
+        /// 添加技能施放步骤，并记录表现层选择攻击动画所需的技能分类。
+        /// </summary>
+        /// <param name="message">战斗日志中显示的文字。</param>
+        /// <param name="animType">该步骤需要播放的攻击方动画。</param>
+        /// <param name="skillCategory">技能对应的物理、特殊或状态分类。</param>
+        public void AddSkillStep(
+            string message,
+            StepAnimType animType,
+            SkillCategory skillCategory)
+        {
+            Steps.Add(new TurnStep
+            {
+                Message = message,
+                PlayerHpAfter = Player.CurrentHP,
+                EnemyHpAfter = Enemy.CurrentHP,
+                AnimType = animType,
+                SkillCategory = skillCategory
+            });
+        }
     }
 
     /// <summary>

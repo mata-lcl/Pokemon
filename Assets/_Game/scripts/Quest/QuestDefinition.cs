@@ -96,7 +96,7 @@ namespace Pokemon.Domain
         public int Amount => amount;
     }
 
-    [CreateAssetMenu(fileName = "Quest_", menuName = "Pokemon/任务配置")]
+    [CreateAssetMenu(fileName = "任务_", menuName = "宝可梦/配置/任务配置")]
     public class QuestDefinition : ScriptableObject
     {
         [Header("基本信息")]

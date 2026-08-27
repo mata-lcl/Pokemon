@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Pokemon.Domain
 {
-    [CreateAssetMenu(fileName = "Ability", menuName = "Pokemon/Ability")]
+    [CreateAssetMenu(fileName = "特性_", menuName = "宝可梦/配置/特性/基础特性")]
     public class AbilityData : ScriptableObject
     {
         public int Id;

@@ -1,5 +1,6 @@
 using Pokemon.Application;
 using Pokemon.Domain;
+using Pokemon.Presentation.Animation;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -32,6 +33,9 @@ namespace Pokemon.Presentation
         [SerializeField] private BattleUnitView playerView;
         [SerializeField] private BattleUnitView enemyView;
 
+        [Header("动画")]
+        [SerializeField] private PokemonBattleAnimationCatalog animationCatalog;
+
         private MonsterRuntime _player;
         private MonsterRuntime _enemy;
         private ExecuteTurnUseCase _turnUseCase;
@@ -44,8 +48,14 @@ namespace Pokemon.Presentation
         {
             if (uiController == null) return;
             InitBattle();
-            if (playerView != null) playerView.Setup(_player.Species.BattleSprite);
-            if (enemyView != null) enemyView.Setup(_enemy.Species.BattleSprite);
+            if (playerView != null)
+                playerView.Setup(
+                    _player.Species.BattleSprite,
+                    GetAnimationProfile(_player.Species));
+            if (enemyView != null)
+                enemyView.Setup(
+                    _enemy.Species.BattleSprite,
+                    GetAnimationProfile(_enemy.Species));
         }
 
         private void InitBattle()
@@ -98,6 +108,7 @@ namespace Pokemon.Presentation
 
             uiController.SetupNames(_player.Species.DisplayName, _enemy.Species.DisplayName);
             uiController.UpdateHp(_player.CurrentHP, _player.MaxHP, _enemy.CurrentHP, _enemy.MaxHP);
+            uiController.UpdatePokemonIndicators(_player, _enemy);
             uiController.RefreshSkills(_playerSkills, _player.CurrentPP);
 
             // 3. 确保初始显示主菜单
@@ -200,6 +211,109 @@ namespace Pokemon.Presentation
         }
 
         /// <summary>
+        /// 播放技能施放动画，并把序列帧事件转发给当前回合的表现适配逻辑。
+        /// </summary>
+        /// <param name="step">包含攻击方和技能分类的施放步骤。</param>
+        /// <param name="frameEventCallback">动画到达已配置事件帧时调用的回调。</param>
+        private IEnumerator PlayAttackStepAnimation(
+            TurnStep step,
+            System.Action<SpriteFrameEventContext> frameEventCallback)
+        {
+            if (_playbackMode == PlaybackMode.SkipWait)
+            {
+                frameEventCallback?.Invoke(new SpriteFrameEventContext(
+                    null,
+                    SpriteFrameAnimationEventIds.Impact,
+                    -1));
+                yield return null;
+                yield break;
+            }
+
+            float speedMultiplier = _playbackMode == PlaybackMode.Fast
+                ? 1f / Mathf.Clamp(fastPlaybackMultiplier, 0.05f, 1f)
+                : 1f;
+            bool isPlayer = step.AnimType == StepAnimType.PlayerAttack;
+            BattleUnitView attackerView = isPlayer ? playerView : enemyView;
+
+            if (attackerView == null)
+            {
+                frameEventCallback?.Invoke(new SpriteFrameEventContext(
+                    null,
+                    SpriteFrameAnimationEventIds.Impact,
+                    -1));
+                yield return null;
+                yield break;
+            }
+
+            yield return attackerView.PlaySkillAnimation(
+                GetSkillAnimationType(step),
+                isPlayer,
+                speedMultiplier,
+                frameEventCallback);
+        }
+
+        /// <summary>
+        /// 将技能分类转换为动画模块定义的四类播放类型。
+        /// </summary>
+        /// <param name="step">带有技能分类的施放步骤。</param>
+        /// <returns>对应的物理、特殊或状态技能动画类型。</returns>
+        private static SpriteFrameAnimationType GetSkillAnimationType(TurnStep step)
+        {
+            if (step.SkillCategory == SkillCategory.Special)
+                return SpriteFrameAnimationType.SpecialAttack;
+            if (step.SkillCategory == SkillCategory.Status)
+                return SpriteFrameAnimationType.StatusSkill;
+            return SpriteFrameAnimationType.PhysicalAttack;
+        }
+
+        /// <summary>
+        /// 判断当前步骤是否为一方的技能施放动画步骤。
+        /// </summary>
+        /// <param name="step">需要判断的回合播放步骤。</param>
+        /// <returns>玩家或敌方攻击步骤返回 true。</returns>
+        private static bool IsAttackStep(TurnStep step)
+        {
+            return step.AnimType == StepAnimType.PlayerAttack ||
+                   step.AnimType == StepAnimType.EnemyAttack;
+        }
+
+        /// <summary>
+        /// 收集当前技能施放之后需要由打击帧触发的表现步骤。
+        /// </summary>
+        /// <param name="steps">本次回合的全部播放步骤。</param>
+        /// <param name="attackStepIndex">当前技能施放步骤的下标。</param>
+        /// <returns>紧随施放步骤之后的连续打击帧步骤下标。</returns>
+        private static List<int> GetImpactStepIndices(
+            IReadOnlyList<TurnStep> steps,
+            int attackStepIndex)
+        {
+            var indices = new List<int>();
+            for (int i = attackStepIndex + 1; i < steps.Count; i++)
+            {
+                TurnStep candidate = steps[i];
+                if (!candidate.PresentAtAttackImpact) break;
+                indices.Add(i);
+            }
+
+            return indices;
+        }
+
+        /// <summary>
+        /// 将步骤中的日志与双方 HP 快照同步到战斗 UI。
+        /// </summary>
+        /// <param name="step">需要显示的回合播放步骤。</param>
+        private void PresentTurnStep(TurnStep step)
+        {
+            uiController.SetLog(step.Message);
+            uiController.UpdateHp(
+                step.PlayerHpAfter,
+                _player.MaxHP,
+                step.EnemyHpAfter,
+                _enemy.MaxHP);
+            uiController.UpdatePokemonIndicators(_player, _enemy);
+        }
+
+        /// <summary>
         /// 辅助方法，用于检测输入
         /// Returns false when a battle action is already being played.
         /// </summary>
@@ -296,10 +410,26 @@ namespace Pokemon.Presentation
                 if (skill != null) _playerSkills.Add(skill);
             }
 
-            if (playerView != null) playerView.Setup(_player.Species.BattleSprite);
+            if (playerView != null)
+                playerView.Setup(
+                    _player.Species.BattleSprite,
+                    GetAnimationProfile(_player.Species));
             uiController.SetupNames(_player.Species.DisplayName, _enemy.Species.DisplayName);
             uiController.UpdateHp(_player.CurrentHP, _player.MaxHP, _enemy.CurrentHP, _enemy.MaxHP);
+            uiController.UpdatePokemonIndicators(_player, _enemy);
             uiController.RefreshSkills(_playerSkills, _player.CurrentPP);
+        }
+
+        /// <summary>
+        /// 从独立目录中获取指定精灵的战斗动画配置。
+        /// </summary>
+        /// <param name="species">需要查找动画配置的精灵种族。</param>
+        /// <returns>对应的动画配置；目录未绑定或未收录时返回 null。</returns>
+        private SpriteFrameAnimationProfile GetAnimationProfile(PokemonSpeciesData species)
+        {
+            return animationCatalog != null
+                ? animationCatalog.GetProfile(species)
+                : null;
         }
 
         private IEnumerator PokemonSwitchTurnRoutine(MonsterRuntime previousPokemon)
@@ -449,15 +579,61 @@ namespace Pokemon.Presentation
         {
             // uiController.SetInteractable(false);
 
-            foreach (var step in steps)
+            var presentedImpactStepIndices = new HashSet<int>();
+            for (int stepIndex = 0; stepIndex < steps.Count; stepIndex++)
             {
+                if (presentedImpactStepIndices.Contains(stepIndex)) continue;
+
+                TurnStep step = steps[stepIndex];
                 // 如果这一步没有任何消息，就跳过 UI 更新
                 if (string.IsNullOrEmpty(step.Message)) continue;
 
-                uiController.SetLog(step.Message);
-                uiController.UpdateHp(step.PlayerHpAfter, _player.MaxHP, step.EnemyHpAfter, _enemy.MaxHP);// 更新血条（使用当前步数值）
+                PresentTurnStep(step);
 
-                yield return StartCoroutine(PlayStepAnimation(step));
+                if (IsAttackStep(step))
+                {
+                    List<int> impactStepIndices = GetImpactStepIndices(steps, stepIndex);
+                    int nextImpactStep = 0;
+
+                    System.Action<SpriteFrameEventContext> frameEventCallback = eventContext =>
+                    {
+                        if (!string.Equals(
+                                eventContext.EventId,
+                                SpriteFrameAnimationEventIds.Impact,
+                                System.StringComparison.Ordinal) ||
+                            nextImpactStep >= impactStepIndices.Count)
+                        {
+                            return;
+                        }
+
+                        int impactStepIndex = impactStepIndices[nextImpactStep];
+                        nextImpactStep++;
+                        if (!presentedImpactStepIndices.Add(impactStepIndex)) return;
+
+                        TurnStep impactStep = steps[impactStepIndex];
+                        PresentTurnStep(impactStep);
+                        StartCoroutine(PlayStepAnimation(impactStep));
+                    };
+
+                    yield return StartCoroutine(
+                        PlayAttackStepAnimation(step, frameEventCallback));
+
+                    if (nextImpactStep == 0 && impactStepIndices.Count > 0)
+                    {
+                        int impactStepIndex = impactStepIndices[0];
+                        nextImpactStep++;
+                        presentedImpactStepIndices.Add(impactStepIndex);
+
+                        TurnStep impactStep = steps[impactStepIndex];
+                        PresentTurnStep(impactStep);
+                        yield return StartCoroutine(PlayStepAnimation(impactStep));
+                    }
+                }
+                else
+                {
+                    yield return StartCoroutine(PlayStepAnimation(step));
+                }
+
                 yield return StartCoroutine(WaitForPlayback(stepDelaySeconds));
 
                 if (step.IsBattleEnd)

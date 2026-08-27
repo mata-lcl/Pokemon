@@ -40,6 +40,25 @@ namespace Pokemon.Presentation
         [SerializeField] private TMP_Text enemyHpText;
         [SerializeField] private TMP_Text logText;
 
+        [Header("HP bars")]
+        [SerializeField] private Image playerHpFill;
+        [SerializeField] private Image enemyHpFill;
+
+        [Header("Pokemon indicators")]
+        [SerializeField] private Image playerPrimaryTypeImage;
+        [SerializeField] private Image playerSecondaryTypeImage;
+        [SerializeField] private Image enemyPrimaryTypeImage;
+        [SerializeField] private Image enemySecondaryTypeImage;
+        [SerializeField] private Image playerStatusImage;
+        [SerializeField] private Image enemyStatusImage;
+
+        [Header("Status icons")]
+        [SerializeField] private Sprite poisonStatusIcon;
+        [SerializeField] private Sprite burnStatusIcon;
+        [SerializeField] private Sprite paralyzeStatusIcon;
+        [SerializeField] private Sprite sleepStatusIcon;
+        [SerializeField] private Sprite freezeStatusIcon;
+
         [Header("Skill buttons")]
         [SerializeField] private Button[] skillButtons;
         [SerializeField] private TMP_Text[] skillBtnTexts;
@@ -324,6 +343,74 @@ namespace Pokemon.Presentation
         {
             if (playerHpText != null) playerHpText.text = $"HP: {playerHp}/{playerMax}";
             if (enemyHpText != null) enemyHpText.text = $"HP: {enemyHp}/{enemyMax}";
+            if (playerHpFill != null) playerHpFill.fillAmount = Mathf.Clamp01((float)playerHp / playerMax);
+            if (enemyHpFill != null) enemyHpFill.fillAmount = Mathf.Clamp01((float)enemyHp / enemyMax);
+        }
+
+        /// <summary>
+        /// 刷新双方精灵的属性图标和异常状态图标。
+        /// </summary>
+        /// <param name="player">当前玩家精灵。</param>
+        /// <param name="enemy">当前敌方精灵。</param>
+        public void UpdatePokemonIndicators(MonsterRuntime player, MonsterRuntime enemy)
+        {
+            UpdateTypeImages(
+                player.Species,
+                playerPrimaryTypeImage,
+                playerSecondaryTypeImage);
+            UpdateTypeImages(
+                enemy.Species,
+                enemyPrimaryTypeImage,
+                enemySecondaryTypeImage);
+            UpdateStatusImage(player.CurrentStatus, playerStatusImage);
+            UpdateStatusImage(enemy.CurrentStatus, enemyStatusImage);
+        }
+
+        /// <summary>
+        /// 根据精灵配置刷新主属性和副属性图片。
+        /// </summary>
+        /// <param name="species">需要显示属性的精灵配置。</param>
+        /// <param name="primaryImage">主属性图片组件。</param>
+        /// <param name="secondaryImage">副属性图片组件。</param>
+        private static void UpdateTypeImages(
+            PokemonSpeciesData species,
+            Image primaryImage,
+            Image secondaryImage)
+        {
+            primaryImage.sprite = species.PrimaryTypeIcon;
+            primaryImage.gameObject.SetActive(species.PrimaryTypeIcon != null);
+            secondaryImage.sprite = species.SecondaryTypeIcon;
+            secondaryImage.gameObject.SetActive(species.SecondaryTypeIcon != null);
+        }
+
+        /// <summary>
+        /// 根据当前异常状态刷新对应图片。
+        /// </summary>
+        /// <param name="status">需要显示的异常状态。</param>
+        /// <param name="statusImage">承载异常状态图片的组件。</param>
+        private void UpdateStatusImage(StatusCondition status, Image statusImage)
+        {
+            Sprite statusIcon = GetStatusIcon(status);
+            statusImage.sprite = statusIcon;
+            statusImage.gameObject.SetActive(statusIcon != null);
+        }
+
+        /// <summary>
+        /// 获取指定异常状态在战斗界面使用的图片。
+        /// </summary>
+        /// <param name="status">需要查询的异常状态。</param>
+        /// <returns>对应的异常状态图片；无状态时返回 null。</returns>
+        private Sprite GetStatusIcon(StatusCondition status)
+        {
+            return status switch
+            {
+                StatusCondition.Poison => poisonStatusIcon,
+                StatusCondition.Burn => burnStatusIcon,
+                StatusCondition.Paralyze => paralyzeStatusIcon,
+                StatusCondition.Sleep => sleepStatusIcon,
+                StatusCondition.Freeze => freezeStatusIcon,
+                _ => null
+            };
         }
 
         public void SetLog(string message)
