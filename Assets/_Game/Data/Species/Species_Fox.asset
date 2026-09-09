@@ -40,3 +40,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 04192d7159180c84fbf5e0e423968c43, type: 2}
   - {fileID: 11400000, guid: 99dbbab079062a54b837b51470489492, type: 2}
   BattleSprite: {fileID: 21300000, guid: 423f4ae2841286d45b72dd19f0cbc7e0, type: 3}
+  CatchRate: 45

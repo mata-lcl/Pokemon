@@ -18,12 +18,19 @@ public class PotionData : ItemData, IUsable
     public void OnUse(EffectContext context)
     {
         // 1. 执行血量恢复
-        context.User.Heal(HealAmount);
+        BattleHealResult result = context.Operations.Heal(new BattleHealRequest
+        {
+            Source = context.User,
+            Target = context.User,
+            Amount = HealAmount,
+            Cause = BattleHealCause.Item,
+            Origin = this
+        });
 
         // 2. 添加到动画/消息队列中
         context.Steps.Add(new TurnStep
         {
-            Message = $"{context.User.Species.DisplayName} 恢复了 {HealAmount} 点生命值！",
+            Message = $"{context.User.Species.DisplayName} 恢复了 {result.AppliedHealing} 点生命值！",
             PlayerHpAfter = context.User.CurrentHP, // 更新当前血量到 UI
             EnemyHpAfter = context.Target.CurrentHP,
             AnimType = StepAnimType.None // 或者添加一个恢复特效的枚举

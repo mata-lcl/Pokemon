@@ -21,3 +21,8 @@ MonoBehaviour:
   MaxPP: 20
   ApplyStatus: 0
   StatusChance: 0
+  Priority: 0
+  primaryEffect: {fileID: 11400000, guid: 3ee2f98b9f5f0234ba56a6f9a2367be5, type: 2}
+  secondaryEffects: []
+  effectConfigs: []
+  Effects: []

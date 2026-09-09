@@ -28,9 +28,6 @@ namespace Pokemon.Presentation
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (coordinator == null) return;
 
-            // 获取当前战斗中的实例（利用反射或修改 BattleCoordinator 将其公开）
-            // 这里假设我们在 BattleCoordinator 中添加了对 _player 和 _enemy 的访问权限
-
             if (Input.GetKeyDown(lowHPKey))
             {
                 SetPlayerLowHP();
@@ -82,27 +79,13 @@ namespace Pokemon.Presentation
             Debug.Log("<color=green>[Debugger]</color> 玩家已满血复活");
         }
 
-        // 辅助方法：通过反射或公开字段获取私有变量
-        private MonsterRuntime GetPlayer() =>
-            (MonsterRuntime)typeof(BattleCoordinator).GetField("_player", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(coordinator);
+        private MonsterRuntime GetPlayer() => coordinator.CurrentPlayer;
 
-        private MonsterRuntime GetEnemy() =>
-            (MonsterRuntime)typeof(BattleCoordinator).GetField("_enemy", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(coordinator);
+        private MonsterRuntime GetEnemy() => coordinator.CurrentEnemy;
 
         private void RefreshUI()
         {
-            // 通过调用 coordinator 的 UI 更新逻辑同步画面
-            // 假设我们稍微修改 BattleCoordinator 暴露一个刷新 UI 的方法
-            coordinator.SendMessage("InitBattleUI", null, SendMessageOptions.DontRequireReceiver);
-
-            // 或者直接强制刷新
-            var ui = typeof(BattleCoordinator).GetField("uiController", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(coordinator) as BattleUIController;
-            if (ui != null)
-            {
-                var p = GetPlayer();
-                var e = GetEnemy();
-                ui.UpdateHp(p.CurrentHP, p.MaxHP, e.CurrentHP, e.MaxHP);
-            }
+            coordinator.RefreshBattlePresentation();
         }
 #endif
     }

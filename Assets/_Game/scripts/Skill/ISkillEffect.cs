@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Pokemon.Application;
 
 namespace Pokemon.Domain
 {
@@ -7,12 +8,9 @@ namespace Pokemon.Domain
     {
         public MonsterRuntime User;      // 使用者
         public MonsterRuntime Target;    // 目标
-        public SkillData Skill;          // 技能数据
-        public DamageResult? Damage;     // 威力计算结果（可选）
         public List<Application.TurnStep> Steps; // 记录步骤的引用
-        public bool IsPlayerAttacking;
-        public IReactionSkillEffect IncomingReaction;
-        public SkillReactionContext ReactionContext;
+        public Application.IBattleOperations Operations;
+        public Application.IBattleRuntimeEffectRegistry RuntimeEffects;
 
         // 【新增】：不论谁施法，这两个变量永远指向正确的 UI 阵营
         public MonsterRuntime PlayerRef;
@@ -53,6 +51,19 @@ namespace Pokemon.Domain
     }
 
     /// <summary>
+    /// 技能效果执行期间使用的上下文，提供技能数据、计算结果和统一战斗操作入口。
+    /// </summary>
+    public sealed class SkillEffectContext : EffectContext
+    {
+        public SkillData Skill;
+        public DamageResult? Damage;
+        public SkillActionResult ActionResult;
+        public bool IsPlayerAttacking;
+        public IReactionSkillEffect IncomingReaction;
+        public SkillReactionContext ReactionContext;
+    }
+
+    /// <summary>
     /// 后手反应技能的执行上下文。具体反应规则由技能效果实现。
     /// </summary>
     public sealed class SkillReactionContext
@@ -66,6 +77,9 @@ namespace Pokemon.Domain
         public MonsterRuntime EnemyRef;
         public bool IsUserPlayer;
         public bool HasTriggered;
+        public Application.IBattleOperations Operations;
+        public Application.IBattleRuntimeEffectRegistry RuntimeEffects;
+        public SkillActionResult ActionResult;
 
         private bool _useAnnounced;
 
@@ -110,7 +124,7 @@ namespace Pokemon.Domain
         /// <returns>已经接管伤害时返回 true，原 DamageEffect 将不再扣血。</returns>
         bool TryInterceptDamage(
             SkillReactionContext reactionContext,
-            EffectContext incomingContext,
+            SkillEffectContext incomingContext,
             int incomingDamage);
 
         /// <summary>
@@ -127,12 +141,12 @@ namespace Pokemon.Domain
         /// </summary>
         /// <param name="context">当前技能效果的执行上下文。</param>
         /// <returns>可以执行时返回 true，否则返回 false。</returns>
-        bool CanProcess(EffectContext context);
+        bool CanProcess(SkillEffectContext context);
 
         /// <summary>
         /// 执行效果并按需修改运行时数据、追加播放步骤。
         /// </summary>
         /// <param name="context">当前技能效果的执行上下文。</param>
-        void Execute(EffectContext context);
+        void Execute(SkillEffectContext context);
     }
 }

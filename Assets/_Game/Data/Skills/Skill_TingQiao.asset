@@ -20,7 +20,7 @@ MonoBehaviour:
   Accuracy: 1
   MaxPP: 10
   Priority: -1
-  effectConfigs:
-  - Effect: {fileID: 11400000, guid: d6e8f0a2b4c6491d8e7f5a3c1b9d0e2f, type: 2}
-    Chance: 1
+  primaryEffect: {fileID: 11400000, guid: d6e8f0a2b4c6491d8e7f5a3c1b9d0e2f, type: 2}
+  secondaryEffects: []
+  effectConfigs: []
   Effects: []

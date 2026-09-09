@@ -60,8 +60,12 @@ namespace Pokemon.Presentation
         [SerializeField] private Sprite freezeStatusIcon;
 
         [Header("Skill buttons")]
-        [SerializeField] private Button[] skillButtons;
-        [SerializeField] private TMP_Text[] skillBtnTexts;
+        [SerializeField] private Transform skillButtonContainer;
+        [SerializeField] private SkillButtonView skillButtonPrefab;
+        [SerializeField] private SkillTooltipView skillTooltip;
+        [SerializeField] private PokemonTypeVisualCatalog typeVisualCatalog;
+        [HideInInspector, SerializeField] private Button[] skillButtons;
+        [HideInInspector, SerializeField] private TMP_Text[] skillBtnTexts;
 
         [Header("Item buttons")]
         [SerializeField] private Button[] itemButtons;
@@ -81,9 +85,13 @@ namespace Pokemon.Presentation
 
         private List<ItemData> _cachedItems = new List<ItemData>();
         private List<MonsterRuntime> _cachedPokemon = new List<MonsterRuntime>();
+        private readonly List<SkillButtonView> _skillButtonViews =
+            new List<SkillButtonView>();
+        private bool _skillInputInteractable = true;
 
         private void Awake()
         {
+            skillTooltip.Hide();
             if (fightBtn != null) fightBtn.onClick.AddListener(() => ShowSubPanel(skillPanel));
             if (bagBtn != null)
                 bagBtn.onClick.AddListener(ShowBagPanel);
@@ -119,12 +127,7 @@ namespace Pokemon.Presentation
             if (playbackModeButton != null)
                 playbackModeButton.onClick.AddListener(() => OnPlaybackModeClicked?.Invoke());
 
-            for (int i = 0; i < skillButtons.Length; i++)
-            {
-                int index = i;
-                if (skillButtons[i] != null)
-                    skillButtons[i].onClick.AddListener(() => OnSkillClicked?.Invoke(index));
-            }
+            DisableLegacySkillButtons();
 
             for (int i = 0; i < itemButtons.Length; i++)
             {
@@ -165,6 +168,7 @@ namespace Pokemon.Presentation
 
         private void ShowSubPanel(GameObject targetPanel)
         {
+            skillTooltip.Hide();
             if (mainActionPanel != null) mainActionPanel.SetActive(targetPanel == mainActionPanel);
             if (skillPanel != null) skillPanel.SetActive(targetPanel == skillPanel);
             if (itemPanel != null) itemPanel.SetActive(targetPanel == itemPanel);
@@ -218,6 +222,7 @@ namespace Pokemon.Presentation
 
         public void HideAllPanels()
         {
+            skillTooltip.Hide();
             if (mainActionPanel != null) mainActionPanel.SetActive(false);
             if (skillPanel != null) skillPanel.SetActive(false);
             if (itemPanel != null) itemPanel.SetActive(false);
@@ -431,6 +436,10 @@ namespace Pokemon.Presentation
 
         public void SetInteractable(bool interactable)
         {
+            _skillInputInteractable = interactable;
+            if (!interactable)
+                skillTooltip.Hide();
+
             SetInteractable(fightBtn, interactable);
             SetInteractable(bagBtn, interactable);
             SetInteractable(runBtn, interactable);
@@ -441,6 +450,8 @@ namespace Pokemon.Presentation
             if (pokemonCollectionPanel != null)
                 pokemonCollectionPanel.SetInteractable(interactable);
             SetInteractable(skillButtons, interactable);
+            for (int i = 0; i < _skillButtonViews.Count; i++)
+                _skillButtonViews[i].SetInteractable(interactable);
             SetInteractable(itemButtons, interactable);
             SetInteractable(pokemonButtons, interactable);
         }
@@ -458,17 +469,98 @@ namespace Pokemon.Presentation
 
         public void RefreshSkills(List<SkillData> skills, IReadOnlyDictionary<SkillData, int> ppMap)
         {
-            for (int i = 0; i < skillButtons.Length; i++)
+            int skillCount = skills != null ? skills.Count : 0;
+            EnsureSkillButtonCount(skillCount);
+            skillTooltip.Hide();
+
+            for (int i = 0; i < _skillButtonViews.Count; i++)
             {
-                if (skillButtons[i] == null) continue;
-                bool available = skills != null && i < skills.Count;
-                skillButtons[i].gameObject.SetActive(available);
+                SkillButtonView buttonView = _skillButtonViews[i];
+                bool available = i < skillCount;
+                buttonView.gameObject.SetActive(available);
                 if (!available) continue;
+
                 SkillData skill = skills[i];
                 int currentPP = ppMap.ContainsKey(skill) ? ppMap[skill] : 0;
-                skillButtons[i].interactable = currentPP > 0;
-                if (i < skillBtnTexts.Length && skillBtnTexts[i] != null)
-                    skillBtnTexts[i].text = $"{skill.DisplayName} ({currentPP})";
+                PokemonTypeVisual typeVisual =
+                    typeVisualCatalog.GetVisual(skill.Type);
+                buttonView.Bind(
+                    skill,
+                    currentPP,
+                    i,
+                    typeVisual,
+                    HandleSkillButtonClicked,
+                    HandleSkillPreviewRequested,
+                    HandleSkillPreviewEnded);
+                buttonView.SetInteractable(_skillInputInteractable);
+            }
+        }
+
+        /// <summary>
+        /// 创建足够数量的技能按钮视图，已经创建的按钮会继续复用。
+        /// </summary>
+        /// <param name="requiredCount">当前技能列表需要的按钮数量。</param>
+        private void EnsureSkillButtonCount(int requiredCount)
+        {
+            while (_skillButtonViews.Count < requiredCount)
+            {
+                SkillButtonView buttonView = Instantiate(
+                    skillButtonPrefab,
+                    skillButtonContainer);
+                _skillButtonViews.Add(buttonView);
+            }
+        }
+
+        /// <summary>
+        /// 将技能按钮点击事件继续转发为原有的技能下标事件。
+        /// </summary>
+        /// <param name="skillIndex">玩家当前技能列表中的下标。</param>
+        private void HandleSkillButtonClicked(int skillIndex)
+        {
+            OnSkillClicked?.Invoke(skillIndex);
+        }
+
+        /// <summary>
+        /// 根据当前悬停或选中的技能刷新共享描述面板。
+        /// </summary>
+        /// <param name="skill">需要预览的技能。</param>
+        /// <param name="currentPP">技能当前剩余 PP。</param>
+        private void HandleSkillPreviewRequested(
+            SkillData skill,
+            int currentPP)
+        {
+            PokemonTypeVisual typeVisual =
+                typeVisualCatalog.GetVisual(skill.Type);
+            skillTooltip.Show(skill, currentPP, typeVisual);
+        }
+
+        /// <summary>
+        /// 结束技能按钮预览并隐藏共享描述面板。
+        /// </summary>
+        private void HandleSkillPreviewEnded()
+        {
+            skillTooltip.Hide();
+        }
+
+        /// <summary>
+        /// 隐藏场景中旧版固定技能按钮，避免与新 Prefab 按钮重复显示。
+        /// </summary>
+        private void DisableLegacySkillButtons()
+        {
+            if (skillButtons != null)
+            {
+                for (int i = 0; i < skillButtons.Length; i++)
+                {
+                    if (skillButtons[i] != null)
+                        skillButtons[i].gameObject.SetActive(false);
+                }
+            }
+
+            if (skillBtnTexts == null) return;
+            for (int i = 0; i < skillBtnTexts.Length; i++)
+            {
+                if (skillBtnTexts[i] != null)
+                    skillBtnTexts[i].text = string.Empty;
             }
         }
     }

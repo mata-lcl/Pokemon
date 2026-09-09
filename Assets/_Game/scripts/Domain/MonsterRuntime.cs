@@ -25,6 +25,8 @@ namespace Pokemon.Domain
 
     public class MonsterRuntime
     {
+        public const int MaxEquippedSkillCount = 4;
+
         // ==========================================
         // 1. 观察者事件 (Observer Events)
         // ==========================================
@@ -58,7 +60,11 @@ namespace Pokemon.Domain
 
         // --- 状态与技能 ---
         public StatusCondition CurrentStatus { get; private set; }
-        public Dictionary<SkillData, int> CurrentPP { get; private set; }
+        private readonly List<SkillData> _equippedSkills = new List<SkillData>();
+        private readonly Dictionary<SkillData, int> _currentPP =
+            new Dictionary<SkillData, int>();
+        public IReadOnlyList<SkillData> EquippedSkills => _equippedSkills;
+        public IReadOnlyDictionary<SkillData, int> CurrentPP => _currentPP;
         public bool IsFainted => CurrentHP <= 0;
         public int CurrentExp { get; private set; }
 
@@ -128,10 +134,12 @@ namespace Pokemon.Domain
             _currentHP = MaxHP;
 
             // 5. 初始化技能
-            CurrentPP = new Dictionary<SkillData, int>();
             foreach (var skill in species.InitialSkills)
             {
-                if (skill != null) CurrentPP[skill] = skill.MaxPP;
+                if (_equippedSkills.Count >= MaxEquippedSkillCount)
+                    break;
+
+                TryEquipSkill(skill);
             }
         }
 
@@ -195,7 +203,19 @@ namespace Pokemon.Domain
             _evSpecialDefense = evSpecialDefense;
             ActiveAbility = ability;
             HeldItem = heldItem;
-            CurrentPP = new Dictionary<SkillData, int>(skillPP);
+            _equippedSkills.Clear();
+            _currentPP.Clear();
+            foreach (KeyValuePair<SkillData, int> skillState in skillPP)
+            {
+                if (skillState.Key == null ||
+                    _equippedSkills.Count >= MaxEquippedSkillCount)
+                {
+                    continue;
+                }
+
+                _equippedSkills.Add(skillState.Key);
+                _currentPP[skillState.Key] = skillState.Value;
+            }
             CurrentHP = currentHP;
         }
 
@@ -286,12 +306,64 @@ namespace Pokemon.Domain
 
         public bool TryConsumePP(SkillData skill)
         {
-            if (CurrentPP.TryGetValue(skill, out int pp) && pp > 0)
+            if (_currentPP.TryGetValue(skill, out int pp) && pp > 0)
             {
-                CurrentPP[skill] = pp - 1;
+                _currentPP[skill] = pp - 1;
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// 将技能装备到空余技能槽，并将其 PP 初始化为最大值。
+        /// </summary>
+        /// <param name="skill">需要装备的技能。</param>
+        /// <returns>装备成功时返回 true；技能无效、已装备或四个槽位已满时返回 false。</returns>
+        public bool TryEquipSkill(SkillData skill)
+        {
+            if (skill == null ||
+                _equippedSkills.Count >= MaxEquippedSkillCount ||
+                _equippedSkills.Contains(skill))
+            {
+                return false;
+            }
+
+            _equippedSkills.Add(skill);
+            _currentPP[skill] = skill.MaxPP;
+            return true;
+        }
+
+        /// <summary>
+        /// 使用新技能替换指定位置的已装备技能，并将新技能 PP 初始化为最大值。
+        /// </summary>
+        /// <param name="slotIndex">需要替换的技能槽下标，范围为 0 到 3。</param>
+        /// <param name="newSkill">需要装备到该槽位的新技能。</param>
+        /// <returns>替换成功时返回 true；槽位无效、技能无效或技能已装备时返回 false。</returns>
+        public bool TryReplaceEquippedSkill(int slotIndex, SkillData newSkill)
+        {
+            if (slotIndex < 0 ||
+                slotIndex >= _equippedSkills.Count ||
+                newSkill == null ||
+                _equippedSkills.Contains(newSkill))
+            {
+                return false;
+            }
+
+            SkillData oldSkill = _equippedSkills[slotIndex];
+            _equippedSkills[slotIndex] = newSkill;
+            _currentPP.Remove(oldSkill);
+            _currentPP[newSkill] = newSkill.MaxPP;
+            return true;
+        }
+
+        /// <summary>
+        /// 判断指定技能是否位于当前精灵的四个装备技能槽中。
+        /// </summary>
+        /// <param name="skill">需要查询的技能。</param>
+        /// <returns>技能已经装备时返回 true。</returns>
+        public bool IsSkillEquipped(SkillData skill)
+        {
+            return skill != null && _equippedSkills.Contains(skill);
         }
 
         public bool TryApplyStatus(StatusCondition status)

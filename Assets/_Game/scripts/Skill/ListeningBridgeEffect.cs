@@ -13,13 +13,13 @@ namespace Pokemon.Domain.Effects
         /// </summary>
         /// <param name="context">当前技能效果上下文。</param>
         /// <returns>始终返回 false，实际逻辑由反应技能管线调用。</returns>
-        public override bool CanProcess(EffectContext context) => false;
+        public override bool CanProcess(SkillEffectContext context) => false;
 
         /// <summary>
         /// 保留普通技能效果接口；听桥不在此阶段执行任何逻辑。
         /// </summary>
         /// <param name="context">当前技能效果上下文。</param>
-        public override void Execute(EffectContext context)
+        public override void Execute(SkillEffectContext context)
         {
         }
 
@@ -32,7 +32,7 @@ namespace Pokemon.Domain.Effects
         /// <returns>成功反弹伤害时返回 true，否则返回 false。</returns>
         public bool TryInterceptDamage(
             SkillReactionContext reactionContext,
-            EffectContext incomingContext,
+            SkillEffectContext incomingContext,
             int incomingDamage)
         {
             if (reactionContext.OpponentSkill == null ||
@@ -43,7 +43,17 @@ namespace Pokemon.Domain.Effects
             }
 
             reactionContext.AnnounceUse();
-            incomingContext.User.ApplyDamage(incomingDamage);
+            Application.BattleDamageResult reflectedResult =
+                reactionContext.Operations.DealDamage(
+                    new Application.BattleDamageRequest
+                    {
+                        Source = reactionContext.User,
+                        Target = incomingContext.User,
+                        Skill = reactionContext.Skill,
+                        Amount = incomingDamage,
+                        Cause = Application.BattleDamageCause.Reaction,
+                        Origin = this
+                    });
             reactionContext.HasTriggered = true;
 
             StepAnimType reflectedHitAnim = reactionContext.IsUserPlayer
@@ -51,7 +61,7 @@ namespace Pokemon.Domain.Effects
                 : StepAnimType.PlayerHit;
 
             reactionContext.AddStep(
-                $"{reactionContext.User.Species.DisplayName} 将 {incomingDamage} 点伤害反弹了回去！",
+                $"{reactionContext.User.Species.DisplayName} 将 {reflectedResult.AppliedDamage} 点伤害反弹了回去！",
                 reflectedHitAnim);
             return true;
         }
@@ -71,9 +81,19 @@ namespace Pokemon.Domain.Effects
                     1,
                     Mathf.FloorToInt(context.User.MaxHP * statusPenaltyFraction));
 
-                context.User.ApplyDamage(penaltyDamage);
+                Application.BattleDamageResult penaltyResult =
+                    context.Operations.DealDamage(
+                        new Application.BattleDamageRequest
+                        {
+                            Source = context.Opponent,
+                            Target = context.User,
+                            Skill = context.Skill,
+                            Amount = penaltyDamage,
+                            Cause = Application.BattleDamageCause.Reaction,
+                            Origin = this
+                        });
                 context.AddStep(
-                    $"面对变化技能，{context.User.Species.DisplayName} 损失了 {penaltyDamage} 点生命值！",
+                    $"面对变化技能，{context.User.Species.DisplayName} 损失了 {penaltyResult.AppliedDamage} 点生命值！",
                     context.IsUserPlayer ? StepAnimType.PlayerHit : StepAnimType.EnemyHit);
                 return;
             }

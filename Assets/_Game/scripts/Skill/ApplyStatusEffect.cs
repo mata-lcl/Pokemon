@@ -7,14 +7,25 @@ namespace Pokemon.Domain.Effects
     {
         public StatusCondition StatusToApply;
 
-        public override bool CanProcess(EffectContext context)
+        public override bool CanProcess(SkillEffectContext context)
         {
             return context.Target != null && !context.Target.IsFainted && context.Target.CurrentStatus == StatusCondition.None;
         }
 
-        public override void Execute(EffectContext context)
+        public override void Execute(SkillEffectContext context)
         {
-            if (context.Target.TryApplyStatus(StatusToApply))
+            Application.StatusApplyResult result =
+                context.Operations.ApplyStatus(new Application.StatusApplyRequest
+                {
+                    Source = context.User,
+                    Target = context.Target,
+                    Skill = context.Skill,
+                    Status = StatusToApply,
+                    Cause = Application.BattleStatusCause.Skill,
+                    Origin = this
+                });
+
+            if (result.Applied)
             {
                 context.AddStep($"{context.Target.Species.DisplayName}{StatusToApply.ToChineseName()} 了！");
             }

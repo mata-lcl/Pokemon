@@ -3,6 +3,38 @@ using Pokemon.Domain;
 namespace Pokemon.Application
 {
     /// <summary>
+    /// 在行动排序前发布完整回合开始事件。
+    /// </summary>
+    public sealed class TurnStartedPhase : ITurnPhase
+    {
+        private readonly IBattleEventDispatcher _eventDispatcher;
+        private readonly BattleEndResolver _battleEndResolver;
+
+        /// <summary>
+        /// 创建回合开始事件阶段。
+        /// </summary>
+        /// <param name="eventDispatcher">负责发布回合生命周期事件的分发器。</param>
+        /// <param name="battleEndResolver">事件处理完成后使用的胜负处理器。</param>
+        public TurnStartedPhase(
+            IBattleEventDispatcher eventDispatcher,
+            BattleEndResolver battleEndResolver)
+        {
+            _eventDispatcher = eventDispatcher;
+            _battleEndResolver = battleEndResolver;
+        }
+
+        /// <summary>
+        /// 发布回合开始事件，并检查事件效果是否结束战斗。
+        /// </summary>
+        /// <param name="context">当前回合的共享上下文。</param>
+        public void Execute(TurnContext context)
+        {
+            _eventDispatcher.PublishTurnStarted(context);
+            _battleEndResolver.TryResolve(context);
+        }
+    }
+
+    /// <summary>
     /// 根据技能优先级和速度确定双方本回合的行动顺序。
     /// </summary>
     public sealed class ActionOrderPhase : ITurnPhase
@@ -97,18 +129,22 @@ namespace Pokemon.Application
     public sealed class EndOfTurnPhase : ITurnPhase
     {
         private readonly EndOfTurnResolver _endOfTurnResolver;
+        private readonly IBattleEventDispatcher _eventDispatcher;
         private readonly BattleEndResolver _battleEndResolver;
 
         /// <summary>
         /// 创建回合末阶段。
         /// </summary>
         /// <param name="endOfTurnResolver">中毒、灼伤等持续效果处理器。</param>
+        /// <param name="eventDispatcher">负责发布回合生命周期事件的分发器。</param>
         /// <param name="battleEndResolver">状态结算后的胜负处理器。</param>
         public EndOfTurnPhase(
             EndOfTurnResolver endOfTurnResolver,
+            IBattleEventDispatcher eventDispatcher,
             BattleEndResolver battleEndResolver)
         {
             _endOfTurnResolver = endOfTurnResolver;
+            _eventDispatcher = eventDispatcher;
             _battleEndResolver = battleEndResolver;
         }
 
@@ -119,6 +155,9 @@ namespace Pokemon.Application
         public void Execute(TurnContext context)
         {
             _endOfTurnResolver.Resolve(context);
+            if (_battleEndResolver.TryResolve(context)) return;
+
+            _eventDispatcher.PublishTurnEnded(context);
             _battleEndResolver.TryResolve(context);
         }
     }

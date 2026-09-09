@@ -8,13 +8,22 @@ namespace Pokemon.Domain.Effects
         [Tooltip("固定回复生命值的数值")]
         [SerializeField] private int _amount;
 
-        public override bool CanProcess(EffectContext context) => true;
+        public override bool CanProcess(SkillEffectContext context) => true;
 
-        public override void Execute(EffectContext context)
+        public override void Execute(SkillEffectContext context)
         {
-            context.User.Heal(_amount);
+            Application.BattleHealResult result =
+                context.Operations.Heal(new Application.BattleHealRequest
+                {
+                    Source = context.User,
+                    Target = context.User,
+                    Skill = context.Skill,
+                    Amount = _amount,
+                    Cause = Application.BattleHealCause.Skill,
+                    Origin = this
+                });
 
-            context.AddStep($"{context.User.Species.DisplayName} 恢复了 {_amount} 点生命值！");
+            context.AddStep($"{context.User.Species.DisplayName} 恢复了 {result.AppliedHealing} 点生命值！");
         }
     }
 }

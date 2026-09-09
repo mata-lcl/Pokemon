@@ -7,9 +7,9 @@ namespace Pokemon.Domain.Effects
     public class DamageEffect : SkillEffectSO // 改为继承 SkillEffectSO
     {
         // 使用 override 重写基类的抽象方法
-        public override bool CanProcess(EffectContext context) => context.Damage != null;
+        public override bool CanProcess(SkillEffectContext context) => context.Damage != null;
 
-        public override void Execute(EffectContext context)
+        public override void Execute(SkillEffectContext context)
         {
             int damage = context.Damage.Value.FinalDamage;
             if (context.IncomingReaction != null &&
@@ -19,15 +19,23 @@ namespace Pokemon.Domain.Effects
                 return;
             }
 
-            context.Target.ApplyDamage(damage);
-
+            Application.BattleDamageResult damageResult =
+                context.Operations.DealDamage(new Application.BattleDamageRequest
+                {
+                    Source = context.User,
+                    Target = context.Target,
+                    Skill = context.Skill,
+                    Amount = damage,
+                    Cause = Application.BattleDamageCause.Skill,
+                    Origin = this
+                });
             // 判断是谁在挨打，分配对应的受击动画
             StepAnimType hitAnim = context.IsPlayerAttacking
                 ? StepAnimType.EnemyHit
                 : StepAnimType.PlayerHit;
 
             context.AddImpactStep(
-                $"{context.User.Species.DisplayName} 造成了 {damage} 点伤害",
+                $"{context.User.Species.DisplayName} 造成了 {damageResult.AppliedDamage} 点伤害",
                 hitAnim);
         }
     }

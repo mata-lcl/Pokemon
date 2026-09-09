@@ -29,6 +29,11 @@ namespace Pokemon.Application
         private readonly SkillActionExecutor _skillActionExecutor;
         private readonly EndOfTurnResolver _endOfTurnResolver;
         private readonly BattleEndResolver _battleEndResolver;
+        private readonly IBattleEventDispatcher _eventDispatcher;
+
+        public IBattleOperations Operations { get; }
+        public IBattleRuntimeEffectRegistry RuntimeEffects { get; }
+        public IBattleEventSource Events => _eventDispatcher;
 
         /// <summary>
         /// 创建回合用例并组装当前玩法需要的排序、行动和回合末阶段。
@@ -38,6 +43,11 @@ namespace Pokemon.Application
             DamageCalculator damageCalculator,
             ITurnActionOrderComparer actionOrderComparer = null)
         {
+            _eventDispatcher = new BattleEventDispatcher();
+            var runtimeEffectController = new BattleRuntimeEffectController();
+            _eventDispatcher.AddListener(runtimeEffectController);
+            Operations = new BattleOperations(_eventDispatcher);
+            RuntimeEffects = runtimeEffectController;
             _battleEndResolver = new BattleEndResolver();
             _skillActionExecutor = new SkillActionExecutor(damageCalculator);
             _endOfTurnResolver = new EndOfTurnResolver();
@@ -52,6 +62,9 @@ namespace Pokemon.Application
 
             _turnPipeline = new TurnPipeline(new ITurnPhase[]
             {
+                new TurnStartedPhase(
+                    _eventDispatcher,
+                    _battleEndResolver),
                 new ActionOrderPhase(actionOrderComparer),
                 new ActionExecutionPhase(
                     actionDispatcher,
@@ -59,6 +72,7 @@ namespace Pokemon.Application
                     _battleEndResolver),
                 new EndOfTurnPhase(
                     _endOfTurnResolver,
+                    _eventDispatcher,
                     _battleEndResolver)
             });
         }
@@ -84,7 +98,12 @@ namespace Pokemon.Application
             var enemyAction = new SkillTurnAction(
                 enemy, player, enemySkill, isPlayerAction: false);
             var context = new TurnContext(
-                player, enemy, playerAction, enemyAction);
+                player,
+                enemy,
+                Operations,
+                RuntimeEffects,
+                playerAction,
+                enemyAction);
 
             _turnPipeline.Execute(context);
             return context.Steps;
@@ -111,8 +130,14 @@ namespace Pokemon.Application
                 isPlayerAction ? enemy : player,
                 skill,
                 isPlayerAction);
-            var context = new TurnContext(player, enemy);
+            var context = new TurnContext(
+                player,
+                enemy,
+                Operations,
+                RuntimeEffects);
 
+            _eventDispatcher.PublishTurnStarted(context);
+            if (_battleEndResolver.TryResolve(context)) return context.Steps;
             _skillActionExecutor.Execute(context, action);
             _battleEndResolver.TryResolve(context);
             return context.Steps;
@@ -130,8 +155,15 @@ namespace Pokemon.Application
         {
             ValidateCombatants(player, enemy);
 
-            var context = new TurnContext(player, enemy);
+            var context = new TurnContext(
+                player,
+                enemy,
+                Operations,
+                RuntimeEffects);
             _endOfTurnResolver.Resolve(context);
+            if (_battleEndResolver.TryResolve(context)) return context.Steps;
+
+            _eventDispatcher.PublishTurnEnded(context);
             _battleEndResolver.TryResolve(context);
             return context.Steps;
         }

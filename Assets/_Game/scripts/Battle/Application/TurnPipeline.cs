@@ -83,6 +83,8 @@ namespace Pokemon.Application
         public MonsterRuntime Enemy { get; }
         public ITurnAction PlayerAction { get; }
         public ITurnAction EnemyAction { get; }
+        public IBattleOperations Operations { get; }
+        public IBattleRuntimeEffectRegistry RuntimeEffects { get; }
         public List<ITurnAction> OrderedActions { get; } = new List<ITurnAction>();
         public List<TurnStep> Steps { get; } = new List<TurnStep>();
         public bool IsBattleEnded { get; set; }
@@ -92,16 +94,22 @@ namespace Pokemon.Application
         /// </summary>
         /// <param name="player">当前玩家出战宝可梦。</param>
         /// <param name="enemy">当前敌方出战宝可梦。</param>
+        /// <param name="operations">本场战斗统一使用的状态修改入口。</param>
+        /// <param name="runtimeEffects">本场战斗的跨回合效果注册入口。</param>
         /// <param name="playerAction">玩家本回合的技能行动；单行动流程中可以为空。</param>
         /// <param name="enemyAction">敌方本回合的技能行动；单行动流程中可以为空。</param>
         public TurnContext(
             MonsterRuntime player,
             MonsterRuntime enemy,
+            IBattleOperations operations,
+            IBattleRuntimeEffectRegistry runtimeEffects,
             ITurnAction playerAction = null,
             ITurnAction enemyAction = null)
         {
             Player = player;
             Enemy = enemy;
+            Operations = operations;
+            RuntimeEffects = runtimeEffects;
             PlayerAction = playerAction;
             EnemyAction = enemyAction;
         }

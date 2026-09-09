@@ -9,19 +9,34 @@ namespace Pokemon.Domain.Effects
         [Tooltip("反伤倍率")]
         public float RecoilMultiplier = 1.5f;
 
-        public override bool CanProcess(EffectContext context)
+        public override bool CanProcess(SkillEffectContext context)
         {
-            return context.Damage != null && context.Damage.Value.FinalDamage > 0;
+            return context.ActionResult.GetTotalDamage(
+                context.User,
+                context.Target,
+                Application.BattleDamageCause.Skill) > 0;
         }
 
-        public override void Execute(EffectContext context)
+        public override void Execute(SkillEffectContext context)
         {
-            int recoilDamage = Mathf.RoundToInt(context.Damage.Value.FinalDamage * RecoilMultiplier);
+            int skillDamage = context.ActionResult.GetTotalDamage(
+                context.User,
+                context.Target,
+                Application.BattleDamageCause.Skill);
+            int recoilDamage = Mathf.RoundToInt(skillDamage * RecoilMultiplier);
             // 反伤应打在使用者自己身上
-            context.User.ApplyDamage(recoilDamage);
-
+            Application.BattleDamageResult recoilResult =
+                context.Operations.DealDamage(new Application.BattleDamageRequest
+                {
+                    Source = context.User,
+                    Target = context.User,
+                    Skill = context.Skill,
+                    Amount = recoilDamage,
+                    Cause = Application.BattleDamageCause.Recoil,
+                    Origin = this
+                });
             StepAnimType hitAnim = context.IsPlayerAttacking ? StepAnimType.PlayerHit : StepAnimType.EnemyHit;
-            context.AddStep($"{context.User.Species.DisplayName} 受到了 {recoilDamage} 点反伤", hitAnim);
+            context.AddStep($"{context.User.Species.DisplayName} 受到了 {recoilResult.AppliedDamage} 点反伤", hitAnim);
         }
     }
 }

@@ -83,6 +83,9 @@ namespace Pokemon.Application
                 return;
             }
 
+            var actionResult = new SkillActionResult();
+            actionResult.MarkHitSucceeded();
+
             DamageResult? damage = null;
             if (action.Skill.Category != SkillCategory.Status)
             {
@@ -93,7 +96,7 @@ namespace Pokemon.Application
                     context.Steps);
             }
 
-            var effectContext = new EffectContext
+            var effectContext = new SkillEffectContext
             {
                 User = action.Actor,
                 Target = action.Target,
@@ -103,16 +106,29 @@ namespace Pokemon.Application
                 IsPlayerAttacking = action.IsPlayerAction,
                 IncomingReaction = incomingReaction,
                 ReactionContext = reactionContext,
+                Operations = new SkillActionOperations(
+                    context.Operations,
+                    actionResult),
+                RuntimeEffects = context.RuntimeEffects,
+                ActionResult = actionResult,
                 PlayerRef = context.Player,
                 EnemyRef = context.Enemy
             };
 
-            foreach (ISkillEffect effect in action.Skill.GetEffects())
-            {
-                if (!effect.CanProcess(effectContext)) continue;
+            ISkillEffect primaryEffect = action.Skill.GetPrimaryEffect();
+            if (primaryEffect == null || !primaryEffect.CanProcess(effectContext))
+                return;
 
-                effect.Execute(effectContext);
-                if (action.Actor.IsFainted || action.Target.IsFainted) break;
+            primaryEffect.Execute(effectContext);
+            if (!action.Actor.IsFainted && !action.Target.IsFainted)
+            {
+                foreach (ISkillEffect effect in action.Skill.GetTriggeredSecondaryEffects())
+                {
+                    if (!effect.CanProcess(effectContext)) continue;
+
+                    effect.Execute(effectContext);
+                    if (action.Actor.IsFainted || action.Target.IsFainted) break;
+                }
             }
 
             CheckAbilityCrisisTrigger(
@@ -196,7 +212,7 @@ namespace Pokemon.Application
         }
 
         /// <summary>
-        /// 从技能配置中寻找第一个实现反应接口的技能效果。
+        /// 从技能配置的主效果中寻找实现反应接口的技能效果。
         /// </summary>
         /// <param name="skill">需要检查的后手技能。</param>
         /// <param name="reactionEffect">找到时返回对应的反应效果。</param>
@@ -207,13 +223,11 @@ namespace Pokemon.Application
         {
             if (skill != null)
             {
-                foreach (ISkillEffect effect in skill.GetEffects())
+                ISkillEffect effect = skill.GetPrimaryEffect();
+                if (effect is IReactionSkillEffect reaction)
                 {
-                    if (effect is IReactionSkillEffect reaction)
-                    {
-                        reactionEffect = reaction;
-                        return true;
-                    }
+                    reactionEffect = reaction;
+                    return true;
                 }
             }
 
@@ -244,8 +258,13 @@ namespace Pokemon.Application
                 Steps = context.Steps,
                 PlayerRef = context.Player,
                 EnemyRef = context.Enemy,
-                IsUserPlayer = reactionAction.IsPlayerAction
+                IsUserPlayer = reactionAction.IsPlayerAction,
+                RuntimeEffects = context.RuntimeEffects,
+                ActionResult = new SkillActionResult()
             };
+            reactionContext.Operations = new SkillActionOperations(
+                context.Operations,
+                reactionContext.ActionResult);
 
             if (opponentAction.Skill != null)
             {
@@ -313,9 +332,17 @@ namespace Pokemon.Application
                 return;
             }
 
-            target.ApplyDamage(damage);
+            BattleDamageResult damageResult = context.Operations.DealDamage(
+                new BattleDamageRequest
+                {
+                    Source = target,
+                    Target = target,
+                    Amount = damage,
+                    Cause = BattleDamageCause.Status,
+                    Origin = target.CurrentStatus
+                });
             context.AddStep(
-                $"{target.Species.DisplayName} 因为{statusName}受到了 {damage} 点伤害！",
+                $"{target.Species.DisplayName} 因为{statusName}受到了 {damageResult.AppliedDamage} 点伤害！",
                 isPlayer ? StepAnimType.PlayerHit : StepAnimType.EnemyHit);
 
             target.ActiveAbility?.CheckAndProcessNotification(
