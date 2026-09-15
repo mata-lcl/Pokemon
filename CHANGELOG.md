@@ -5,6 +5,28 @@
 格式参考：[Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)
 
 ---
+## [0.6.0] - 2026-09-15
+
+### 新增功能
+
+- 新增 `Pokemon.Domain`、`Pokemon.Application`、`Pokemon.Presentation` 和 `Pokemon.Battle.Tests` 独立程序集，在编译期约束层级依赖方向。
+- 新增战斗领域事件、业务执行结果与表现层播放计划，使战斗计算结果不再直接包含 UI 播放步骤。
+- 新增战斗应用服务，统一协调技能回合、换人、道具消耗、捕获入队、敌方回应、逃跑判定和战斗背包操作。
+- 新增任务应用协调器，通过领域事件推进收集目标并发放任务奖励。
+
+### 重构与优化
+
+- 解除 `Domain → Application` 反向依赖，统一形成 `Presentation → Application → Domain` 的依赖方向。
+- 拆分 `BattleCoordinator` 的业务计算与表现职责，并将 `BattleUIController` 调整为只显示数据和发送用户操作事件。
+- 拆除 `PlayerParty` 与 `QuestService` 的直接调用环，改由应用层订阅道具获得和任务完成事件。
+- 收拢 `PlayerParty` 的队伍、仓库和背包集合，对外仅提供操作方法及只读快照。
+- 将存档数据、运行时映射、文件仓储和待读档位置从 `SaveGameService` 中拆分，并由表现层显式提供当前场景名称。
+- 将战斗结果、领域事件和 UI 播放步骤分别放入对应层级，技能、道具与运行时效果统一通过战斗操作入口修改状态。
+
+### 测试
+
+- 新增 25 项 EditMode 自动化测试，覆盖战斗分层、伤害计算、队伍操作、任务协调与推进、战斗命令以及存档往返。
+
 ## [0.5.3] - 2026-09-09
 
 ### 新增功能

@@ -8,28 +8,26 @@ namespace Pokemon.Application
     public sealed class BattleEndResolver
     {
         /// <summary>
-        /// 检查双方是否有人倒下；若有则记录结束步骤并停止管线。
+        /// 检查双方是否有人倒下；若有则记录战斗结论与倒下事件并停止管线。
         /// </summary>
-        /// <param name="context">包含双方运行状态和步骤列表的回合上下文。</param>
+        /// <param name="context">包含双方运行状态、事件入口和战斗结论的回合上下文。</param>
         /// <returns>战斗已经结束时返回 true，否则返回 false。</returns>
         public bool TryResolve(TurnContext context)
         {
             if (!context.Player.IsFainted && !context.Enemy.IsFainted)
                 return false;
 
-            context.Steps.Add(new TurnStep
+            MonsterRuntime fainted = context.Player.IsFainted
+                ? context.Player
+                : context.Enemy;
+            context.Events.Publish(new CombatantFaintedEvent
             {
-                Message = context.Player.IsFainted
-                    ? $"{context.Player.Species.DisplayName} 倒下了..."
-                    : $"{context.Enemy.Species.DisplayName} 倒下了！",
-                PlayerHpAfter = context.Player.CurrentHP,
-                EnemyHpAfter = context.Enemy.CurrentHP,
-                IsBattleEnd = true,
-                PlayerWon = context.Enemy.IsFainted,
-                AnimType = StepAnimType.None
+                Combatant = fainted
             });
 
-            context.IsBattleEnded = true;
+            context.Conclusion = context.Enemy.IsFainted
+                ? BattleConclusion.PlayerVictory
+                : BattleConclusion.PlayerDefeat;
             return true;
         }
     }
@@ -51,7 +49,7 @@ namespace Pokemon.Application
         }
 
         /// <summary>
-        /// 执行指定技能行动，并把产生的所有画面步骤追加到当前回合。
+        /// 执行指定技能行动，并把产生的领域事件记录到当前回合。
         /// </summary>
         /// <param name="context">当前回合的共享上下文。</param>
         /// <param name="action">需要执行的技能行动。</param>
@@ -67,19 +65,27 @@ namespace Pokemon.Application
 
             if (!action.Actor.TryConsumePP(action.Skill))
             {
-                context.AddStep(
-                    $"{action.Actor.Species.DisplayName} 的 {action.Skill.DisplayName} PP已耗尽！");
+                context.Events.Publish(new SkillPpExhaustedEvent
+                {
+                    Actor = action.Actor,
+                    Skill = action.Skill
+                });
                 return;
             }
 
-            context.AddSkillStep(
-                $"{action.Actor.Species.DisplayName} 使用了 {action.Skill.DisplayName}！",
-                action.IsPlayerAction ? StepAnimType.PlayerAttack : StepAnimType.EnemyAttack,
-                action.Skill.Category);
+            context.Events.Publish(new SkillUseStartedEvent
+            {
+                Actor = action.Actor,
+                Skill = action.Skill
+            });
 
             if (!_damageCalculator.CheckHit(action.Skill))
             {
-                context.AddStep($"{action.Skill.DisplayName} 未命中！");
+                context.Events.Publish(new SkillMissedEvent
+                {
+                    Actor = action.Actor,
+                    Skill = action.Skill
+                });
                 return;
             }
 
@@ -92,8 +98,7 @@ namespace Pokemon.Application
                 damage = _damageCalculator.CalculateDamage(
                     action.Actor,
                     action.Target,
-                    action.Skill,
-                    context.Steps);
+                    action.Skill);
             }
 
             var effectContext = new SkillEffectContext
@@ -102,17 +107,14 @@ namespace Pokemon.Application
                 Target = action.Target,
                 Skill = action.Skill,
                 Damage = damage,
-                Steps = context.Steps,
-                IsPlayerAttacking = action.IsPlayerAction,
                 IncomingReaction = incomingReaction,
                 ReactionContext = reactionContext,
                 Operations = new SkillActionOperations(
                     context.Operations,
                     actionResult),
                 RuntimeEffects = context.RuntimeEffects,
+                Events = context.Events,
                 ActionResult = actionResult,
-                PlayerRef = context.Player,
-                EnemyRef = context.Enemy
             };
 
             ISkillEffect primaryEffect = action.Skill.GetPrimaryEffect();
@@ -133,26 +135,20 @@ namespace Pokemon.Application
 
             CheckAbilityCrisisTrigger(
                 action.Target,
-                context.Steps,
-                context.Player,
-                context.Enemy);
+                context.Events);
         }
 
         /// <summary>
         /// 在技能效果结束后通知目标检查低血量等危机特性。
         /// </summary>
         /// <param name="target">可能触发特性的宝可梦。</param>
-        /// <param name="steps">用于记录特性提示的回合步骤列表。</param>
-        /// <param name="playerRef">始终指向玩家宝可梦的引用。</param>
-        /// <param name="enemyRef">始终指向敌方宝可梦的引用。</param>
+        /// <param name="events">用于发布特性触发事实的领域事件入口。</param>
         private static void CheckAbilityCrisisTrigger(
             MonsterRuntime target,
-            System.Collections.Generic.List<TurnStep> steps,
-            MonsterRuntime playerRef,
-            MonsterRuntime enemyRef)
+            IBattleDomainEventSink events)
         {
             target.ActiveAbility?.CheckAndProcessNotification(
-                target, steps, playerRef, enemyRef);
+                target, events);
         }
     }
 
@@ -255,11 +251,8 @@ namespace Pokemon.Application
                 Opponent = opponentAction.Actor,
                 Skill = reactionAction.Skill,
                 OpponentSkill = opponentAction.Skill,
-                Steps = context.Steps,
-                PlayerRef = context.Player,
-                EnemyRef = context.Enemy,
-                IsUserPlayer = reactionAction.IsPlayerAction,
                 RuntimeEffects = context.RuntimeEffects,
+                Events = context.Events,
                 ActionResult = new SkillActionResult()
             };
             reactionContext.Operations = new SkillActionOperations(
@@ -277,8 +270,11 @@ namespace Pokemon.Application
 
             if (!canReact)
             {
-                context.AddStep(
-                    $"{reactionAction.Actor.Species.DisplayName} 的 {reactionAction.Skill.DisplayName} PP已耗尽！");
+                context.Events.Publish(new SkillPpExhaustedEvent
+                {
+                    Actor = reactionAction.Actor,
+                    Skill = reactionAction.Skill
+                });
             }
 
             if (_battleEndResolver.TryResolve(context)) return;
@@ -303,10 +299,10 @@ namespace Pokemon.Application
         /// <param name="context">当前回合的共享上下文。</param>
         public void Resolve(TurnContext context)
         {
-            ProcessStatusDamage(context.Player, true, context);
+            ProcessStatusDamage(context.Player, context);
             if (!context.Player.IsFainted)
             {
-                ProcessStatusDamage(context.Enemy, false, context);
+                ProcessStatusDamage(context.Enemy, context);
             }
         }
 
@@ -314,11 +310,9 @@ namespace Pokemon.Application
         /// 查询并应用指定宝可梦当前状态造成的回合末伤害。
         /// </summary>
         /// <param name="target">需要结算状态伤害的宝可梦。</param>
-        /// <param name="isPlayer">目标是否属于玩家，用于选择受击动画。</param>
         /// <param name="context">当前回合的共享上下文。</param>
         private static void ProcessStatusDamage(
             MonsterRuntime target,
-            bool isPlayer,
             TurnContext context)
         {
             if (target.IsFainted) return;
@@ -327,13 +321,12 @@ namespace Pokemon.Application
                     target.CurrentStatus,
                     target.MaxHP,
                     out int damage,
-                    out string statusName))
+                    out _))
             {
                 return;
             }
 
-            BattleDamageResult damageResult = context.Operations.DealDamage(
-                new BattleDamageRequest
+            context.Operations.DealDamage(new BattleDamageRequest
                 {
                     Source = target,
                     Target = target,
@@ -341,15 +334,9 @@ namespace Pokemon.Application
                     Cause = BattleDamageCause.Status,
                     Origin = target.CurrentStatus
                 });
-            context.AddStep(
-                $"{target.Species.DisplayName} 因为{statusName}受到了 {damageResult.AppliedDamage} 点伤害！",
-                isPlayer ? StepAnimType.PlayerHit : StepAnimType.EnemyHit);
-
             target.ActiveAbility?.CheckAndProcessNotification(
                 target,
-                context.Steps,
-                context.Player,
-                context.Enemy);
+                context.Events);
         }
     }
 }

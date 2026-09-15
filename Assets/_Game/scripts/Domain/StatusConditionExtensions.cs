@@ -1,5 +1,8 @@
 namespace Pokemon.Domain
 {
+    /// <summary>
+    /// 提供异常状态的显示名称转换。
+    /// </summary>
     public static class StatusConditionExtensions
     {
         public static string ToChineseName(this StatusCondition status)

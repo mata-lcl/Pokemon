@@ -19,24 +19,15 @@ namespace Pokemon.Domain.Effects
                 return;
             }
 
-            Application.BattleDamageResult damageResult =
-                context.Operations.DealDamage(new Application.BattleDamageRequest
+            context.Operations.DealDamage(new BattleDamageRequest
                 {
                     Source = context.User,
                     Target = context.Target,
                     Skill = context.Skill,
                     Amount = damage,
-                    Cause = Application.BattleDamageCause.Skill,
+                    Cause = BattleDamageCause.Skill,
                     Origin = this
                 });
-            // 判断是谁在挨打，分配对应的受击动画
-            StepAnimType hitAnim = context.IsPlayerAttacking
-                ? StepAnimType.EnemyHit
-                : StepAnimType.PlayerHit;
-
-            context.AddImpactStep(
-                $"{context.User.Species.DisplayName} 造成了 {damageResult.AppliedDamage} 点伤害",
-                hitAnim);
         }
     }
 }

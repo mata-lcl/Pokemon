@@ -1,4 +1,3 @@
-using Pokemon.Application;
 using Pokemon.Domain;
 using UnityEngine;
 
@@ -34,20 +33,20 @@ namespace Pokemon.Domain
             if (success)
             {
                 // 捕捉成功：结束战斗
-                context.Steps.Add(new TurnStep
+                context.Events.Publish(new CaptureResolvedEvent
                 {
-                    Message = $"成功捕捉了 {context.Target.Species.DisplayName}！",
-                    PlayerHpAfter = context.PlayerRef.CurrentHP,
-                    EnemyHpAfter = context.EnemyRef.CurrentHP,
-                    IsBattleEnd = true,
-                    CaughtSuccess = true,
-                    AnimType = StepAnimType.None
+                    Target = context.Target,
+                    Succeeded = true
                 });
             }
             else
             {
                 // 捕捉失败：战斗继续
-                context.AddStep($"哎呀，{context.Target.Species.DisplayName} 挣脱了！");
+                context.Events.Publish(new CaptureResolvedEvent
+                {
+                    Target = context.Target,
+                    Succeeded = false
+                });
             }
         }
     }

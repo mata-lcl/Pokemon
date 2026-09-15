@@ -1,5 +1,14 @@
 namespace Pokemon.Presentation
 {
+    public enum StepAnimType
+    {
+        None,
+        PlayerAttack,
+        EnemyAttack,
+        PlayerHit,
+        EnemyHit
+    }
+
     public enum PlaybackMode
     {
         Normal,

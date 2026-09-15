@@ -14,7 +14,7 @@ namespace Pokemon.Domain.Effects
             return context.ActionResult.GetTotalDamage(
                 context.User,
                 context.Target,
-                Application.BattleDamageCause.Skill) > 0;
+                BattleDamageCause.Skill) > 0;
         }
 
         public override void Execute(SkillEffectContext context)
@@ -22,21 +22,18 @@ namespace Pokemon.Domain.Effects
             int skillDamage = context.ActionResult.GetTotalDamage(
                 context.User,
                 context.Target,
-                Application.BattleDamageCause.Skill);
+                BattleDamageCause.Skill);
             int recoilDamage = Mathf.RoundToInt(skillDamage * RecoilMultiplier);
             // 反伤应打在使用者自己身上
-            Application.BattleDamageResult recoilResult =
-                context.Operations.DealDamage(new Application.BattleDamageRequest
+            context.Operations.DealDamage(new BattleDamageRequest
                 {
                     Source = context.User,
                     Target = context.User,
                     Skill = context.Skill,
                     Amount = recoilDamage,
-                    Cause = Application.BattleDamageCause.Recoil,
+                    Cause = BattleDamageCause.Recoil,
                     Origin = this
                 });
-            StepAnimType hitAnim = context.IsPlayerAttacking ? StepAnimType.PlayerHit : StepAnimType.EnemyHit;
-            context.AddStep($"{context.User.Species.DisplayName} 受到了 {recoilResult.AppliedDamage} 点反伤", hitAnim);
         }
     }
 }

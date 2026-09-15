@@ -35,10 +35,11 @@ namespace Pokemon.Domain
         public static MonsterRuntime ActivePokemon { get; set; }
         public static int Money { get; private set; }
 
-        // 保留队伍列表的公开访问，以兼容现有代码；后续写入操作逐步迁移到下方方法中。
-        public static List<MonsterRuntime> Party = new List<MonsterRuntime>();
-        public static List<MonsterRuntime> Storage = new List<MonsterRuntime>();
-        public static Dictionary<ItemData, int> Inventory = new Dictionary<ItemData, int>();
+        // 集合仅由 PlayerParty 内部维护，对外通过方法返回快照。
+        private static readonly List<MonsterRuntime> Party = new List<MonsterRuntime>();
+        private static readonly List<MonsterRuntime> Storage = new List<MonsterRuntime>();
+        private static readonly Dictionary<ItemData, int> Inventory =
+            new Dictionary<ItemData, int>();
 
         private static readonly List<ItemData> ItemOrder = new List<ItemData>();
 
@@ -483,7 +484,6 @@ namespace Pokemon.Domain
 
             InventoryChanged?.Invoke();
             ItemAdded?.Invoke(item, count);
-            QuestService.ReportItemCollected(item, count);
         }
 
         // 只有对应操作成功后才移除道具。

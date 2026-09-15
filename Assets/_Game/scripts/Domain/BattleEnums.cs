@@ -37,15 +37,6 @@ namespace Pokemon.Domain
         Status    // 变化/状态技能：不直接造成伤害，而是改变属性、状态或天气
     }
 
-    public enum StepAnimType
-    {
-        None,
-        PlayerAttack,
-        EnemyAttack,
-        PlayerHit,
-        EnemyHit
-    }
-
     public enum ItemType
     {
         HealHP,    // 回复HP

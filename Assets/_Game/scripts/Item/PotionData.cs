@@ -1,6 +1,5 @@
 using UnityEngine;
 using Pokemon.Domain;
-using Pokemon.Application;
 
 [CreateAssetMenu(fileName = "恢复药_", menuName = "宝可梦/配置/道具/恢复药")]
 public class PotionData : ItemData, IUsable
@@ -18,7 +17,7 @@ public class PotionData : ItemData, IUsable
     public void OnUse(EffectContext context)
     {
         // 1. 执行血量恢复
-        BattleHealResult result = context.Operations.Heal(new BattleHealRequest
+        context.Operations.Heal(new BattleHealRequest
         {
             Source = context.User,
             Target = context.User,
@@ -27,13 +26,5 @@ public class PotionData : ItemData, IUsable
             Origin = this
         });
 
-        // 2. 添加到动画/消息队列中
-        context.Steps.Add(new TurnStep
-        {
-            Message = $"{context.User.Species.DisplayName} 恢复了 {result.AppliedHealing} 点生命值！",
-            PlayerHpAfter = context.User.CurrentHP, // 更新当前血量到 UI
-            EnemyHpAfter = context.Target.CurrentHP,
-            AnimType = StepAnimType.None // 或者添加一个恢复特效的枚举
-        });
     }
 }

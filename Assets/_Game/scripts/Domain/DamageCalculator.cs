@@ -1,7 +1,4 @@
-using Pokemon.Application;
 using System;
-using System.Collections.Generic;
-using Unity.VisualScripting.Antlr3.Runtime.Misc;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -32,7 +29,7 @@ namespace Pokemon.Domain
         /// <param 防御方="defender"></param>
         /// <param 技能="skill"></param>
         /// <returns></returns>
-        public DamageResult CalculateDamage(MonsterRuntime attacker, MonsterRuntime defender, SkillData skill, List<TurnStep> steps = null)
+        public DamageResult CalculateDamage(MonsterRuntime attacker, MonsterRuntime defender, SkillData skill)
         {
 
             // 选择攻击和防御属性
@@ -70,7 +67,7 @@ namespace Pokemon.Domain
             if (attacker.ActiveAbility != null)
             {
                 // 调用特性基类中的虚方法，实现一特性一脚本的解耦
-                abilityMod = attacker.ActiveAbility.GetDamageMultiplier(attacker, defender, skill, steps);
+                abilityMod = attacker.ActiveAbility.GetDamageMultiplier(attacker, defender, skill);
             }
 
             // 5. 最终计算

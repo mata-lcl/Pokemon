@@ -1,4 +1,3 @@
-using Pokemon.Application;
 using Pokemon.Domain;
 using Pokemon.Presentation.Animation;
 using System;
@@ -127,19 +126,17 @@ namespace Pokemon.Presentation
         /// </summary>
         /// <param name="steps">需要依次播放的回合步骤。</param>
         /// <returns>播放全部步骤或遇到战斗结束步骤时完成的协程。</returns>
-        public IEnumerator PlaySteps(IReadOnlyList<TurnStep> steps)
+        public IEnumerator PlaySteps(IReadOnlyList<BattlePlaybackStep> steps)
         {
             var presentedImpactStepIndices = new HashSet<int>();
             for (int stepIndex = 0; stepIndex < steps.Count; stepIndex++)
             {
                 if (presentedImpactStepIndices.Contains(stepIndex)) continue;
 
-                TurnStep step = steps[stepIndex];
+                BattlePlaybackStep step = steps[stepIndex];
                 if (string.IsNullOrEmpty(step.Message)) continue;
 
                 PresentTurnStep(step);
-                bool battleEndedAtImpact = false;
-
                 if (IsAttackStep(step))
                 {
                     List<int> impactStepIndices = GetImpactStepIndices(steps, stepIndex);
@@ -160,10 +157,9 @@ namespace Pokemon.Presentation
                         nextImpactStep++;
                         if (!presentedImpactStepIndices.Add(impactStepIndex)) return;
 
-                        TurnStep impactStep = steps[impactStepIndex];
+                        BattlePlaybackStep impactStep = steps[impactStepIndex];
                         PresentTurnStep(impactStep);
                         StartCoroutine(PlayStepAnimation(impactStep));
-                        battleEndedAtImpact |= impactStep.IsBattleEnd;
                     };
 
                     yield return PlayAttackStepAnimation(step, frameEventCallback);
@@ -173,10 +169,9 @@ namespace Pokemon.Presentation
                         int impactStepIndex = impactStepIndices[0];
                         presentedImpactStepIndices.Add(impactStepIndex);
 
-                        TurnStep impactStep = steps[impactStepIndex];
+                        BattlePlaybackStep impactStep = steps[impactStepIndex];
                         PresentTurnStep(impactStep);
                         yield return PlayStepAnimation(impactStep);
-                        battleEndedAtImpact |= impactStep.IsBattleEnd;
                     }
                 }
                 else
@@ -185,9 +180,6 @@ namespace Pokemon.Presentation
                 }
 
                 yield return WaitForStep();
-
-                if (step.IsBattleEnd || battleEndedAtImpact)
-                    yield break;
             }
         }
 
@@ -213,7 +205,7 @@ namespace Pokemon.Presentation
         /// </summary>
         /// <param name="step">需要播放动画的回合步骤。</param>
         /// <returns>动画播放完成时结束的协程。</returns>
-        private IEnumerator PlayStepAnimation(TurnStep step)
+        private IEnumerator PlayStepAnimation(BattlePlaybackStep step)
         {
             if (_playbackMode == PlaybackMode.SkipWait)
             {
@@ -240,7 +232,7 @@ namespace Pokemon.Presentation
         /// <param name="frameEventCallback">动画到达已配置事件帧时调用的回调。</param>
         /// <returns>技能施放动画完成时结束的协程。</returns>
         private IEnumerator PlayAttackStepAnimation(
-            TurnStep step,
+            BattlePlaybackStep step,
             Action<SpriteFrameEventContext> frameEventCallback)
         {
             if (_playbackMode == PlaybackMode.SkipWait)
@@ -289,7 +281,7 @@ namespace Pokemon.Presentation
         /// </summary>
         /// <param name="step">带有技能分类的施放步骤。</param>
         /// <returns>对应的物理、特殊或状态技能动画类型。</returns>
-        private static SpriteFrameAnimationType GetSkillAnimationType(TurnStep step)
+        private static SpriteFrameAnimationType GetSkillAnimationType(BattlePlaybackStep step)
         {
             if (step.SkillCategory == SkillCategory.Special)
                 return SpriteFrameAnimationType.SpecialAttack;
@@ -303,7 +295,7 @@ namespace Pokemon.Presentation
         /// </summary>
         /// <param name="step">需要判断的回合播放步骤。</param>
         /// <returns>玩家或敌方攻击步骤返回 true。</returns>
-        private static bool IsAttackStep(TurnStep step)
+        private static bool IsAttackStep(BattlePlaybackStep step)
         {
             return step.AnimType == StepAnimType.PlayerAttack ||
                    step.AnimType == StepAnimType.EnemyAttack;
@@ -316,13 +308,13 @@ namespace Pokemon.Presentation
         /// <param name="attackStepIndex">当前技能施放步骤的下标。</param>
         /// <returns>紧随施放步骤之后的连续打击帧步骤下标。</returns>
         private static List<int> GetImpactStepIndices(
-            IReadOnlyList<TurnStep> steps,
+            IReadOnlyList<BattlePlaybackStep> steps,
             int attackStepIndex)
         {
             var indices = new List<int>();
             for (int i = attackStepIndex + 1; i < steps.Count; i++)
             {
-                TurnStep candidate = steps[i];
+                BattlePlaybackStep candidate = steps[i];
                 if (!candidate.PresentAtAttackImpact) break;
                 indices.Add(i);
             }
@@ -334,7 +326,7 @@ namespace Pokemon.Presentation
         /// 将步骤中的日志与双方 HP 快照同步到战斗 UI。
         /// </summary>
         /// <param name="step">需要显示的回合播放步骤。</param>
-        private void PresentTurnStep(TurnStep step)
+        private void PresentTurnStep(BattlePlaybackStep step)
         {
             uiController.SetLog(step.Message);
             uiController.UpdateHp(

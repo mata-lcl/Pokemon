@@ -1,4 +1,3 @@
-using Pokemon.Application;
 using UnityEngine;
 
 namespace Pokemon.Domain.Effects
@@ -38,9 +37,12 @@ namespace Pokemon.Domain.Effects
                     storageTurns,
                     releaseMultiplier));
 
-            context.AddStep(
-                $"{context.User.Species.DisplayName} 开始蓄积伤害，" +
-                $"将在接下来的 {storageTurns} 回合后释放！");
+            context.Events.Publish(new StoredDamageEffectStartedEvent
+            {
+                Owner = context.User,
+                Skill = context.Skill,
+                StorageTurns = storageTurns
+            });
         }
 
         /// <summary>
@@ -122,17 +124,20 @@ namespace Pokemon.Domain.Effects
                             Cause = BattleDamageCause.RuntimeEffect,
                             Origin = this
                         });
-                    context.AddStep(
-                        $"{Owner.Species.DisplayName} 将蓄积的伤害释放，" +
-                        $"对 {target.Species.DisplayName} 造成了 {result.AppliedDamage} 点伤害！",
-                        Owner == context.Player
-                            ? StepAnimType.EnemyHit
-                            : StepAnimType.PlayerHit);
+                    context.Events.Publish(new StoredDamageEffectReleasedEvent
+                    {
+                        Owner = Owner,
+                        Target = target,
+                        DamageResult = result
+                    });
                 }
                 else
                 {
-                    context.AddStep(
-                        $"{Owner.Species.DisplayName} 没有蓄积到可以释放的伤害。");
+                    context.Events.Publish(new StoredDamageEffectReleasedEvent
+                    {
+                        Owner = Owner,
+                        Target = target
+                    });
                 }
 
                 Expire();

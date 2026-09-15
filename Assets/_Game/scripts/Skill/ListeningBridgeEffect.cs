@@ -43,26 +43,27 @@ namespace Pokemon.Domain.Effects
             }
 
             reactionContext.AnnounceUse();
-            Application.BattleDamageResult reflectedResult =
+            BattleDamageResult reflectedResult =
                 reactionContext.Operations.DealDamage(
-                    new Application.BattleDamageRequest
+                    new BattleDamageRequest
                     {
                         Source = reactionContext.User,
                         Target = incomingContext.User,
                         Skill = reactionContext.Skill,
                         Amount = incomingDamage,
-                        Cause = Application.BattleDamageCause.Reaction,
+                        Cause = BattleDamageCause.Reaction,
                         Origin = this
                     });
             reactionContext.HasTriggered = true;
 
-            StepAnimType reflectedHitAnim = reactionContext.IsUserPlayer
-                ? StepAnimType.EnemyHit
-                : StepAnimType.PlayerHit;
-
-            reactionContext.AddStep(
-                $"{reactionContext.User.Species.DisplayName} 将 {reflectedResult.AppliedDamage} 点伤害反弹了回去！",
-                reflectedHitAnim);
+            reactionContext.Events.Publish(new ReactionResolvedEvent
+            {
+                User = reactionContext.User,
+                Opponent = incomingContext.User,
+                Skill = reactionContext.Skill,
+                Resolution = ReactionResolution.Reflected,
+                DamageResult = reflectedResult
+            });
             return true;
         }
 
@@ -81,28 +82,38 @@ namespace Pokemon.Domain.Effects
                     1,
                     Mathf.FloorToInt(context.User.MaxHP * statusPenaltyFraction));
 
-                Application.BattleDamageResult penaltyResult =
+                BattleDamageResult penaltyResult =
                     context.Operations.DealDamage(
-                        new Application.BattleDamageRequest
+                        new BattleDamageRequest
                         {
                             Source = context.Opponent,
                             Target = context.User,
                             Skill = context.Skill,
                             Amount = penaltyDamage,
-                            Cause = Application.BattleDamageCause.Reaction,
+                            Cause = BattleDamageCause.Reaction,
                             Origin = this
                         });
-                context.AddStep(
-                    $"面对变化技能，{context.User.Species.DisplayName} 损失了 {penaltyResult.AppliedDamage} 点生命值！",
-                    context.IsUserPlayer ? StepAnimType.PlayerHit : StepAnimType.EnemyHit);
+                context.Events.Publish(new ReactionResolvedEvent
+                {
+                    User = context.User,
+                    Opponent = context.Opponent,
+                    Skill = context.Skill,
+                    Resolution = ReactionResolution.StatusPenalty,
+                    DamageResult = penaltyResult
+                });
                 return;
             }
 
             if (!context.HasTriggered)
             {
                 context.AnnounceUse();
-                context.AddStep(
-                    $"{context.User.Species.DisplayName} 的 {context.Skill.DisplayName} 失败了！");
+                context.Events.Publish(new ReactionResolvedEvent
+                {
+                    User = context.User,
+                    Opponent = context.Opponent,
+                    Skill = context.Skill,
+                    Resolution = ReactionResolution.Failed
+                });
             }
         }
     }

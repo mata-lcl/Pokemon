@@ -1,217 +1,84 @@
+using Pokemon.Domain;
 using System.Collections.Generic;
 
 namespace Pokemon.Application
 {
-    /// <summary>
-    /// 接收战斗状态变化与回合生命周期事件。
-    /// </summary>
-    public interface IBattleEventListener
-    {
-        /// <summary>
-        /// 在伤害通过统一入口实际结算后接收结果。
-        /// </summary>
-        /// <param name="result">本次伤害的实际结算结果。</param>
-        void OnDamageApplied(BattleDamageResult result);
-
-        /// <summary>
-        /// 在治疗通过统一入口实际结算后接收结果。
-        /// </summary>
-        /// <param name="result">本次治疗的实际结算结果。</param>
-        void OnHealingApplied(BattleHealResult result);
-
-        /// <summary>
-        /// 在异常状态通过统一入口尝试附加后接收结果。
-        /// </summary>
-        /// <param name="result">本次异常状态附加结果。</param>
-        void OnStatusApplied(StatusApplyResult result);
-
-        /// <summary>
-        /// 在一个完整战斗回合开始时接收通知。
-        /// </summary>
-        /// <param name="context">当前回合的共享上下文。</param>
-        void OnTurnStarted(TurnContext context);
-
-        /// <summary>
-        /// 在一个完整战斗回合结束时接收通知。
-        /// </summary>
-        /// <param name="context">当前回合的共享上下文。</param>
-        void OnTurnEnded(TurnContext context);
-    }
-
-    /// <summary>
-    /// 为只关心部分事件的监听者提供空实现。
-    /// </summary>
-    public abstract class BattleEventListener : IBattleEventListener
-    {
-        /// <summary>
-        /// 在伤害结算后处理事件，默认不执行逻辑。
-        /// </summary>
-        /// <param name="result">本次伤害的实际结算结果。</param>
-        public virtual void OnDamageApplied(BattleDamageResult result)
-        {
-        }
-
-        /// <summary>
-        /// 在治疗结算后处理事件，默认不执行逻辑。
-        /// </summary>
-        /// <param name="result">本次治疗的实际结算结果。</param>
-        public virtual void OnHealingApplied(BattleHealResult result)
-        {
-        }
-
-        /// <summary>
-        /// 在异常状态附加后处理事件，默认不执行逻辑。
-        /// </summary>
-        /// <param name="result">本次异常状态附加结果。</param>
-        public virtual void OnStatusApplied(StatusApplyResult result)
-        {
-        }
-
-        /// <summary>
-        /// 在回合开始时处理事件，默认不执行逻辑。
-        /// </summary>
-        /// <param name="context">当前回合的共享上下文。</param>
-        public virtual void OnTurnStarted(TurnContext context)
-        {
-        }
-
-        /// <summary>
-        /// 在回合结束时处理事件，默认不执行逻辑。
-        /// </summary>
-        /// <param name="context">当前回合的共享上下文。</param>
-        public virtual void OnTurnEnded(TurnContext context)
-        {
-        }
-    }
-
-    /// <summary>
-    /// 对外开放的战斗事件订阅入口，不允许订阅者主动伪造事件。
-    /// </summary>
     public interface IBattleEventSource
     {
         /// <summary>
-        /// 注册一个战斗事件监听者。
+        /// 注册一个战斗领域事件监听者。
         /// </summary>
         /// <param name="listener">需要接收后续事件的监听者。</param>
-        void AddListener(IBattleEventListener listener);
+        void AddListener(IBattleDomainEventListener listener);
 
         /// <summary>
-        /// 移除一个战斗事件监听者。
+        /// 移除一个战斗领域事件监听者。
         /// </summary>
         /// <param name="listener">不再接收事件的监听者。</param>
-        void RemoveListener(IBattleEventListener listener);
-
+        void RemoveListener(IBattleDomainEventListener listener);
     }
 
-    /// <summary>
-    /// 由战斗流程内部使用的事件发布入口。
-    /// </summary>
-    public interface IBattleEventDispatcher : IBattleEventSource
+    public interface IBattleEventDispatcher :
+        IBattleEventSource,
+        IBattleDomainEventSink
     {
+        int EventCount { get; }
 
         /// <summary>
-        /// 发布一次已经完成的伤害结算。
+        /// 返回指定位置之后按发生顺序记录的领域事件副本。
         /// </summary>
-        /// <param name="result">本次伤害的实际结算结果。</param>
-        void PublishDamageApplied(BattleDamageResult result);
-
-        /// <summary>
-        /// 发布一次已经完成的治疗结算。
-        /// </summary>
-        /// <param name="result">本次治疗的实际结算结果。</param>
-        void PublishHealingApplied(BattleHealResult result);
-
-        /// <summary>
-        /// 发布一次已经完成的异常状态附加尝试。
-        /// </summary>
-        /// <param name="result">本次异常状态附加结果。</param>
-        void PublishStatusApplied(StatusApplyResult result);
-
-        /// <summary>
-        /// 发布完整战斗回合开始事件。
-        /// </summary>
-        /// <param name="context">当前回合的共享上下文。</param>
-        void PublishTurnStarted(TurnContext context);
-
-        /// <summary>
-        /// 发布完整战斗回合结束事件。
-        /// </summary>
-        /// <param name="context">当前回合的共享上下文。</param>
-        void PublishTurnEnded(TurnContext context);
+        /// <param name="startIndex">需要开始读取的事件下标。</param>
+        /// <returns>本次执行范围内产生的领域事件。</returns>
+        IReadOnlyList<IBattleDomainEvent> GetEventsSince(int startIndex);
     }
 
     public sealed class BattleEventDispatcher : IBattleEventDispatcher
     {
-        private readonly List<IBattleEventListener> _listeners =
-            new List<IBattleEventListener>();
+        private readonly List<IBattleDomainEventListener> _listeners =
+            new List<IBattleDomainEventListener>();
+        private readonly List<IBattleDomainEvent> _events =
+            new List<IBattleDomainEvent>();
+
+        public int EventCount => _events.Count;
 
         /// <summary>
-        /// 注册一个战斗事件监听者，已注册的实例不会重复添加。
+        /// 注册一个战斗领域事件监听者，已注册的实例不会重复添加。
         /// </summary>
         /// <param name="listener">需要接收后续事件的监听者。</param>
-        public void AddListener(IBattleEventListener listener)
+        public void AddListener(IBattleDomainEventListener listener)
         {
             if (!_listeners.Contains(listener))
                 _listeners.Add(listener);
         }
 
         /// <summary>
-        /// 移除一个战斗事件监听者。
+        /// 移除一个战斗领域事件监听者。
         /// </summary>
         /// <param name="listener">不再接收事件的监听者。</param>
-        public void RemoveListener(IBattleEventListener listener)
+        public void RemoveListener(IBattleDomainEventListener listener)
         {
             _listeners.Remove(listener);
         }
 
         /// <summary>
-        /// 向当前监听者发布一次已经完成的伤害结算。
+        /// 按发生顺序记录领域事件并同步通知当前监听者。
         /// </summary>
-        /// <param name="result">本次伤害的实际结算结果。</param>
-        public void PublishDamageApplied(BattleDamageResult result)
+        /// <param name="domainEvent">需要记录和分发的领域事件。</param>
+        public void Publish(IBattleDomainEvent domainEvent)
         {
-            foreach (IBattleEventListener listener in _listeners.ToArray())
-                listener.OnDamageApplied(result);
+            _events.Add(domainEvent);
+            foreach (IBattleDomainEventListener listener in _listeners.ToArray())
+                listener.OnEvent(domainEvent);
         }
 
         /// <summary>
-        /// 向当前监听者发布一次已经完成的治疗结算。
+        /// 返回指定位置之后按发生顺序记录的领域事件副本。
         /// </summary>
-        /// <param name="result">本次治疗的实际结算结果。</param>
-        public void PublishHealingApplied(BattleHealResult result)
+        /// <param name="startIndex">需要开始读取的事件下标。</param>
+        /// <returns>本次执行范围内产生的领域事件。</returns>
+        public IReadOnlyList<IBattleDomainEvent> GetEventsSince(int startIndex)
         {
-            foreach (IBattleEventListener listener in _listeners.ToArray())
-                listener.OnHealingApplied(result);
-        }
-
-        /// <summary>
-        /// 向当前监听者发布一次已经完成的异常状态附加尝试。
-        /// </summary>
-        /// <param name="result">本次异常状态附加结果。</param>
-        public void PublishStatusApplied(StatusApplyResult result)
-        {
-            foreach (IBattleEventListener listener in _listeners.ToArray())
-                listener.OnStatusApplied(result);
-        }
-
-        /// <summary>
-        /// 向当前监听者发布完整战斗回合开始事件。
-        /// </summary>
-        /// <param name="context">当前回合的共享上下文。</param>
-        public void PublishTurnStarted(TurnContext context)
-        {
-            foreach (IBattleEventListener listener in _listeners.ToArray())
-                listener.OnTurnStarted(context);
-        }
-
-        /// <summary>
-        /// 向当前监听者发布完整战斗回合结束事件。
-        /// </summary>
-        /// <param name="context">当前回合的共享上下文。</param>
-        public void PublishTurnEnded(TurnContext context)
-        {
-            foreach (IBattleEventListener listener in _listeners.ToArray())
-                listener.OnTurnEnded(context);
+            return _events.GetRange(startIndex, _events.Count - startIndex);
         }
     }
 }

@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using Pokemon.Application;
-
 namespace Pokemon.Domain
 {
     // 战斗信息数据包，包含执行效果所需的全部信息
@@ -8,46 +5,9 @@ namespace Pokemon.Domain
     {
         public MonsterRuntime User;      // 使用者
         public MonsterRuntime Target;    // 目标
-        public List<Application.TurnStep> Steps; // 记录步骤的引用
-        public Application.IBattleOperations Operations;
-        public Application.IBattleRuntimeEffectRegistry RuntimeEffects;
-
-        // 【新增】：不论谁施法，这两个变量永远指向正确的 UI 阵营
-        public MonsterRuntime PlayerRef;
-        public MonsterRuntime EnemyRef;
-
-        /// <summary>
-        /// 添加一个 TurnStep 并自动填充双方 HP 快照，简化效果内部代码。
-        /// </summary>
-        /// <param name="message">战斗日志中显示的文字。</param>
-        /// <param name="animType">该步骤需要播放的动画类型。</param>
-        public void AddStep(string message, StepAnimType animType = StepAnimType.None)
-        {
-            Steps.Add(new Application.TurnStep
-            {
-                Message = message,
-                PlayerHpAfter = PlayerRef.CurrentHP,
-                EnemyHpAfter = EnemyRef.CurrentHP,
-                AnimType = animType
-            });
-        }
-
-        /// <summary>
-        /// 添加一个需要在攻击动画打击帧展示的效果步骤。
-        /// </summary>
-        /// <param name="message">打击帧触发时显示的战斗日志。</param>
-        /// <param name="animType">打击帧触发时播放的受击动画。</param>
-        public void AddImpactStep(string message, StepAnimType animType)
-        {
-            Steps.Add(new Application.TurnStep
-            {
-                Message = message,
-                PlayerHpAfter = PlayerRef.CurrentHP,
-                EnemyHpAfter = EnemyRef.CurrentHP,
-                AnimType = animType,
-                PresentAtAttackImpact = true
-            });
-        }
+        public IBattleOperations Operations;
+        public IBattleRuntimeEffectRegistry RuntimeEffects;
+        public IBattleDomainEventSink Events;
     }
 
     /// <summary>
@@ -58,7 +18,6 @@ namespace Pokemon.Domain
         public SkillData Skill;
         public DamageResult? Damage;
         public SkillActionResult ActionResult;
-        public bool IsPlayerAttacking;
         public IReactionSkillEffect IncomingReaction;
         public SkillReactionContext ReactionContext;
     }
@@ -72,13 +31,10 @@ namespace Pokemon.Domain
         public MonsterRuntime Opponent;
         public SkillData Skill;
         public SkillData OpponentSkill;
-        public List<Application.TurnStep> Steps;
-        public MonsterRuntime PlayerRef;
-        public MonsterRuntime EnemyRef;
-        public bool IsUserPlayer;
         public bool HasTriggered;
-        public Application.IBattleOperations Operations;
-        public Application.IBattleRuntimeEffectRegistry RuntimeEffects;
+        public IBattleOperations Operations;
+        public IBattleRuntimeEffectRegistry RuntimeEffects;
+        public IBattleDomainEventSink Events;
         public SkillActionResult ActionResult;
 
         private bool _useAnnounced;
@@ -90,22 +46,11 @@ namespace Pokemon.Domain
         {
             if (_useAnnounced) return;
             _useAnnounced = true;
-            AddStep($"{User.Species.DisplayName} 使用了 {Skill.DisplayName}！");
-        }
-
-        /// <summary>
-        /// 为反应技能添加一个带有双方当前 HP 快照的播放步骤。
-        /// </summary>
-        /// <param name="message">战斗日志中显示的文字。</param>
-        /// <param name="animType">该步骤需要播放的动画类型。</param>
-        public void AddStep(string message, StepAnimType animType = StepAnimType.None)
-        {
-            Steps.Add(new Application.TurnStep
+            Events.Publish(new SkillUseStartedEvent
             {
-                Message = message,
-                PlayerHpAfter = PlayerRef.CurrentHP,
-                EnemyHpAfter = EnemyRef.CurrentHP,
-                AnimType = animType
+                Actor = User,
+                Skill = Skill,
+                IsReactionAnnouncement = true
             });
         }
     }
@@ -144,7 +89,7 @@ namespace Pokemon.Domain
         bool CanProcess(SkillEffectContext context);
 
         /// <summary>
-        /// 执行效果并按需修改运行时数据、追加播放步骤。
+        /// 执行效果并按需修改运行时数据、发布领域事件。
         /// </summary>
         /// <param name="context">当前技能效果的执行上下文。</param>
         void Execute(SkillEffectContext context);

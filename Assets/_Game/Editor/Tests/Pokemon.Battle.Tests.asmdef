@@ -1,0 +1,26 @@
+{
+    "name": "Pokemon.Battle.Tests",
+    "rootNamespace": "Pokemon.Tests",
+    "references": [
+        "GUID:4536045efa654e72a1a8aaff5452a25a",
+        "GUID:b186ba67396c48d0a07b5a0b8f57e6f3",
+        "GUID:75c5523fca124707b0a204354b40806b",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

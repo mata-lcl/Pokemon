@@ -7,19 +7,19 @@ namespace Pokemon.Application
     /// </summary>
     public sealed class TurnStartedPhase : ITurnPhase
     {
-        private readonly IBattleEventDispatcher _eventDispatcher;
+        private readonly BattleRuntimeEffectController _runtimeEffectController;
         private readonly BattleEndResolver _battleEndResolver;
 
         /// <summary>
         /// 创建回合开始事件阶段。
         /// </summary>
-        /// <param name="eventDispatcher">负责发布回合生命周期事件的分发器。</param>
+        /// <param name="runtimeEffectController">负责通知跨回合效果进入回合开始节点的控制器。</param>
         /// <param name="battleEndResolver">事件处理完成后使用的胜负处理器。</param>
         public TurnStartedPhase(
-            IBattleEventDispatcher eventDispatcher,
+            BattleRuntimeEffectController runtimeEffectController,
             BattleEndResolver battleEndResolver)
         {
-            _eventDispatcher = eventDispatcher;
+            _runtimeEffectController = runtimeEffectController;
             _battleEndResolver = battleEndResolver;
         }
 
@@ -29,7 +29,7 @@ namespace Pokemon.Application
         /// <param name="context">当前回合的共享上下文。</param>
         public void Execute(TurnContext context)
         {
-            _eventDispatcher.PublishTurnStarted(context);
+            _runtimeEffectController.OnTurnStarted(context);
             _battleEndResolver.TryResolve(context);
         }
     }
@@ -129,22 +129,22 @@ namespace Pokemon.Application
     public sealed class EndOfTurnPhase : ITurnPhase
     {
         private readonly EndOfTurnResolver _endOfTurnResolver;
-        private readonly IBattleEventDispatcher _eventDispatcher;
+        private readonly BattleRuntimeEffectController _runtimeEffectController;
         private readonly BattleEndResolver _battleEndResolver;
 
         /// <summary>
         /// 创建回合末阶段。
         /// </summary>
         /// <param name="endOfTurnResolver">中毒、灼伤等持续效果处理器。</param>
-        /// <param name="eventDispatcher">负责发布回合生命周期事件的分发器。</param>
+        /// <param name="runtimeEffectController">负责通知跨回合效果进入回合结束节点的控制器。</param>
         /// <param name="battleEndResolver">状态结算后的胜负处理器。</param>
         public EndOfTurnPhase(
             EndOfTurnResolver endOfTurnResolver,
-            IBattleEventDispatcher eventDispatcher,
+            BattleRuntimeEffectController runtimeEffectController,
             BattleEndResolver battleEndResolver)
         {
             _endOfTurnResolver = endOfTurnResolver;
-            _eventDispatcher = eventDispatcher;
+            _runtimeEffectController = runtimeEffectController;
             _battleEndResolver = battleEndResolver;
         }
 
@@ -157,7 +157,7 @@ namespace Pokemon.Application
             _endOfTurnResolver.Resolve(context);
             if (_battleEndResolver.TryResolve(context)) return;
 
-            _eventDispatcher.PublishTurnEnded(context);
+            _runtimeEffectController.OnTurnEnded(context);
             _battleEndResolver.TryResolve(context);
         }
     }

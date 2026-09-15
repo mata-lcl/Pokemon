@@ -27,7 +27,9 @@ namespace Pokemon.Presentation
         [SerializeField] private bool testMode = false;
 
         private BattleSession _session;
+        private BattleCommandService _commandService;
         private BattleOutcomeService _outcomeService;
+        private BattlePlaybackPlanBuilder _playbackPlanBuilder;
         private bool _inputLocked;
 
         public MonsterRuntime CurrentPlayer => _session?.Player;
@@ -45,17 +47,32 @@ namespace Pokemon.Presentation
         private void InitBattle()
         {
             var sessionFactory = new BattleSessionFactory();
+            PokemonSpeciesData encounterSpecies = null;
+            int encounterLevel = 0;
+            if (SceneTransitionManager.Instance != null)
+            {
+                SceneTransitionManager.Instance.TryGetPendingEncounter(
+                    out encounterSpecies,
+                    out encounterLevel);
+            }
+
             _session = sessionFactory.Create(
                 playerSpecies,
                 enemySpecies,
                 typeChart,
                 defaultPokeball,
-                defaultPokeballCount);
+                defaultPokeballCount,
+                encounterSpecies,
+                encounterLevel);
+            _commandService = new BattleCommandService();
             _outcomeService = new BattleOutcomeService();
+            _playbackPlanBuilder = new BattlePlaybackPlanBuilder();
 
             uiController.OnSkillClicked += HandlePlayerAction;
             uiController.OnPlaybackModeClicked += HandlePlaybackModeClicked;
+            uiController.OnBagClicked += HandleBagClicked;
             uiController.OnItemClicked += HandleUseItem;      // 订阅道具点击
+            uiController.OnItemReorderRequested += HandleItemReorderRequested;
             uiController.OnRunClicked += HandleRunAttempt;    // 订阅逃跑点击
             uiController.OnPokemonClicked += HandlePokemonClicked;
             uiController.OnPokemonSwitchCancelled += HandlePokemonSwitchCancelled;
@@ -84,7 +101,9 @@ namespace Pokemon.Presentation
             {
                 uiController.OnSkillClicked -= HandlePlayerAction;
                 uiController.OnPlaybackModeClicked -= HandlePlaybackModeClicked;
+                uiController.OnBagClicked -= HandleBagClicked;
                 uiController.OnItemClicked -= HandleUseItem;
+                uiController.OnItemReorderRequested -= HandleItemReorderRequested;
                 uiController.OnRunClicked -= HandleRunAttempt;
                 uiController.OnPokemonClicked -= HandlePokemonClicked;
                 uiController.OnPokemonSwitchCancelled -= HandlePokemonSwitchCancelled;
@@ -113,6 +132,31 @@ namespace Pokemon.Presentation
         private void HandlePlaybackModeClicked()
         {
             turnPlayback.CyclePlaybackMode();
+        }
+
+        /// <summary>
+        /// 读取当前可使用道具并交给战斗界面显示。
+        /// </summary>
+        private void HandleBagClicked()
+        {
+            uiController.ShowBagPanel(
+                _commandService.GetUsableItemSnapshot());
+        }
+
+        /// <summary>
+        /// 通过应用层调整道具顺序，并使用最新快照刷新战斗背包。
+        /// </summary>
+        /// <param name="item">需要移动的道具。</param>
+        /// <param name="targetItem">作为目标位置的道具。</param>
+        private void HandleItemReorderRequested(
+            ItemData item,
+            ItemData targetItem)
+        {
+            if (_commandService.TryReorderItem(item, targetItem))
+            {
+                uiController.ShowBagPanel(
+                    _commandService.GetUsableItemSnapshot());
+            }
         }
 
         /// <summary>
@@ -146,7 +190,7 @@ namespace Pokemon.Presentation
         /// <param name="skillIndex">玩家技能列表中的下标。</param>
         private void HandlePlayerAction(int skillIndex)
         {
-            if (skillIndex < 0 || skillIndex >= _session.PlayerSkills.Count)
+            if (!_commandService.CanExecuteSkillTurn(_session, skillIndex))
                 return;
 
             if (!TryBeginInput())
@@ -155,15 +199,11 @@ namespace Pokemon.Presentation
             // 立即隐藏 UI，进入演算阶段
             uiController.HideAllPanels();
 
-            SkillData playerSkill = _session.PlayerSkills[skillIndex];
-            SkillData enemySkill = PickFirstAvailableSkill(_session.Enemy);
-
-            List<TurnStep> steps = _session.TurnUseCase.Execute(
-                _session.Player,
-                playerSkill,
-                _session.Enemy,
-                enemySkill);
-            StartCoroutine(SkillTurnRoutine(steps));
+            _commandService.TryExecuteSkillTurn(
+                _session,
+                skillIndex,
+                out TurnExecutionResult result);
+            StartCoroutine(SkillTurnRoutine(result));
         }
 
         // 逃跑处理
@@ -171,7 +211,8 @@ namespace Pokemon.Presentation
         {
             if (_session.BattleEnded || _inputLocked) return;
 
-            List<MonsterRuntime> switchable = PlayerParty.GetSwitchablePokemon();
+            IReadOnlyList<MonsterRuntime> switchable =
+                _commandService.GetSwitchablePokemon();
             if (switchable.Count == 0)
             {
                 uiController.SetLog("没有可替换的精灵！");
@@ -181,8 +222,8 @@ namespace Pokemon.Presentation
             _inputLocked = true;
             uiController.SetInteractable(false);
             uiController.ShowPokemonSelection(
-                PlayerParty.GetPartySnapshot(),
-                PlayerParty.ActivePokemon ?? _session.Player);
+                _commandService.GetPartySnapshot(),
+                _session.Player);
         }
 
         private void HandlePokemonSwitchCancelled()
@@ -198,11 +239,12 @@ namespace Pokemon.Presentation
             if (!_inputLocked || selectedPokemon == null || selectedPokemon == _session.Player)
                 return;
 
-            MonsterRuntime previousPokemon = _session.Player;
-            if (!PlayerParty.TrySetActivePokemon(selectedPokemon))
+            if (!_commandService.TrySwitchPokemon(
+                    _session,
+                    selectedPokemon,
+                    out MonsterRuntime previousPokemon))
                 return;
 
-            _session.SetPlayer(selectedPokemon);
             RefreshPlayerPresentation();
             uiController.HideAllPanels();
             StartCoroutine(PokemonSwitchTurnRoutine(previousPokemon));
@@ -226,27 +268,15 @@ namespace Pokemon.Presentation
             uiController.SetLog($"{previousPokemon.Species.DisplayName} 回到精灵球，{_session.Player.Species.DisplayName} 出战！");
             yield return turnPlayback.WaitForStep();
 
-            if (!_session.BattleEnded && !_session.Enemy.IsFainted)
+            if (_commandService.CanExecuteEnemyResponse(_session))
             {
                 uiController.SetLog($"野生的 {_session.Enemy.Species.DisplayName} 发起了攻击！");
                 yield return turnPlayback.WaitForStep();
 
-                SkillData enemySkill = PickFirstAvailableSkill(_session.Enemy);
-                List<TurnStep> counterAttackSteps = _session.TurnUseCase.ExecuteSingleAction(
-                    _session.Player,
-                    _session.Enemy,
-                    enemySkill,
-                    isPlayerAction: false);
-
-                if (!counterAttackSteps.Exists(step => step.IsBattleEnd))
-                {
-                    counterAttackSteps.AddRange(
-                        _session.TurnUseCase.ExecuteEndOfTurn(
-                            _session.Player,
-                            _session.Enemy));
-                }
-
-                yield return PlayTurnRoutine(counterAttackSteps);
+                _commandService.TryExecuteEnemyResponse(
+                    _session,
+                    out TurnExecutionResult counterAttackResult);
+                yield return PlayTurnRoutine(counterAttackResult);
             }
 
             if (!_session.BattleEnded)
@@ -258,10 +288,13 @@ namespace Pokemon.Presentation
             if (!TryBeginInput()) return;
             uiController.HideAllPanels();
 
-            // 简单逻辑：直接成功。复杂逻辑可以加随机率或速度判定
-            uiController.SetLog("逃跑成功！");
-            //Invoke(nameof(ReturnToWorld), 1.5f);
-            SceneTransitionManager.Instance.ReturnToWorld();
+            if (_commandService.TryEscape(_session))
+            {
+                // 简单逻辑：直接成功。复杂逻辑可以加随机率或速度判定
+                uiController.SetLog("逃跑成功！");
+                //Invoke(nameof(ReturnToWorld), 1.5f);
+                SceneTransitionManager.Instance.ReturnToWorld();
+            }
         }
 
         /// <summary>
@@ -273,27 +306,15 @@ namespace Pokemon.Presentation
             if (!TryBeginInput()) return;
             uiController.HideAllPanels();
 
-            if (item is IUsable usable)
+            if (_commandService.TryExecuteItem(
+                    _session,
+                    item,
+                    out ItemUseExecutionResult result))
             {
-                var context = new EffectContext
+                if (result.Succeeded)
                 {
-                    User = _session.Player,
-                    Target = _session.Enemy,
-                    Steps = new List<TurnStep>(),
-                    Operations = _session.TurnUseCase.Operations,
-                    RuntimeEffects = _session.TurnUseCase.RuntimeEffects,
-                    PlayerRef = _session.Player,
-                    EnemyRef = _session.Enemy
-                };
-
-                if (usable.CanUse(context))
-                {
-                    usable.OnUse(context);
-
-                    if (usable.IsConsumable) PlayerParty.RemoveItem(item, 1);
-
                     // 执行道具流程
-                    StartCoroutine(ItemTurnRoutine(context.Steps));
+                    StartCoroutine(ItemTurnRoutine(result.BattleResult));
                 }
                 else
                 {
@@ -312,22 +333,19 @@ namespace Pokemon.Presentation
         /// <summary>
         /// 播放道具步骤、处理捕捉结果、执行敌方反击和回合末结算。
         /// </summary>
-        /// <param name="itemSteps">道具使用产生的播放步骤。</param>
-        private IEnumerator ItemTurnRoutine(List<TurnStep> itemSteps)
+        /// <param name="itemResult">道具使用产生的业务结果和领域事件。</param>
+        private IEnumerator ItemTurnRoutine(TurnExecutionResult itemResult)
         {
             uiController.SetInteractable(false);
 
             // 1. 播放道具使用的动画和文字信息
-            yield return PlayTurnRoutine(itemSteps);
+            yield return PlayTurnRoutine(itemResult);
 
             // 2. 检查是否捕捉成功
-            if (itemSteps.Exists(step => step.CaughtSuccess))
+            if (itemResult.Conclusion == BattleConclusion.Captured)
             {
                 // 将精灵加入背包
-                PlayerParty.TryAddMonster(new MonsterRuntime(
-                    _session.Enemy.Species,
-                    _session.Enemy.Level));
-                _session.BattleEnded = true;
+                _commandService.CompleteCapture(_session);
 
                 uiController.SetLog($"{_session.Enemy.Species.DisplayName} 加入了背包！");
                 yield return turnPlayback.WaitForStep();
@@ -336,28 +354,15 @@ namespace Pokemon.Presentation
             }
 
             // 3. 如果战斗没结束且敌人没倒下，敌人进行反击
-            if (!_session.BattleEnded && !_session.Enemy.IsFainted)
+            if (_commandService.CanExecuteEnemyResponse(_session))
             {
                 uiController.SetLog($"野生的 {_session.Enemy.Species.DisplayName} 趁机发起了攻击！");
                 yield return turnPlayback.WaitForStep();
 
-                SkillData enemySkill = PickFirstAvailableSkill(_session.Enemy);
-                List<TurnStep> counterAttackSteps = _session.TurnUseCase.ExecuteSingleAction(
-                    _session.Player,
-                    _session.Enemy,
-                    enemySkill,
-                    isPlayerAction: false);
-
-                // 敌方行动没有结束战斗时，继续结算中毒、灼伤等回合末效果。
-                if (!counterAttackSteps.Exists(step => step.IsBattleEnd))
-                {
-                    counterAttackSteps.AddRange(
-                        _session.TurnUseCase.ExecuteEndOfTurn(
-                            _session.Player,
-                            _session.Enemy));
-                }
-
-                yield return PlayTurnRoutine(counterAttackSteps);
+                _commandService.TryExecuteEnemyResponse(
+                    _session,
+                    out TurnExecutionResult counterAttackResult);
+                yield return PlayTurnRoutine(counterAttackResult);
             }
 
             if (!_session.BattleEnded)
@@ -367,43 +372,47 @@ namespace Pokemon.Presentation
         /// <summary>
         /// 播放普通技能回合的全部步骤，并在完整回合结束后重新开放操作。
         /// </summary>
-        /// <param name="steps">回合执行器生成的播放步骤。</param>
-        private IEnumerator SkillTurnRoutine(List<TurnStep> steps)
+        /// <param name="result">回合执行器生成的业务结果和领域事件。</param>
+        private IEnumerator SkillTurnRoutine(TurnExecutionResult result)
         {
-            yield return PlayTurnRoutine(steps);
+            yield return PlayTurnRoutine(result);
 
             if (!_session.BattleEnded)
                 FinishTurn();
         }
 
         /// <summary>
-        /// 播放传入的步骤，并在发现战斗结束步骤时启动对应结算。
+        /// 将领域事件转换为播放步骤，并根据业务结果启动对应结算。
         /// </summary>
-        /// <param name="steps">需要依次显示和播放的步骤。</param>
-        private IEnumerator PlayTurnRoutine(List<TurnStep> steps)
+        /// <param name="result">需要播放并处理的战斗执行结果。</param>
+        private IEnumerator PlayTurnRoutine(TurnExecutionResult result)
         {
+            List<BattlePlaybackStep> steps = _playbackPlanBuilder.Build(
+                result,
+                _session.Player,
+                _session.Enemy);
             yield return turnPlayback.PlaySteps(steps);
 
-            if (!TryGetBattleEndStep(steps, out TurnStep battleEndStep))
+            if (result.Conclusion == BattleConclusion.Ongoing)
                 yield break;
 
             _session.BattleEnded = true;
             uiController.SetInteractable(false);
 
             // 捕捉成功：直接跳出，由 ItemTurnRoutine 处理后续逻辑
-            if (battleEndStep.CaughtSuccess)
+            if (result.Conclusion == BattleConclusion.Captured)
                 yield break;
 
-            yield return ResolveBattleEndRoutine(battleEndStep);
+            yield return ResolveBattleEndRoutine(result.Conclusion);
         }
 
         /// <summary>
         /// 处理战斗胜负结算、结算文本和离开战斗场景的流程。
         /// </summary>
-        /// <param name="battleEndStep">描述本场战斗胜负结果的结束步骤。</param>
-        private IEnumerator ResolveBattleEndRoutine(TurnStep battleEndStep)
+        /// <param name="conclusion">应用层已经确定的战斗结论。</param>
+        private IEnumerator ResolveBattleEndRoutine(BattleConclusion conclusion)
         {
-            if (battleEndStep.PlayerWon)
+            if (conclusion == BattleConclusion.PlayerVictory)
             {
                 BattleOutcome outcome = _outcomeService.ResolveVictory(
                     _session.Player,
@@ -424,7 +433,7 @@ namespace Pokemon.Presentation
             }
             else
             {
-                // --- 修正逻辑：只有 PlayerWon 为 false 才是战败 ---
+                // --- 修正逻辑：只有应用层明确返回玩家胜利时才执行胜利结算 ---
                 uiController.SetLog("你眼前一黑...");
                 yield return turnPlayback.WaitForStep();
             }
@@ -445,28 +454,6 @@ namespace Pokemon.Presentation
         }
 
         /// <summary>
-        /// 从一组回合步骤中查找首个战斗结束步骤。
-        /// </summary>
-        /// <param name="steps">需要检查的回合步骤。</param>
-        /// <param name="battleEndStep">找到的首个战斗结束步骤。</param>
-        /// <returns>找到战斗结束步骤时返回 true。</returns>
-        private static bool TryGetBattleEndStep(
-            IReadOnlyList<TurnStep> steps,
-            out TurnStep battleEndStep)
-        {
-            for (int i = 0; i < steps.Count; i++)
-            {
-                if (!steps[i].IsBattleEnd) continue;
-
-                battleEndStep = steps[i];
-                return true;
-            }
-
-            battleEndStep = default;
-            return false;
-        }
-
-        /// <summary>
         /// 在完整回合播放结束后刷新菜单并释放输入锁。
         /// </summary>
         private void FinishTurn()
@@ -484,19 +471,5 @@ namespace Pokemon.Presentation
             UnlockInput();
         }
 
-        /// <summary>
-        /// 返回敌方当前第一个仍有 PP 的技能。
-        /// </summary>
-        /// <param name="monster">需要选择技能的敌方宝可梦。</param>
-        /// <returns>第一个可用技能；没有可用技能时返回 null。</returns>
-        private SkillData PickFirstAvailableSkill(MonsterRuntime monster)
-        {
-            foreach (var pair in monster.CurrentPP)
-            {
-                if (pair.Key != null && pair.Value > 0) return pair.Key;
-            }
-
-            return null;
-        }
     }
 }

@@ -85,9 +85,10 @@ namespace Pokemon.Application
         public ITurnAction EnemyAction { get; }
         public IBattleOperations Operations { get; }
         public IBattleRuntimeEffectRegistry RuntimeEffects { get; }
+        public IBattleDomainEventSink Events { get; }
         public List<ITurnAction> OrderedActions { get; } = new List<ITurnAction>();
-        public List<TurnStep> Steps { get; } = new List<TurnStep>();
-        public bool IsBattleEnded { get; set; }
+        public BattleConclusion Conclusion { get; set; }
+        public bool IsBattleEnded => Conclusion != BattleConclusion.Ongoing;
 
         /// <summary>
         /// 创建本回合的共享上下文。
@@ -96,6 +97,7 @@ namespace Pokemon.Application
         /// <param name="enemy">当前敌方出战宝可梦。</param>
         /// <param name="operations">本场战斗统一使用的状态修改入口。</param>
         /// <param name="runtimeEffects">本场战斗的跨回合效果注册入口。</param>
+        /// <param name="events">本次执行使用的领域事件发布入口。</param>
         /// <param name="playerAction">玩家本回合的技能行动；单行动流程中可以为空。</param>
         /// <param name="enemyAction">敌方本回合的技能行动；单行动流程中可以为空。</param>
         public TurnContext(
@@ -103,6 +105,7 @@ namespace Pokemon.Application
             MonsterRuntime enemy,
             IBattleOperations operations,
             IBattleRuntimeEffectRegistry runtimeEffects,
+            IBattleDomainEventSink events,
             ITurnAction playerAction = null,
             ITurnAction enemyAction = null)
         {
@@ -110,45 +113,9 @@ namespace Pokemon.Application
             Enemy = enemy;
             Operations = operations;
             RuntimeEffects = runtimeEffects;
+            Events = events;
             PlayerAction = playerAction;
             EnemyAction = enemyAction;
-        }
-
-        /// <summary>
-        /// 添加一个带有双方当前 HP 快照的播放步骤。
-        /// </summary>
-        /// <param name="message">战斗日志中显示的文字。</param>
-        /// <param name="animType">该步骤需要播放的动画类型。</param>
-        public void AddStep(string message, StepAnimType animType = StepAnimType.None)
-        {
-            Steps.Add(new TurnStep
-            {
-                Message = message,
-                PlayerHpAfter = Player.CurrentHP,
-                EnemyHpAfter = Enemy.CurrentHP,
-                AnimType = animType
-            });
-        }
-
-        /// <summary>
-        /// 添加技能施放步骤，并记录表现层选择攻击动画所需的技能分类。
-        /// </summary>
-        /// <param name="message">战斗日志中显示的文字。</param>
-        /// <param name="animType">该步骤需要播放的攻击方动画。</param>
-        /// <param name="skillCategory">技能对应的物理、特殊或状态分类。</param>
-        public void AddSkillStep(
-            string message,
-            StepAnimType animType,
-            SkillCategory skillCategory)
-        {
-            Steps.Add(new TurnStep
-            {
-                Message = message,
-                PlayerHpAfter = Player.CurrentHP,
-                EnemyHpAfter = Enemy.CurrentHP,
-                AnimType = animType,
-                SkillCategory = skillCategory
-            });
         }
     }
 

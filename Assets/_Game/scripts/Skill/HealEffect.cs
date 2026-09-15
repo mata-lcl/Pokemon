@@ -12,18 +12,15 @@ namespace Pokemon.Domain.Effects
 
         public override void Execute(SkillEffectContext context)
         {
-            Application.BattleHealResult result =
-                context.Operations.Heal(new Application.BattleHealRequest
+            context.Operations.Heal(new BattleHealRequest
                 {
                     Source = context.User,
                     Target = context.User,
                     Skill = context.Skill,
                     Amount = _amount,
-                    Cause = Application.BattleHealCause.Skill,
+                    Cause = BattleHealCause.Skill,
                     Origin = this
                 });
-
-            context.AddStep($"{context.User.Species.DisplayName} 恢复了 {result.AppliedHealing} 点生命值！");
         }
     }
 }

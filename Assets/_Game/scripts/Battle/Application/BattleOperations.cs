@@ -3,126 +3,6 @@ using System;
 
 namespace Pokemon.Application
 {
-    public enum BattleDamageCause
-    {
-        Skill,
-        Status,
-        Recoil,
-        Reaction,
-        RuntimeEffect,
-        Field,
-        Item
-    }
-
-    public enum BattleHealCause
-    {
-        Skill,
-        Item,
-        RuntimeEffect,
-        Field
-    }
-
-    public enum BattleStatusCause
-    {
-        Skill,
-        Item,
-        RuntimeEffect,
-        Field
-    }
-
-    public sealed class BattleDamageRequest
-    {
-        public MonsterRuntime Source { get; set; }
-        public MonsterRuntime Target { get; set; }
-        public SkillData Skill { get; set; }
-        public int Amount { get; set; }
-        public BattleDamageCause Cause { get; set; }
-        public object Origin { get; set; }
-    }
-
-    public sealed class BattleDamageResult
-    {
-        public MonsterRuntime Source { get; internal set; }
-        public MonsterRuntime Target { get; internal set; }
-        public SkillData Skill { get; internal set; }
-        public int RequestedAmount { get; internal set; }
-        public BattleDamageCause Cause { get; internal set; }
-        public object Origin { get; internal set; }
-        public int PreviousHP { get; internal set; }
-        public int CurrentHP { get; internal set; }
-        public int AppliedDamage { get; internal set; }
-    }
-
-    public sealed class BattleHealRequest
-    {
-        public MonsterRuntime Source { get; set; }
-        public MonsterRuntime Target { get; set; }
-        public SkillData Skill { get; set; }
-        public int Amount { get; set; }
-        public BattleHealCause Cause { get; set; }
-        public object Origin { get; set; }
-    }
-
-    public sealed class BattleHealResult
-    {
-        public MonsterRuntime Source { get; internal set; }
-        public MonsterRuntime Target { get; internal set; }
-        public SkillData Skill { get; internal set; }
-        public int RequestedAmount { get; internal set; }
-        public BattleHealCause Cause { get; internal set; }
-        public object Origin { get; internal set; }
-        public int PreviousHP { get; internal set; }
-        public int CurrentHP { get; internal set; }
-        public int AppliedHealing { get; internal set; }
-    }
-
-    public sealed class StatusApplyRequest
-    {
-        public MonsterRuntime Source { get; set; }
-        public MonsterRuntime Target { get; set; }
-        public SkillData Skill { get; set; }
-        public StatusCondition Status { get; set; }
-        public BattleStatusCause Cause { get; set; }
-        public object Origin { get; set; }
-    }
-
-    public sealed class StatusApplyResult
-    {
-        public MonsterRuntime Source { get; internal set; }
-        public MonsterRuntime Target { get; internal set; }
-        public SkillData Skill { get; internal set; }
-        public StatusCondition RequestedStatus { get; internal set; }
-        public BattleStatusCause Cause { get; internal set; }
-        public object Origin { get; internal set; }
-        public StatusCondition PreviousStatus { get; internal set; }
-        public StatusCondition CurrentStatus { get; internal set; }
-        public bool Applied { get; internal set; }
-    }
-
-    public interface IBattleOperations
-    {
-        /// <summary>
-        /// 通过统一战斗入口对目标造成伤害并返回实际扣除结果。
-        /// </summary>
-        /// <param name="request">伤害来源、目标、数值和原因。</param>
-        /// <returns>目标扣血前后状态及实际伤害。</returns>
-        BattleDamageResult DealDamage(BattleDamageRequest request);
-
-        /// <summary>
-        /// 通过统一战斗入口治疗目标并返回实际恢复结果。
-        /// </summary>
-        /// <param name="request">治疗来源、目标、数值和原因。</param>
-        /// <returns>目标治疗前后状态及实际恢复量。</returns>
-        BattleHealResult Heal(BattleHealRequest request);
-
-        /// <summary>
-        /// 通过统一战斗入口为目标附加异常状态。
-        /// </summary>
-        /// <param name="request">状态来源、目标、状态类型和原因。</param>
-        /// <returns>附加前后状态及是否成功。</returns>
-        StatusApplyResult ApplyStatus(StatusApplyRequest request);
-    }
-
     public sealed class BattleOperations : IBattleOperations
     {
         private readonly IBattleEventDispatcher _eventDispatcher;
@@ -166,7 +46,7 @@ namespace Pokemon.Application
                 CurrentHP = request.Target.CurrentHP,
                 AppliedDamage = previousHP - request.Target.CurrentHP
             };
-            _eventDispatcher.PublishDamageApplied(result);
+            _eventDispatcher.Publish(new DamageAppliedEvent { Result = result });
             return result;
         }
 
@@ -192,7 +72,7 @@ namespace Pokemon.Application
                 CurrentHP = request.Target.CurrentHP,
                 AppliedHealing = request.Target.CurrentHP - previousHP
             };
-            _eventDispatcher.PublishHealingApplied(result);
+            _eventDispatcher.Publish(new HealingAppliedEvent { Result = result });
             return result;
         }
 
@@ -217,7 +97,7 @@ namespace Pokemon.Application
                 CurrentStatus = request.Target.CurrentStatus,
                 Applied = applied
             };
-            _eventDispatcher.PublishStatusApplied(result);
+            _eventDispatcher.Publish(new StatusAppliedEvent { Result = result });
             return result;
         }
     }

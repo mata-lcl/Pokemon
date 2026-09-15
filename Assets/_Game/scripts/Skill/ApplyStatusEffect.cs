@@ -14,21 +14,16 @@ namespace Pokemon.Domain.Effects
 
         public override void Execute(SkillEffectContext context)
         {
-            Application.StatusApplyResult result =
-                context.Operations.ApplyStatus(new Application.StatusApplyRequest
+            StatusApplyResult result =
+                context.Operations.ApplyStatus(new StatusApplyRequest
                 {
                     Source = context.User,
                     Target = context.Target,
                     Skill = context.Skill,
                     Status = StatusToApply,
-                    Cause = Application.BattleStatusCause.Skill,
+                    Cause = BattleStatusCause.Skill,
                     Origin = this
                 });
-
-            if (result.Applied)
-            {
-                context.AddStep($"{context.Target.Species.DisplayName}{StatusToApply.ToChineseName()} 了！");
-            }
         }
     }
 }

@@ -11,6 +11,8 @@ namespace Pokemon.Domain
             new List<QuestRuntimeData>();
 
         public static event Action Changed;
+        // 应用层监听任务完成事实，并负责产生玩家资产副作用。
+        public static event Action<QuestDefinition> QuestCompleted;
 
         /// <summary>
         /// 注册当前游戏使用的任务配置，并为新任务建立初始状态。
@@ -106,7 +108,7 @@ namespace Pokemon.Domain
         }
 
         /// <summary>
-        /// 提交已达成全部目标的任务并发放奖励。
+        /// 提交已达成全部目标的任务并发布任务完成事件。
         /// </summary>
         /// <param name="definition">需要提交的任务配置。</param>
         public static bool SubmitQuest(QuestDefinition definition)
@@ -116,7 +118,7 @@ namespace Pokemon.Domain
                 return false;
 
             runtimeData.state = QuestState.Completed;
-            GrantRewards(definition);
+            QuestCompleted?.Invoke(definition);
             RefreshAvailableQuests();
             Changed?.Invoke();
             return true;
@@ -274,22 +276,6 @@ namespace Pokemon.Domain
                     return false;
             }
             return true;
-        }
-
-        /// <summary>
-        /// 向玩家发放指定任务配置的全部奖励。
-        /// </summary>
-        /// <param name="definition">包含奖励内容的任务配置。</param>
-        private static void GrantRewards(QuestDefinition definition)
-        {
-            for (int i = 0; i < definition.Rewards.Count; i++)
-            {
-                QuestRewardDefinition reward = definition.Rewards[i];
-                if (reward.Type == QuestRewardType.Money)
-                    PlayerParty.AddMoney(reward.Amount);
-                else
-                    PlayerParty.AddItem(reward.Item, reward.Amount);
-            }
         }
 
         /// <summary>

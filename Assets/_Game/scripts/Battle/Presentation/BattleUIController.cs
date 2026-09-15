@@ -77,6 +77,8 @@ namespace Pokemon.Presentation
 
         public event Action<int> OnSkillClicked;
         public event Action<ItemData> OnItemClicked;
+        public event Action OnBagClicked;
+        public event Action<ItemData, ItemData> OnItemReorderRequested;
         public event Action OnRunClicked;
         public event Action OnPlaybackModeClicked;
         public event Action OnPokemonClicked;
@@ -94,7 +96,7 @@ namespace Pokemon.Presentation
             skillTooltip.Hide();
             if (fightBtn != null) fightBtn.onClick.AddListener(() => ShowSubPanel(skillPanel));
             if (bagBtn != null)
-                bagBtn.onClick.AddListener(ShowBagPanel);
+                bagBtn.onClick.AddListener(HandleBagClicked);
             if (skillBackBtn != null) skillBackBtn.onClick.AddListener(() => ShowSubPanel(mainActionPanel));
             if (BagBackBtn != null) BagBackBtn.onClick.AddListener(() => ShowSubPanel(mainActionPanel));
             if (runBtn != null) runBtn.onClick.AddListener(() => OnRunClicked?.Invoke());
@@ -177,12 +179,24 @@ namespace Pokemon.Presentation
                 pokemonCollectionPanel.Hide();
         }
 
-        private void ShowBagPanel()
+        /// <summary>
+        /// 通知战斗协调器读取并显示最新背包数据。
+        /// </summary>
+        private void HandleBagClicked()
+        {
+            OnBagClicked?.Invoke();
+        }
+
+        /// <summary>
+        /// 使用应用层提供的道具快照打开战斗背包界面。
+        /// </summary>
+        /// <param name="items">保持当前顺序的可使用道具及数量。</param>
+        public void ShowBagPanel(IReadOnlyList<InventoryItemStack> items)
         {
             if (bagPanel == null)
             {
                 // Fall back to the legacy list until the new prefab is assigned.
-                RefreshItemList();
+                RefreshItemList(items);
                 ShowSubPanel(itemPanel);
                 return;
             }
@@ -194,7 +208,7 @@ namespace Pokemon.Presentation
                 pokemonCollectionPanel.Hide();
 
             bagPanel.gameObject.SetActive(true);
-            bagPanel.Refresh(PlayerParty.GetUsableItemSnapshot());
+            bagPanel.Refresh(items);
         }
 
         private void HandleBagUseConfirmed(ItemData item)
@@ -203,14 +217,13 @@ namespace Pokemon.Presentation
         }
 
         /// <summary>
-        /// 调用数据层方法调整战斗背包中的道具顺序并刷新显示。
+        /// 将战斗背包中的道具顺序调整请求转发给战斗协调器。
         /// </summary>
         /// <param name="item">需要移动的道具。</param>
         /// <param name="targetItem">作为目标位置的道具。</param>
         private void HandleItemReorderRequested(ItemData item, ItemData targetItem)
         {
-            if (PlayerParty.TryReorderItem(item, targetItem) && bagPanel != null)
-                bagPanel.Refresh(PlayerParty.GetUsableItemSnapshot());
+            OnItemReorderRequested?.Invoke(item, targetItem);
         }
 
         private void HandleBagCancelled()
@@ -238,7 +251,7 @@ namespace Pokemon.Presentation
 
         public void ShowPokemonSelection(IReadOnlyList<MonsterRuntime> pokemon)
         {
-            ShowPokemonSelection(pokemon, PlayerParty.ActivePokemon);
+            ShowPokemonSelection(pokemon, null);
         }
 
         public void ShowPokemonSelection(
@@ -321,9 +334,19 @@ namespace Pokemon.Presentation
 
         public void ItemButtonCallback(ItemData item) => OnItemClicked?.Invoke(item);
 
-        public void RefreshItemList()
+        /// <summary>
+        /// 使用应用层提供的道具快照刷新旧版战斗道具按钮。
+        /// </summary>
+        /// <param name="items">保持当前顺序的可使用道具及数量。</param>
+        public void RefreshItemList(IReadOnlyList<InventoryItemStack> items)
         {
-            _cachedItems = PlayerParty.GetUsableItems();
+            _cachedItems.Clear();
+            if (items != null)
+            {
+                for (int i = 0; i < items.Count; i++)
+                    _cachedItems.Add(items[i].Item);
+            }
+
             for (int i = 0; i < itemButtons.Length; i++)
             {
                 if (itemButtons[i] == null) continue;
@@ -331,7 +354,7 @@ namespace Pokemon.Presentation
                 itemButtons[i].gameObject.SetActive(available);
                 if (!available) continue;
                 ItemData item = _cachedItems[i];
-                int count = PlayerParty.GetItemCount(item);
+                int count = items[i].Count;
                 itemButtons[i].interactable = count > 0;
                 if (i < itemBtnTexts.Length && itemBtnTexts[i] != null)
                     itemBtnTexts[i].text = $"{item.DisplayName} x{count}";

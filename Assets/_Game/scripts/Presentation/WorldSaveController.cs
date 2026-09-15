@@ -1,6 +1,7 @@
 using Pokemon.Application;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Pokemon.Presentation
@@ -86,7 +87,10 @@ namespace Pokemon.Presentation
         /// <param name="slotIndex">从零开始的存档栏索引。</param>
         private void SaveToSlot(int slotIndex)
         {
-            SaveGameService.Save(slotIndex, playerTransform.position);
+            SaveGameService.Save(
+                slotIndex,
+                SceneManager.GetActiveScene().name,
+                playerTransform.position);
             statusText.text = $"已保存到存档栏 {slotIndex + 1}";
             RefreshSlots();
         }

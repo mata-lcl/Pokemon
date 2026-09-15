@@ -1,5 +1,3 @@
-using Pokemon.Application;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Pokemon.Domain
@@ -13,7 +11,7 @@ namespace Pokemon.Domain
         [SerializeField] private float hpThreshold = 0.333f; // 触发的血量阀值（1/3）
         [SerializeField] private float multiplier = 1.5f;    // 加成倍率  
 
-        public override float GetDamageMultiplier(MonsterRuntime owner, MonsterRuntime opponent, SkillData skill, List<TurnStep> steps)
+        public override float GetDamageMultiplier(MonsterRuntime owner, MonsterRuntime opponent, SkillData skill)
         {
             // 1. 检查属性
             if (skill.Type != targetType) return 1.0f;
@@ -50,19 +48,19 @@ namespace Pokemon.Domain
         }
 
         // 只有自己知道什么时候该弹窗
-        public override bool CheckAndProcessNotification(MonsterRuntime owner, List<TurnStep> steps, MonsterRuntime playerRef, MonsterRuntime enemyRef)
+        public override bool CheckAndProcessNotification(
+            MonsterRuntime owner,
+            IBattleDomainEventSink events)
         {
             // 如果血量低于 1/3 且未倒下
             if (owner.CurrentHP <= owner.MaxHP * hpThreshold && !owner.HasTriggeredCrisisAbility)
             {
                 // 这里可以加一个标记防止重复弹出，例如 owner.HasAbilityTriggered
                 owner.HasTriggeredCrisisAbility = true; // 标记本场战斗已触发过，防止刷屏
-                steps.Add(new TurnStep
+                events.Publish(new AbilityActivatedEvent
                 {
-                    Message = $"{owner.Species.DisplayName} 的 {AbilityName} 发动了！",
-                    PlayerHpAfter = playerRef.CurrentHP,
-                    EnemyHpAfter = enemyRef.CurrentHP,
-                    AnimType = StepAnimType.None
+                    Owner = owner,
+                    Ability = this
                 });
                 return true;
             }

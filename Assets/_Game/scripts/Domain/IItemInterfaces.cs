@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Pokemon.Domain
 {
     // 主动使用接口：用于玩家在战斗菜单或背包中点击使用
@@ -19,6 +17,6 @@ namespace Pokemon.Domain
         // 攻击前钩子：用于威力加成
         void OnBeforeAttack(EffectContext context);
         // 回合结束钩子：用于每回合回血等
-        void OnTurnEnd(MonsterRuntime owner, List<Application.TurnStep> steps);
+        void OnTurnEnd(MonsterRuntime owner, EffectContext context);
     }
 }

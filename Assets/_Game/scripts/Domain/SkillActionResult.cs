@@ -1,8 +1,10 @@
-using Pokemon.Domain;
 using System.Collections.Generic;
 
-namespace Pokemon.Application
+namespace Pokemon.Domain
 {
+    /// <summary>
+    /// 汇总一次技能行动通过统一操作入口产生的实际结算结果。
+    /// </summary>
     public sealed class SkillActionResult
     {
         private readonly List<BattleDamageResult> _damageResults =

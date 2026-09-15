@@ -13,13 +13,17 @@ namespace Pokemon.Application
         /// <param name="typeChart">战斗伤害计算使用的属性克制表。</param>
         /// <param name="defaultPokeball">首次进入战斗时发放的默认精灵球。</param>
         /// <param name="defaultPokeballCount">默认精灵球的发放数量。</param>
+        /// <param name="encounterSpecies">场景层已经选定的遭遇精灵；为空时使用默认敌方配置。</param>
+        /// <param name="encounterLevel">场景层已经选定的遭遇等级；无有效遭遇时传入 0。</param>
         /// <returns>完成初始化的战斗会话。</returns>
         public BattleSession Create(
             PokemonSpeciesData playerSpecies,
             PokemonSpeciesData enemySpecies,
             TypeChartData typeChart,
             ItemData defaultPokeball,
-            int defaultPokeballCount)
+            int defaultPokeballCount,
+            PokemonSpeciesData encounterSpecies = null,
+            int encounterLevel = 0)
         {
             // 初始化默认道具（仅首次）
             if (defaultPokeball != null && !PlayerParty.HasItem(defaultPokeball))
@@ -35,16 +39,12 @@ namespace Pokemon.Application
             PlayerParty.EnsureActivePokemon();
             MonsterRuntime player = PlayerParty.ActivePokemon;
 
-            PokemonSpeciesData selectedEnemySpecies = enemySpecies;
-            int selectedEnemyLevel = Random.Range(3, 7);
-            if (SceneTransitionManager.Instance != null &&
-                SceneTransitionManager.Instance.TryGetPendingEncounter(
-                    out PokemonSpeciesData encounterSpecies,
-                    out int encounterLevel))
-            {
-                selectedEnemySpecies = encounterSpecies;
-                selectedEnemyLevel = encounterLevel;
-            }
+            PokemonSpeciesData selectedEnemySpecies = encounterSpecies != null
+                ? encounterSpecies
+                : enemySpecies;
+            int selectedEnemyLevel = encounterSpecies != null && encounterLevel > 0
+                ? encounterLevel
+                : Random.Range(3, 7);
 
             var enemy = new MonsterRuntime(selectedEnemySpecies, selectedEnemyLevel);
             var turnUseCase = new ExecuteTurnUseCase(new DamageCalculator(typeChart));
