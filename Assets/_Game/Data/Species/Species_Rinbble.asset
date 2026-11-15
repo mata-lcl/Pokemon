@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77c98b9a2c1cba34e85a98b0a7de8642, type: 3}
+  m_Name: Species_Rinbble
+  m_EditorClassIdentifier: 
+  ID: 1
+  DisplayName: "\u6DA6\u6CE2\u6C6A"
+  PrimaryType: 2
+  SecondaryType: 0
+  primaryTypeIcon: {fileID: 21300000, guid: f0ef81fd375cf2243ae9264d62930acd, type: 3}
+  secondaryTypeIcon: {fileID: 0}
+  BaseHP: 54
+  BaseAttack: 38
+  BaseDefense: 44
+  BaseSpeed: 65
+  BaseSpAttack: 65
+  BaseSpDefense: 44
+  BaseExpYield: 50
+  EvYieldHP: 0
+  EvYieldAttack: 0
+  EvYieldDefense: 0
+  EvYieldSpeed: 0
+  EvYieldSpAttack: 1
+  EvYieldSpDefense: 0
+  Abilities:
+  - {fileID: 11400000, guid: 459d01aaa16898b47b3a1d0cb0a2d6e5, type: 2}
+  InitialSkills:
+  - {fileID: 11400000, guid: 3bded21878e77b34ebb2480677a9457d, type: 2}
+  - {fileID: 11400000, guid: 54304e8ee56b56941ae9ea708a7e1c5d, type: 2}
+  BattleSprite: {fileID: 21300000, guid: f6bef21cdf5eec44ba6e36de00fdb434, type: 3}
+  CatchRate: 45

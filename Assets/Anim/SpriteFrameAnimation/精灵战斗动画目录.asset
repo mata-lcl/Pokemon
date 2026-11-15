@@ -15,3 +15,5 @@ MonoBehaviour:
   entries:
   - species: {fileID: 11400000, guid: 9203c7cc45ee05b48812114fd28074a5, type: 2}
     animationProfile: {fileID: 11400000, guid: c5c9aa0d4ca45e4458d48191ab587dc4, type: 2}
+  - species: {fileID: 11400000, guid: 7b32cb9db754528479f62466a7c81e0e, type: 2}
+    animationProfile: {fileID: 11400000, guid: b425c944e5839cd42873c9713104ffdf, type: 2}

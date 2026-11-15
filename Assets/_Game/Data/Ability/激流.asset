@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60fb397a1332e2e4a92ff4b8573f896a, type: 3}
+  m_Name: "\u6FC0\u6D41"
+  m_EditorClassIdentifier: 
+  Id: 1
+  AbilityName: "\u6FC0\u6D41"
+  Description: "\u8840\u91CF\u4F4E\u4E8E1/3\u65F6\uFF0C\u6C34\u5C5E\u6027\u6280\u80FD\u4F24\u5BB3\u63D0\u9AD850%"
+  targetType: 2
+  hpThreshold: 0.333
+  multiplier: 1.5
