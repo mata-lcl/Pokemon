@@ -13,11 +13,30 @@ MonoBehaviour:
   m_Name: "Rinbble_\u7CBE\u7075\u52A8\u753B\u914D\u7F6E_\u5F85\u673A"
   m_EditorClassIdentifier: 
   frames:
-  - {fileID: 21300000, guid: 1a90ea76638b6474b9677746d872342a, type: 3}
-  - {fileID: 21300000, guid: 977e0c99ec447d8468b1d656a0125cbd, type: 3}
-  - {fileID: 21300000, guid: bd1e552bbd5d70147aae20b9bd27835e, type: 3}
-  - {fileID: 21300000, guid: 37b7e6cc29895c34f94533b24a53b9a0, type: 3}
-  - {fileID: 21300000, guid: 0411e73fac1c64841945bce242db9e6c, type: 3}
+  - {fileID: 21300000, guid: dd1d0b47f0a00f84d86cc581fef85dd4, type: 3}
+  - {fileID: 21300000, guid: 4468206b8b9cf964f9c1c41a1fde9e63, type: 3}
+  - {fileID: 21300000, guid: 01e8937b1d73abb48ba911a764fdc148, type: 3}
+  - {fileID: 21300000, guid: c0abc3e5b473ab34bbe0dfeeec849b8c, type: 3}
+  - {fileID: 21300000, guid: 3e77749308f648040bed231b427d82c7, type: 3}
+  - {fileID: 21300000, guid: 15d687f67ac626847b784e922c964443, type: 3}
+  - {fileID: 21300000, guid: db2f79a8e22cd6c4981897b625c5745c, type: 3}
+  - {fileID: 21300000, guid: 40dfa5663353d894eabfdf4791dde3cf, type: 3}
+  - {fileID: 21300000, guid: 824edc06f0deaf04980706046ca1ad49, type: 3}
+  - {fileID: 21300000, guid: 321041dda3c315f4781237b2dfd3c18c, type: 3}
+  - {fileID: 21300000, guid: 7799c15ef8fcc7c4d84b7813d1592e0f, type: 3}
+  - {fileID: 21300000, guid: 8d09b109f6064d94fb9a408e3e223904, type: 3}
+  - {fileID: 21300000, guid: ff3aff4f61dadd64bb4bc0a300d4c319, type: 3}
+  - {fileID: 21300000, guid: 1f6783b281da0754aa5bc1cc75b796fe, type: 3}
+  - {fileID: 21300000, guid: db2d977cf2c77f74993d3b0d54da26ff, type: 3}
+  - {fileID: 21300000, guid: 4b9f21b78352a464b816785a0d6df440, type: 3}
+  - {fileID: 21300000, guid: c39c2e8c5b95aec47ad29a752a57413a, type: 3}
+  - {fileID: 21300000, guid: 369a712698f353a4cb5544741654712c, type: 3}
+  - {fileID: 21300000, guid: aab9ba4846cb9014f958e1633c227d96, type: 3}
+  - {fileID: 21300000, guid: 2f07afb6c0ae049429db72f01afe07b0, type: 3}
+  - {fileID: 21300000, guid: 8b757cc264ef1014a9166fa7040bbe65, type: 3}
+  - {fileID: 21300000, guid: c1079c0458ca7594bb0c54d70ab79b33, type: 3}
+  - {fileID: 21300000, guid: 90431d1d4c9ef344aaf28229e4726559, type: 3}
+  - {fileID: 21300000, guid: b92425870ea4fb64abbb262f6b1e5c29, type: 3}
   framesPerSecond: 30
   loop: 1
   eventMarkers: []
