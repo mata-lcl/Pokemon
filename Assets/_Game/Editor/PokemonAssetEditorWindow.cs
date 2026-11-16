@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using Pokemon.Application;
 using Pokemon.Domain;
+using Pokemon.Presentation;
 using Pokemon.Presentation.Animation;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace Pokemon.EditorTools
@@ -29,6 +32,9 @@ namespace Pokemon.EditorTools
         private int _selectedTab;
         private UnityEngine.Object _selectedAsset;
         private UnityEditor.Editor _cachedEditor;
+        private UnityEditor.Editor _animationEditor;
+        private PokemonBattleAnimationCatalog _animationCatalog;
+        private SaveAssetCatalog _saveAssetCatalog;
 
         /// <summary>
         /// 从统一的中文菜单打开精灵与动画编辑器。
@@ -54,6 +60,8 @@ namespace Pokemon.EditorTools
         {
             if (_cachedEditor != null)
                 DestroyImmediate(_cachedEditor);
+            if (_animationEditor != null)
+                DestroyImmediate(_animationEditor);
         }
 
         /// <summary>
@@ -174,8 +182,128 @@ namespace Pokemon.EditorTools
             _detailScroll = EditorGUILayout.BeginScrollView(_detailScroll);
             UnityEditor.Editor.CreateCachedEditor(_selectedAsset, null, ref _cachedEditor);
             _cachedEditor.OnInspectorGUI();
+            if (_selectedAsset is PokemonSpeciesData species)
+            {
+                DrawSpeciesAnimation(species);
+                DrawSaveCatalog(species);
+            }
             EditorGUILayout.EndScrollView();
             EditorGUILayout.EndVertical();
+        }
+
+        /// <summary>
+        /// 在精灵配置下绘制战斗动画目录关联及对应动画配置。
+        /// </summary>
+        /// <param name="species">当前选中的精灵配置。</param>
+        private void DrawSpeciesAnimation(PokemonSpeciesData species)
+        {
+            EditorGUILayout.Space(12f);
+            EditorGUILayout.LabelField("精灵战斗动画", EditorStyles.boldLabel);
+            _animationCatalog = (PokemonBattleAnimationCatalog)EditorGUILayout.ObjectField(
+                "战斗动画目录", _animationCatalog, typeof(PokemonBattleAnimationCatalog), false);
+            if (_animationCatalog == null)
+            {
+                EditorGUILayout.HelpBox("请指定战斗场景使用的精灵战斗动画目录。", MessageType.Info);
+                return;
+            }
+
+            SpriteFrameAnimationProfile profile = _animationCatalog.GetProfile(species);
+            EditorGUI.BeginChangeCheck();
+            SpriteFrameAnimationProfile selectedProfile = (SpriteFrameAnimationProfile)EditorGUILayout.ObjectField(
+                "动画配置", profile, typeof(SpriteFrameAnimationProfile), false);
+            if (EditorGUI.EndChangeCheck())
+            {
+                SetAnimationProfile(species, selectedProfile);
+                profile = selectedProfile;
+            }
+
+            if (profile == null && GUILayout.Button("为该精灵创建动画配置"))
+            {
+                profile = CreateAnimationProfileAsset($"{species.name}_动画配置", false);
+                SetAnimationProfile(species, profile);
+            }
+
+            if (profile == null)
+                return;
+
+            UnityEditor.Editor.CreateCachedEditor(profile, null, ref _animationEditor);
+            _animationEditor.OnInspectorGUI();
+        }
+
+        /// <summary>
+        /// 将精灵与动画配置的对应关系写入战斗动画目录。
+        /// </summary>
+        /// <param name="species">需要关联的精灵。</param>
+        /// <param name="profile">要使用的动画配置。</param>
+        private void SetAnimationProfile(PokemonSpeciesData species, SpriteFrameAnimationProfile profile)
+        {
+            var catalog = new SerializedObject(_animationCatalog);
+            SerializedProperty entries = catalog.FindProperty("entries");
+            for (int i = 0; i < entries.arraySize; i++)
+            {
+                SerializedProperty entry = entries.GetArrayElementAtIndex(i);
+                if (entry.FindPropertyRelative("species").objectReferenceValue != species)
+                    continue;
+
+                entry.FindPropertyRelative("animationProfile").objectReferenceValue = profile;
+                catalog.ApplyModifiedProperties();
+                AssetDatabase.SaveAssets();
+                return;
+            }
+
+            int index = entries.arraySize;
+            entries.InsertArrayElementAtIndex(index);
+            SerializedProperty newEntry = entries.GetArrayElementAtIndex(index);
+            newEntry.FindPropertyRelative("species").objectReferenceValue = species;
+            newEntry.FindPropertyRelative("animationProfile").objectReferenceValue = profile;
+            catalog.ApplyModifiedProperties();
+            AssetDatabase.SaveAssets();
+        }
+
+        /// <summary>
+        /// 在统一面板中登记精灵到当前指定的读档资源目录。
+        /// </summary>
+        /// <param name="species">需要登记的精灵配置。</param>
+        private void DrawSaveCatalog(PokemonSpeciesData species)
+        {
+            EditorGUILayout.Space(12f);
+            EditorGUILayout.LabelField("读档资源目录", EditorStyles.boldLabel);
+            _saveAssetCatalog = (SaveAssetCatalog)EditorGUILayout.ObjectField(
+                "加载场景目录", _saveAssetCatalog, typeof(SaveAssetCatalog), true);
+            if (_saveAssetCatalog == null)
+            {
+                EditorGUILayout.HelpBox("打开加载场景后，拖入其中的 SaveAssetCatalog 组件，即可在此登记精灵。", MessageType.Info);
+                return;
+            }
+
+            var catalog = new SerializedObject(_saveAssetCatalog);
+            SerializedProperty speciesList = catalog.FindProperty("species");
+            for (int i = 0; i < speciesList.arraySize; i++)
+            {
+                if (speciesList.GetArrayElementAtIndex(i).objectReferenceValue != species)
+                    continue;
+
+                EditorGUILayout.LabelField("该精灵已登记，可用于读档。");
+                return;
+            }
+
+            if (GUILayout.Button("添加到读档资源目录"))
+                RegisterSaveSpecies(species);
+        }
+
+        /// <summary>
+        /// 将新精灵加入当前指定场景的读档资源目录并标记场景待保存。
+        /// </summary>
+        /// <param name="species">需要加入目录的精灵配置。</param>
+        private void RegisterSaveSpecies(PokemonSpeciesData species)
+        {
+            var catalog = new SerializedObject(_saveAssetCatalog);
+            SerializedProperty speciesList = catalog.FindProperty("species");
+            int index = speciesList.arraySize;
+            speciesList.InsertArrayElementAtIndex(index);
+            speciesList.GetArrayElementAtIndex(index).objectReferenceValue = species;
+            catalog.ApplyModifiedProperties();
+            EditorSceneManager.MarkSceneDirty(_saveAssetCatalog.gameObject.scene);
         }
 
         /// <summary>
@@ -188,10 +316,23 @@ namespace Pokemon.EditorTools
             species.ID = GetNextSpeciesId();
             species.DisplayName = "新精灵";
             species.name = $"精灵_{species.ID}";
+            species.BaseHP = 0;
+            species.BaseAttack = 0;
+            species.BaseDefense = 0;
+            species.BaseSpeed = 0;
+            species.BaseSpAttack = 0;
+            species.BaseSpDefense = 0;
+            species.BaseStatTotal = 300;
 
             string path = AssetDatabase.GenerateUniqueAssetPath(
                 $"{SpeciesFolder}/{species.name}.asset");
             AssetDatabase.CreateAsset(species, path);
+            SpriteFrameAnimationProfile profile = CreateAnimationProfileAsset(
+                $"{species.name}_动画配置", false);
+            if (_animationCatalog != null)
+                SetAnimationProfile(species, profile);
+            if (_saveAssetCatalog != null)
+                RegisterSaveSpecies(species);
             AssetDatabase.SaveAssets();
             RefreshAssets();
             SelectAsset(species);
@@ -202,9 +343,20 @@ namespace Pokemon.EditorTools
         /// </summary>
         private void CreateAnimationProfile()
         {
+            CreateAnimationProfileAsset("精灵动画配置_新建", true);
+        }
+
+        /// <summary>
+        /// 在动画目录创建包含四种默认动画的配置资源。
+        /// </summary>
+        /// <param name="profileName">新动画配置的资源名称。</param>
+        /// <param name="select">创建后是否选中动画资源。</param>
+        /// <returns>创建完成的动画配置。</returns>
+        private SpriteFrameAnimationProfile CreateAnimationProfileAsset(string profileName, bool select)
+        {
             EnsureFolder(AnimationFolder);
             var profile = CreateInstance<SpriteFrameAnimationProfile>();
-            profile.name = "精灵动画配置_新建";
+            profile.name = profileName;
             string path = AssetDatabase.GenerateUniqueAssetPath(
                 $"{AnimationFolder}/{profile.name}.asset");
             AssetDatabase.CreateAsset(profile, path);
@@ -232,7 +384,9 @@ namespace Pokemon.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.ImportAsset(path);
             RefreshAssets();
-            SelectAsset(profile);
+            if (select)
+                SelectAsset(profile);
+            return profile;
         }
 
         /// <summary>
@@ -287,6 +441,13 @@ namespace Pokemon.EditorTools
                 left.name,
                 right.name,
                 StringComparison.Ordinal));
+            if (_animationCatalog == null)
+            {
+                string[] catalogGuids = AssetDatabase.FindAssets("t:PokemonBattleAnimationCatalog");
+                if (catalogGuids.Length == 1)
+                    _animationCatalog = AssetDatabase.LoadAssetAtPath<PokemonBattleAnimationCatalog>(
+                        AssetDatabase.GUIDToAssetPath(catalogGuids[0]));
+            }
             Repaint();
         }
 

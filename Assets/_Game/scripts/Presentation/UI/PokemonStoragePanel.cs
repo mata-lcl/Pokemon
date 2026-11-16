@@ -32,6 +32,7 @@ namespace Pokemon.Presentation.UI
         [SerializeField] private TMP_Text previewNameText;
         [SerializeField] private TMP_Text previewLevelText;
         [SerializeField] private TMP_Text previewHintText;
+        [SerializeField] private TMP_Text[] previewSkillTexts;
         [SerializeField] private TMP_Text capacityText;
         [SerializeField] private Button detailButton;
         [SerializeField] private Button openStorageButton;
@@ -39,6 +40,11 @@ namespace Pokemon.Presentation.UI
         [Header("详情页")]
         [SerializeField] private PokemonDetailView detailView;
         [SerializeField] private Button detailBackButton;
+
+        [Header("技能替换")]
+        [SerializeField] private PokemonSkillReplacementPanel skillReplacementPanel;
+        [SerializeField] private Button replaceSkillButton;
+        [SerializeField] private Button storageReplaceSkillButton;
 
         [Header("仓库操作")]
         [SerializeField] private PokemonDetailView storageDetailView;
@@ -106,6 +112,8 @@ namespace Pokemon.Presentation.UI
             Initialize();
             CopyData(party, storage);
 
+            skillReplacementPanel.Close();
+
             _overviewSelection = ClampSelection(_overviewSelection, _party.Count);
             _partySelection = -1;
             _storageSelection = -1;
@@ -121,6 +129,8 @@ namespace Pokemon.Presentation.UI
 
             if (detailButton != null)
                 detailButton.onClick.AddListener(OpenDetailPage);
+            replaceSkillButton.onClick.AddListener(OpenDetailSkillReplacement);
+            storageReplaceSkillButton.onClick.AddListener(OpenStorageSkillReplacement);
             if (openStorageButton != null)
                 openStorageButton.onClick.AddListener(OpenStoragePage);
             if (detailBackButton != null)
@@ -268,6 +278,14 @@ namespace Pokemon.Presentation.UI
                     : "当前队伍中没有精灵。";
             if (detailButton != null)
                 detailButton.interactable = selected != null;
+            for (int i = 0; i < previewSkillTexts.Length; i++)
+            {
+                SkillData skill = selected != null && i < selected.EquippedSkills.Count
+                    ? selected.EquippedSkills[i] : null;
+                previewSkillTexts[i].text = skill != null
+                    ? $"{i + 1}. {skill.DisplayName}\nPP {selected.CurrentPP[skill]}/{skill.MaxPP}"
+                    : $"{i + 1}. 空槽";
+            }
         }
 
         private void RefreshStorageSlots()
@@ -277,6 +295,7 @@ namespace Pokemon.Presentation.UI
                 index =>
                 {
                     _partySelection = index;
+                    storageDetailView.Show(_party[index]);
                     RefreshStorageSlots();
                     RefreshActionState();
                 },
@@ -412,6 +431,7 @@ namespace Pokemon.Presentation.UI
 
         private void RefreshActionState()
         {
+            storageReplaceSkillButton.interactable = storageDetailView.CurrentPokemon != null;
             bool hasPartySelection = GetAt(_party, _partySelection) != null;
             bool hasStorageSelection = GetAt(_storage, _storageSelection) != null;
 
@@ -486,12 +506,33 @@ namespace Pokemon.Presentation.UI
 
         private void SetPage(GameObject visiblePage)
         {
+            skillReplacementPanel.Close();
             if (overviewPage != null)
                 overviewPage.SetActive(visiblePage == overviewPage);
             if (detailPage != null)
                 detailPage.SetActive(visiblePage == detailPage);
             if (storagePage != null)
                 storagePage.SetActive(visiblePage == storagePage);
+        }
+
+        /// <summary>打开队伍详情中的精灵技能替换界面。</summary>
+        private void OpenDetailSkillReplacement()
+        {
+            OpenSkillReplacement(detailView);
+        }
+
+        /// <summary>打开仓库当前预览精灵的技能替换界面。</summary>
+        private void OpenStorageSkillReplacement()
+        {
+            OpenSkillReplacement(storageDetailView);
+        }
+
+        /// <summary>显示指定详情视图的技能替换界面，完成替换后更新显示。</summary>
+        /// <param name="view">当前精灵的详情视图。</param>
+        private void OpenSkillReplacement(PokemonDetailView view)
+        {
+            MonsterRuntime pokemon = view.CurrentPokemon;
+            skillReplacementPanel.Show(pokemon, () => view.Show(pokemon));
         }
 
         private static int ClampSelection(int selection, int count)

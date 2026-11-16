@@ -7,6 +7,16 @@ namespace Pokemon.EditorTools
     [CustomEditor(typeof(PokemonSpeciesData))]
     public sealed class PokemonSpeciesDataInspector : UnityEditor.Editor
     {
+        private static readonly string[] BaseStatNames =
+        {
+            "BaseHP", "BaseAttack", "BaseDefense", "BaseSpeed", "BaseSpAttack", "BaseSpDefense"
+        };
+
+        private static readonly string[] BaseStatLabels =
+        {
+            "生命", "攻击", "防御", "速度", "特攻", "特防"
+        };
+
         /// <summary>
         /// 使用中文分组和字段名称绘制精灵配置。
         /// </summary>
@@ -25,12 +35,7 @@ namespace Pokemon.EditorTools
             DrawProperty("secondaryTypeIcon", "副属性图标", "没有副属性时保持为空。");
 
             DrawSection("种族值");
-            DrawProperty("BaseHP", "生命");
-            DrawProperty("BaseAttack", "攻击");
-            DrawProperty("BaseDefense", "防御");
-            DrawProperty("BaseSpeed", "速度");
-            DrawProperty("BaseSpAttack", "特攻");
-            DrawProperty("BaseSpDefense", "特防");
+            DrawBaseStats();
 
             DrawSection("击败奖励");
             DrawProperty("BaseExpYield", "基础经验");
@@ -48,6 +53,54 @@ namespace Pokemon.EditorTools
             DrawProperty("CatchRate", "基础捕获率", "范围为 0 到 255，数值越高越容易捕获。");
 
             serializedObject.ApplyModifiedProperties();
+        }
+
+        /// <summary>
+        /// 绘制种族值总点数与六项分配滑块，并限制已分配点数不超过总量。
+        /// </summary>
+        private void DrawBaseStats()
+        {
+            var stats = new SerializedProperty[BaseStatNames.Length];
+            int assigned = 0;
+            for (int i = 0; i < stats.Length; i++)
+            {
+                stats[i] = serializedObject.FindProperty(BaseStatNames[i]);
+                assigned += stats[i].intValue;
+            }
+
+            SerializedProperty totalProperty = serializedObject.FindProperty("BaseStatTotal");
+            int total = totalProperty.intValue == 0 ? assigned : totalProperty.intValue;
+            int enteredTotal = Mathf.Max(0, EditorGUILayout.IntField(
+                new GUIContent("种族值总点数", "旧精灵默认使用当前六项之和；修改总点数时按界面顺序保留已有分配。"),
+                total));
+            if (enteredTotal != total)
+            {
+                total = enteredTotal;
+                totalProperty.intValue = total;
+                int available = total;
+                for (int i = 0; i < stats.Length; i++)
+                {
+                    stats[i].intValue = Mathf.Clamp(stats[i].intValue, 0, available);
+                    available -= stats[i].intValue;
+                }
+                assigned = total - available;
+            }
+
+            for (int i = 0; i < stats.Length; i++)
+            {
+                int maximum = total - assigned + stats[i].intValue;
+                int value = EditorGUILayout.IntSlider(BaseStatLabels[i], stats[i].intValue, 0, maximum);
+                if (value == stats[i].intValue)
+                    continue;
+
+                assigned += value - stats[i].intValue;
+                stats[i].intValue = value;
+                totalProperty.intValue = total;
+            }
+
+            EditorGUILayout.LabelField($"已分配：{assigned} / {total}    剩余：{total - assigned}");
+            if (assigned < total)
+                EditorGUILayout.HelpBox("还有种族值未分配，六项之和达到总点数后即完成分配。", MessageType.Info);
         }
 
         /// <summary>

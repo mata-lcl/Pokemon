@@ -29,6 +29,9 @@ namespace Pokemon.Presentation.UI
         [SerializeField] private TMP_Text abilityText;
         [SerializeField] private TMP_Text heldItemText;
 
+        [Header("装备技能")]
+        [SerializeField] private TMP_Text[] equippedSkillTexts = new TMP_Text[0];
+
         public MonsterRuntime CurrentPokemon { get; private set; }
 
         public void Show(MonsterRuntime pokemon)
@@ -100,6 +103,7 @@ namespace Pokemon.Presentation.UI
                     : "无";
                 heldItemText.text = $"携带道具：{heldItemName}";
             }
+            RefreshEquippedSkills();
         }
 
         public void Clear()
@@ -147,6 +151,22 @@ namespace Pokemon.Presentation.UI
 
             if (heldItemText != null)
                 heldItemText.text = string.Empty;
+            RefreshEquippedSkills();
+        }
+
+        /// <summary>
+        /// 刷新四个装备技能槽的名称和当前 PP，未装备的位置显示空槽。
+        /// </summary>
+        private void RefreshEquippedSkills()
+        {
+            for (int index = 0; index < equippedSkillTexts.Length; index++)
+            {
+                SkillData skill = CurrentPokemon != null && index < CurrentPokemon.EquippedSkills.Count
+                    ? CurrentPokemon.EquippedSkills[index] : null;
+                equippedSkillTexts[index].text = skill != null
+                    ? $"{index + 1}. {skill.DisplayName}  PP {CurrentPokemon.CurrentPP[skill]}/{skill.MaxPP}"
+                    : $"{index + 1}. 空槽";
+            }
         }
     }
 }

@@ -69,3 +69,10 @@ private void RefreshAnimationState()
    * 是否需要用户在 Unity Inspector 中手动拖拽绑定变量。
 4. 如果代码中新增了 `[SerializeField]` 字段，必须提醒用户回到 Unity Inspector 中完成引用绑定。
 5. 修改 Unity 项目相关代码时，只在最终回答的最前方添加当前北京时间，格式建议为：`[北京时间：YYYY-MM-DD HH:mm]`,不是每次回答都添加，也不是第一次回答添加
+
+
+## Unity 执行约束
+- 超时或提前返回时先检查现有进程和日志，不并发启动第二个 Unity。
+- 单次等待每 2～5 秒检查一次，连续等待不超过 60 秒；超过后先向用户报告。
+- `Temp/UnityLockfile` 只有在确认无任何 Unity 进程后才允许处理，不能在 Editor 运行时强删。
+- Unity 关闭自动刷新时，请用户执行 `Ctrl+R` 或 `Assets > Refresh`，不要直接手写复杂 TrailRenderer YAML 替代 Editor 保存。

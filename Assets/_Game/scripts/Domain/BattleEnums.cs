@@ -11,7 +11,35 @@ namespace Pokemon.Domain
         [UnityEngine.InspectorName("火")]
         Fire = 3,
         [UnityEngine.InspectorName("草")]
-        Grass = 4
+        Grass = 4,
+        [UnityEngine.InspectorName("电")]
+        Electric = 5,
+        [UnityEngine.InspectorName("冰")]
+        Ice = 6,
+        [UnityEngine.InspectorName("格斗")]
+        Fighting = 7,
+        [UnityEngine.InspectorName("毒")]
+        Poison = 8,
+        [UnityEngine.InspectorName("地面")]
+        Ground = 9,
+        [UnityEngine.InspectorName("飞行")]
+        Flying = 10,
+        [UnityEngine.InspectorName("超能力")]
+        Psychic = 11,
+        [UnityEngine.InspectorName("虫")]
+        Bug = 12,
+        [UnityEngine.InspectorName("岩石")]
+        Rock = 13,
+        [UnityEngine.InspectorName("幽灵")]
+        Ghost = 14,
+        [UnityEngine.InspectorName("龙")]
+        Dragon = 15,
+        [UnityEngine.InspectorName("恶")]
+        Dark = 16,
+        [UnityEngine.InspectorName("钢")]
+        Steel = 17,
+        [UnityEngine.InspectorName("妖精")]
+        Fairy = 18
     }
 
     public enum TargetType

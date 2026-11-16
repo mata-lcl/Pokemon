@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 77c98b9a2c1cba34e85a98b0a7de8642, type: 3}
   m_Name: Species_Slime
   m_EditorClassIdentifier: 
-  ID: 0
+  ID: 998
   DisplayName: "\u53F2\u83B1\u59C6"
   PrimaryType: 2
   SecondaryType: 0

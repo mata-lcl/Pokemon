@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 77c98b9a2c1cba34e85a98b0a7de8642, type: 3}
   m_Name: Species_Fox
   m_EditorClassIdentifier: 
-  ID: 1
+  ID: 999
   DisplayName: "\u5C0F\u706B\u72D0"
   PrimaryType: 3
   SecondaryType: 0

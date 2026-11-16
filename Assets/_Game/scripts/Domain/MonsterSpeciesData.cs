@@ -23,6 +23,7 @@ namespace Pokemon.Domain
         public Sprite SecondaryTypeIcon => secondaryTypeIcon;
 
         [Header("种族值 (不可更改)")]
+        public int BaseStatTotal;
         [Tooltip("血量")] public int BaseHP = 50;
         [Tooltip("攻击")] public int BaseAttack = 10;
         [Tooltip("防御")] public int BaseDefense = 10;
