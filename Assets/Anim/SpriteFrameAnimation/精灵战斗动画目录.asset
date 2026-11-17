@@ -15,5 +15,33 @@ MonoBehaviour:
   entries:
   - species: {fileID: 11400000, guid: 9203c7cc45ee05b48812114fd28074a5, type: 2}
     animationProfile: {fileID: 11400000, guid: c5c9aa0d4ca45e4458d48191ab587dc4, type: 2}
+    spineSkeletonData: {fileID: 0}
+    spineIdleAnimation: 
+    spinePhysicalAttackAnimation: 
+    spineSpecialAttackAnimation: 
+    spineStatusSkillAnimation: 
+    spineScale: 1
   - species: {fileID: 11400000, guid: 7b32cb9db754528479f62466a7c81e0e, type: 2}
     animationProfile: {fileID: 11400000, guid: b425c944e5839cd42873c9713104ffdf, type: 2}
+    spineSkeletonData: {fileID: 0}
+    spineIdleAnimation: 
+    spinePhysicalAttackAnimation: 
+    spineSpecialAttackAnimation: 
+    spineStatusSkillAnimation: 
+    spineScale: 1
+  - species: {fileID: 11400000, guid: 1b5d3391d7f042f1a3ebae131e8faedd, type: 2}
+    animationProfile: {fileID: 11400000, guid: a1f4cf7012e2e424fbde1ee1bf44ca88, type: 2}
+    spineSkeletonData: {fileID: 11400000, guid: 6449b743553a41e45b10b09b60a05b58, type: 2}
+    spineIdleAnimation: standby_loop
+    spinePhysicalAttackAnimation: attack
+    spineSpecialAttackAnimation: skill1
+    spineStatusSkillAnimation: skill2
+    spineScale: 4
+  - species: {fileID: 11400000, guid: 8ad935c78e7fccd4297ca2400592a6aa, type: 2}
+    animationProfile: {fileID: 11400000, guid: c32663ab6802bba4db500bf66c34769c, type: 2}
+    spineSkeletonData: {fileID: 11400000, guid: 6449b743553a41e45b10b09b60a05b58, type: 2}
+    spineIdleAnimation: standby_loop
+    spinePhysicalAttackAnimation: attack
+    spineSpecialAttackAnimation: skill1
+    spineStatusSkillAnimation: skill2
+    spineScale: 4

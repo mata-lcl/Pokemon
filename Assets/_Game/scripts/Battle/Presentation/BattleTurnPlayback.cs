@@ -43,7 +43,8 @@ namespace Pokemon.Presentation
             {
                 enemyView.Setup(
                     enemy.Species.BattleSprite,
-                    GetAnimationProfile(enemy.Species));
+                    GetAnimationProfile(enemy.Species),
+                    GetAnimationEntry(enemy.Species));
             }
 
             RefreshPlaybackModeLabel();
@@ -60,7 +61,8 @@ namespace Pokemon.Presentation
             {
                 playerView.Setup(
                     player.Species.BattleSprite,
-                    GetAnimationProfile(player.Species));
+                    GetAnimationProfile(player.Species),
+                    GetAnimationEntry(player.Species));
             }
         }
 
@@ -346,6 +348,18 @@ namespace Pokemon.Presentation
         {
             return animationCatalog != null
                 ? animationCatalog.GetProfile(species)
+                : null;
+        }
+
+        /// <summary>
+        /// 获取指定精灵的战斗动画条目。
+        /// </summary>
+        /// <param name="species">需要查询动画的精灵种族。</param>
+        /// <returns>目录中的动画条目；目录未收录时返回 null。</returns>
+        private PokemonBattleAnimationEntry GetAnimationEntry(PokemonSpeciesData species)
+        {
+            return animationCatalog != null
+                ? animationCatalog.GetEntry(species)
                 : null;
         }
     }

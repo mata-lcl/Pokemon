@@ -511,7 +511,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   species:
-  - {fileID: 11400000, guid: 7b32cb9db754528479f62466a7c81e0e, type: 2}
+  - {fileID: 11400000, guid: 1b5d3391d7f042f1a3ebae131e8faedd, type: 2}
   items:
   - {fileID: 11400000, guid: 1f4484288865211498459ff73f71fed3, type: 2}
   - {fileID: 11400000, guid: ba3461fc4f2c84249b0707c074c6931f, type: 2}
@@ -555,7 +555,7 @@ MonoBehaviour:
   backButton: {fileID: 9100000184}
   statusText: {fileID: 9100000208}
   assetCatalog: {fileID: 9100000001}
-  starterSpecies: {fileID: 11400000, guid: 7b32cb9db754528479f62466a7c81e0e, type: 2}
+  starterSpecies: {fileID: 11400000, guid: 1b5d3391d7f042f1a3ebae131e8faedd, type: 2}
   starterItem: {fileID: 11400000, guid: 1f4484288865211498459ff73f71fed3, type: 2}
   starterItemCount: 5
   newGameSceneName: World

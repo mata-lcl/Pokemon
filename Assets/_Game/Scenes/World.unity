@@ -1601,11 +1601,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5714981616342393240, guid: 0c231b3ff3b040546bc403378757b7f6, type: 3}
       propertyPath: encounters.Array.size
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5714981616342393240, guid: 0c231b3ff3b040546bc403378757b7f6, type: 3}
       propertyPath: encounters.Array.data[0].weight
-      value: 0.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5714981616342393240, guid: 0c231b3ff3b040546bc403378757b7f6, type: 3}
       propertyPath: encounters.Array.data[1].weight
@@ -1614,18 +1614,18 @@ PrefabInstance:
     - target: {fileID: 5714981616342393240, guid: 0c231b3ff3b040546bc403378757b7f6, type: 3}
       propertyPath: encounters.Array.data[0].species
       value: 
-      objectReference: {fileID: 11400000, guid: cfefac2801e333044b459fc4f13b051f, type: 2}
+      objectReference: {fileID: 11400000, guid: 8ad935c78e7fccd4297ca2400592a6aa, type: 2}
     - target: {fileID: 5714981616342393240, guid: 0c231b3ff3b040546bc403378757b7f6, type: 3}
       propertyPath: encounters.Array.data[1].species
       value: 
-      objectReference: {fileID: 11400000, guid: 9203c7cc45ee05b48812114fd28074a5, type: 2}
+      objectReference: {fileID: 11400000, guid: 8ad935c78e7fccd4297ca2400592a6aa, type: 2}
     - target: {fileID: 5714981616342393240, guid: 0c231b3ff3b040546bc403378757b7f6, type: 3}
       propertyPath: encounters.Array.data[0].maxLevel
-      value: 10
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5714981616342393240, guid: 0c231b3ff3b040546bc403378757b7f6, type: 3}
       propertyPath: encounters.Array.data[0].minLevel
-      value: 5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5714981616342393240, guid: 0c231b3ff3b040546bc403378757b7f6, type: 3}
       propertyPath: encounters.Array.data[1].maxLevel

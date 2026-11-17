@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using Pokemon.Presentation;
 using Pokemon.Presentation.Animation;
+using Spine.Unity;
 using UnityEditor;
 using UnityEngine;
 
@@ -20,7 +22,18 @@ namespace Pokemon.EditorTools
         private SerializedProperty _physicalAttack;
         private SerializedProperty _specialAttack;
         private SerializedProperty _statusSkill;
+        private SerializedProperty _spineSkeletonData;
+        private SerializedProperty _spineIdleAnimation;
+        private SerializedProperty _spinePhysicalAttackAnimation;
+        private SerializedProperty _spineSpecialAttackAnimation;
+        private SerializedProperty _spineStatusSkillAnimation;
+        private SerializedProperty _spineScale;
         private UnityEditor.Editor _clipEditor;
+        private UnityEditor.Editor _spinePreviewEditor;
+        private AnimationReferenceAsset _spinePreviewReference;
+        private SkeletonDataAsset _previewSkeletonAsset;
+        private Spine.SkeletonData _previewSkeletonData;
+        private string _previewAnimationName;
         private bool _showAssetReferences;
         private int _selectedAnimationTab;
 
@@ -33,6 +46,13 @@ namespace Pokemon.EditorTools
             _physicalAttack = serializedObject.FindProperty("physicalAttack");
             _specialAttack = serializedObject.FindProperty("specialAttack");
             _statusSkill = serializedObject.FindProperty("statusSkill");
+            _spineSkeletonData = serializedObject.FindProperty("spineSkeletonData");
+            _spineIdleAnimation = serializedObject.FindProperty("spineIdleAnimation");
+            _spinePhysicalAttackAnimation = serializedObject.FindProperty("spinePhysicalAttackAnimation");
+            _spineSpecialAttackAnimation = serializedObject.FindProperty("spineSpecialAttackAnimation");
+            _spineStatusSkillAnimation = serializedObject.FindProperty("spineStatusSkillAnimation");
+            _spineScale = serializedObject.FindProperty("spineScale");
+            EditorApplication.update += RepaintSpinePreview;
         }
 
         /// <summary>
@@ -42,6 +62,8 @@ namespace Pokemon.EditorTools
         {
             if (_clipEditor != null)
                 DestroyImmediate(_clipEditor);
+            EditorApplication.update -= RepaintSpinePreview;
+            ClearSpinePreview();
         }
 
         /// <summary>
@@ -51,41 +73,192 @@ namespace Pokemon.EditorTools
         {
             serializedObject.Update();
 
-            EditorGUILayout.HelpBox(
-                "每只精灵只需要维护这一个动画配置。可以一键创建四种内置动画，再在下方标签页批量导入图片和预览。",
-                MessageType.Info);
-
-            if (GUILayout.Button("一键创建缺失的四种动画", GUILayout.Height(28f)))
-                CreateMissingAnimationSubAssets();
-
-            _showAssetReferences = EditorGUILayout.Foldout(
-                _showAssetReferences,
-                "动画资源引用（高级）",
-                true);
-            if (_showAssetReferences)
-                DrawAnimationReferences();
-
-            EditorGUILayout.Space(8f);
-            _selectedAnimationTab = GUILayout.Toolbar(
-                _selectedAnimationTab,
-                AnimationTabs,
-                GUILayout.Height(26f));
-
-            SerializedProperty selectedProperty = GetSelectedAnimationProperty();
-            SpriteFrameAnimationClip selectedClip =
-                selectedProperty.objectReferenceValue as SpriteFrameAnimationClip;
-            if (selectedClip == null)
+            EditorGUILayout.PropertyField(
+                _spineSkeletonData,
+                new GUIContent("Spine 骨骼资源"));
+            if (_spineSkeletonData.objectReferenceValue != null)
             {
                 EditorGUILayout.HelpBox(
-                    $"“{AnimationTabs[_selectedAnimationTab]}”尚未创建。点击上方按钮即可自动创建。",
-                    MessageType.Warning);
+                    "选择下方的战斗动作，再从已导入的 Spine 动画中挑选并预览。",
+                    MessageType.Info);
+                EditorGUILayout.PropertyField(_spineScale, new GUIContent("尺寸微调倍率"));
+                EditorGUILayout.Space(8f);
+                _selectedAnimationTab = GUILayout.Toolbar(
+                    _selectedAnimationTab,
+                    AnimationTabs,
+                    GUILayout.Height(26f));
+                DrawSpineAnimationEditor();
             }
             else
             {
-                DrawSelectedClipEditor(selectedClip);
+                ClearSpinePreview();
+                EditorGUILayout.HelpBox(
+                    "每只精灵只需要维护这一个动画配置。可以一键创建四种内置动画，再在下方标签页批量导入图片和预览。",
+                    MessageType.Info);
+
+                if (GUILayout.Button("一键创建缺失的四种动画", GUILayout.Height(28f)))
+                    CreateMissingAnimationSubAssets();
+
+                _showAssetReferences = EditorGUILayout.Foldout(
+                    _showAssetReferences,
+                    "动画资源引用（高级）",
+                    true);
+                if (_showAssetReferences)
+                    DrawAnimationReferences();
+
+                EditorGUILayout.Space(8f);
+                _selectedAnimationTab = GUILayout.Toolbar(
+                    _selectedAnimationTab,
+                    AnimationTabs,
+                    GUILayout.Height(26f));
+
+                SerializedProperty selectedProperty = GetSelectedAnimationProperty();
+                SpriteFrameAnimationClip selectedClip =
+                    selectedProperty.objectReferenceValue as SpriteFrameAnimationClip;
+                if (selectedClip == null)
+                {
+                    EditorGUILayout.HelpBox(
+                        $"“{AnimationTabs[_selectedAnimationTab]}”尚未创建。点击上方按钮即可自动创建。",
+                        MessageType.Warning);
+                }
+                else
+                {
+                    DrawSelectedClipEditor(selectedClip);
+                }
             }
 
             serializedObject.ApplyModifiedProperties();
+        }
+
+        /// <summary>
+        /// 绘制当前战斗类型的 Spine 动画选择和内嵌预览。
+        /// </summary>
+        private void DrawSpineAnimationEditor()
+        {
+            var skeletonAsset = _spineSkeletonData.objectReferenceValue as SkeletonDataAsset;
+            Spine.SkeletonData skeletonData = skeletonAsset.GetSkeletonData(true);
+            if (skeletonData == null)
+            {
+                ClearSpinePreview();
+                EditorGUILayout.HelpBox("骨骼资源尚未成功导入。", MessageType.Warning);
+                return;
+            }
+
+            SerializedProperty animationProperty = GetSelectedSpineAnimationProperty();
+            var animationNames = new List<string> { "" };
+            var animationLabels = new List<string> { "未选择" };
+            foreach (Spine.Animation animation in skeletonData.Animations)
+            {
+                animationNames.Add(animation.Name);
+                animationLabels.Add(animation.Name);
+            }
+
+            int currentIndex = animationNames.IndexOf(animationProperty.stringValue);
+            int selectedIndex = EditorGUILayout.Popup(
+                "Spine 动画",
+                Mathf.Max(0, currentIndex),
+                animationLabels.ToArray());
+            if (selectedIndex != Mathf.Max(0, currentIndex))
+                animationProperty.stringValue = animationNames[selectedIndex];
+
+            if (currentIndex < 0)
+                EditorGUILayout.HelpBox("当前动作名不在骨骼资源中，请重新选择。", MessageType.Warning);
+
+            DrawSpinePreview(skeletonAsset, skeletonData, animationProperty.stringValue);
+        }
+
+        /// <summary>
+        /// 返回当前标签页保存 Spine 动作名称的字段。
+        /// </summary>
+        /// <returns>当前战斗类型对应的动作名称字段。</returns>
+        private SerializedProperty GetSelectedSpineAnimationProperty()
+        {
+            switch (_selectedAnimationTab)
+            {
+                case 1:
+                    return _spinePhysicalAttackAnimation;
+                case 2:
+                    return _spineSpecialAttackAnimation;
+                case 3:
+                    return _spineStatusSkillAnimation;
+                default:
+                    return _spineIdleAnimation;
+            }
+        }
+
+        /// <summary>
+        /// 使用 Spine 自带的动画预览器显示当前选择的动作。
+        /// </summary>
+        /// <param name="skeletonAsset">当前配置绑定的 Spine 骨骼资源。</param>
+        /// <param name="skeletonData">已解析的骨骼数据。</param>
+        /// <param name="animationName">当前标签页选择的动作名称。</param>
+        private void DrawSpinePreview(
+            SkeletonDataAsset skeletonAsset,
+            Spine.SkeletonData skeletonData,
+            string animationName)
+        {
+            if (string.IsNullOrEmpty(animationName) ||
+                skeletonData.FindAnimation(animationName) == null)
+            {
+                ClearSpinePreview();
+                EditorGUILayout.HelpBox("选定一个 Spine 动画后可在这里预览。", MessageType.Info);
+                return;
+            }
+
+            if (_previewSkeletonAsset != skeletonAsset ||
+                _previewSkeletonData != skeletonData ||
+                _previewAnimationName != animationName)
+            {
+                ClearSpinePreview();
+                _spinePreviewReference = CreateInstance<AnimationReferenceAsset>();
+                _spinePreviewReference.hideFlags = HideFlags.HideAndDontSave;
+                var previewObject = new SerializedObject(_spinePreviewReference);
+                previewObject.FindProperty("skeletonDataAsset").objectReferenceValue = skeletonAsset;
+                previewObject.FindProperty("animationName").stringValue = animationName;
+                previewObject.ApplyModifiedPropertiesWithoutUndo();
+                _spinePreviewEditor = UnityEditor.Editor.CreateEditor(_spinePreviewReference);
+                _previewSkeletonAsset = skeletonAsset;
+                _previewSkeletonData = skeletonData;
+                _previewAnimationName = animationName;
+            }
+
+            EditorGUILayout.Space(6f);
+            EditorGUILayout.LabelField("动作预览", EditorStyles.boldLabel);
+            Rect previewArea = GUILayoutUtility.GetRect(
+                120f,
+                260f,
+                GUILayout.ExpandWidth(true));
+            _spinePreviewEditor.OnInteractivePreviewGUI(previewArea, EditorStyles.helpBox);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                EditorGUILayout.LabelField(animationName, EditorStyles.miniLabel);
+                _spinePreviewEditor.OnPreviewSettings();
+            }
+        }
+
+        /// <summary>
+        /// 释放当前标签页使用的 Spine 动画预览资源。
+        /// </summary>
+        private void ClearSpinePreview()
+        {
+            if (_spinePreviewEditor != null)
+                DestroyImmediate(_spinePreviewEditor);
+            if (_spinePreviewReference != null)
+                DestroyImmediate(_spinePreviewReference);
+            _spinePreviewEditor = null;
+            _spinePreviewReference = null;
+            _previewSkeletonAsset = null;
+            _previewSkeletonData = null;
+            _previewAnimationName = null;
+        }
+
+        /// <summary>
+        /// 在 Spine 动作播放期间刷新配置文件的内嵌预览。
+        /// </summary>
+        private void RepaintSpinePreview()
+        {
+            if (_spinePreviewEditor != null)
+                Repaint();
         }
 
         /// <summary>
